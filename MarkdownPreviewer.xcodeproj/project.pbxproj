@@ -6,6 +6,13 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */; };
+		626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */; };
+		626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD52F9DDC9B00BD51F9 /* ALCombine */; };
+		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		626E8D5D2F9DD1C800BD51F9 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,6 +34,8 @@
 		626E8D4F2F9DD1C700BD51F9 /* MarkdownPreviewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownPreviewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		626E8D792F9DD63000BD51F9 /* swift-core-kit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-core-kit"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-core-kit"; sourceTree = "<absolute>"; };
+		626E8D7A2F9DD66800BD51F9 /* swift-argument-parser */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-argument-parser"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-argument-parser"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +61,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
+				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
+				626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */,
+				626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -75,9 +88,12 @@
 		626E8D462F9DD1C700BD51F9 = {
 			isa = PBXGroup;
 			children = (
+				626E8D7A2F9DD66800BD51F9 /* swift-argument-parser */,
+				626E8D792F9DD63000BD51F9 /* swift-core-kit */,
 				626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */,
 				626E8D5F2F9DD1C800BD51F9 /* MarkdownPreviewerTests */,
 				626E8D692F9DD1C800BD51F9 /* MarkdownPreviewerUITests */,
+				626E8DD42F9DDC9B00BD51F9 /* Frameworks */,
 				626E8D502F9DD1C700BD51F9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +106,13 @@
 				626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		626E8DD42F9DDC9B00BD51F9 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -106,12 +129,20 @@
 			buildRules = (
 			);
 			dependencies = (
+				626E8DD12F9DDC9100BD51F9 /* PBXTargetDependency */,
+				626E8DD32F9DDC9100BD51F9 /* PBXTargetDependency */,
+				626E8D8C2F9DD98A00BD51F9 /* PBXTargetDependency */,
+				626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */,
 			);
 			name = MarkdownPreviewer;
 			packageProductDependencies = (
+				626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */,
+				626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */,
+				626E8DD52F9DDC9B00BD51F9 /* ALCombine */,
+				626E8DD72F9DDC9B00BD51F9 /* ALFoundation */,
 			);
 			productName = MarkdownPreviewer;
 			productReference = 626E8D4F2F9DD1C700BD51F9 /* MarkdownPreviewer.app */;
@@ -195,6 +226,9 @@
 			);
 			mainGroup = 626E8D462F9DD1C700BD51F9;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 626E8D502F9DD1C700BD51F9 /* Products */;
 			projectDirPath = "";
@@ -265,6 +299,22 @@
 			isa = PBXTargetDependency;
 			target = 626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */;
 			targetProxy = 626E8D672F9DD1C800BD51F9 /* PBXContainerItemProxy */;
+		};
+		626E8D8C2F9DD98A00BD51F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 626E8D8B2F9DD98A00BD51F9 /* ALCombine */;
+		};
+		626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 626E8D8D2F9DD98A00BD51F9 /* ALFoundation */;
+		};
+		626E8DD12F9DDC9100BD51F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 626E8DD02F9DDC9100BD51F9 /* FlyingFox */;
+		};
+		626E8DD32F9DDC9100BD51F9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 626E8DD22F9DDC9100BD51F9 /* FlyingSocks */;
 		};
 /* End PBXTargetDependency section */
 
@@ -398,11 +448,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FS73MHCS98;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -414,7 +464,6 @@
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -430,11 +479,11 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = FS73MHCS98;
-				ENABLE_APP_SANDBOX = YES;
+				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
-				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -446,7 +495,6 @@
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
@@ -573,6 +621,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swhitty/FlyingFox.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.26.2;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		626E8D8B2F9DD98A00BD51F9 /* ALCombine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ALCombine;
+		};
+		626E8D8D2F9DD98A00BD51F9 /* ALFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ALFoundation;
+		};
+		626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingFox;
+		};
+		626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingSocks;
+		};
+		626E8DD02F9DDC9100BD51F9 /* FlyingFox */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingFox;
+		};
+		626E8DD22F9DDC9100BD51F9 /* FlyingSocks */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */;
+			productName = FlyingSocks;
+		};
+		626E8DD52F9DDC9B00BD51F9 /* ALCombine */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ALCombine;
+		};
+		626E8DD72F9DDC9B00BD51F9 /* ALFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ALFoundation;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 626E8D472F9DD1C700BD51F9 /* Project object */;
 }
