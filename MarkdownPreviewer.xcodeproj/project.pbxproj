@@ -31,7 +31,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		626E8D4F2F9DD1C700BD51F9 /* MarkdownPreviewer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MarkdownPreviewer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Markdown Preview Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D792F9DD63000BD51F9 /* swift-core-kit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-core-kit"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-core-kit"; sourceTree = "<absolute>"; };
@@ -114,7 +114,7 @@
 		626E8D502F9DD1C700BD51F9 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				626E8D4F2F9DD1C700BD51F9 /* MarkdownPreviewer.app */,
+				626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */,
 				626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */,
 				626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */,
 			);
@@ -158,7 +158,7 @@
 				626E8DD72F9DDC9B00BD51F9 /* ALFoundation */,
 			);
 			productName = MarkdownPreviewer;
-			productReference = 626E8D4F2F9DD1C700BD51F9 /* MarkdownPreviewer.app */;
+			productReference = 626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */;
 			productType = "com.apple.product-type.application";
 		};
 		626E8D5B2F9DD1C800BD51F9 /* MarkdownPreviewerTests */ = {
@@ -473,7 +473,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Markdown Preview Server";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
@@ -504,7 +504,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_NAME = "Markdown Preview Server";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
