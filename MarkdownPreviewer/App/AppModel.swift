@@ -12,8 +12,8 @@ final class AppModel {
     }
   }
 
-  /// All renderers whose underlying tools were detected at launch.
-  private(set) var availableRenderers: [any MarkdownRenderer] = []
+  /// All known renderers, in display order, each marked available or not.
+  private(set) var rendererEntries: [RendererEntry] = []
 
   /// Persisted identifier of the user's chosen renderer. May not match
   /// any currently-available renderer until discovery completes.
@@ -66,8 +66,27 @@ final class AppModel {
     }
   }
 
-  func selectRenderer(_ renderer: any MarkdownRenderer) {
-    selectedRendererID = renderer.id
+  /// The entry actually used for rendering: the user's preferred entry if
+  /// it is currently available, otherwise the first available entry.
+  /// `nil` only when no renderer at all is available.
+  var activeEntry: RendererEntry? {
+    if let id = selectedRendererID,
+       let entry = rendererEntries.first(where: { $0.id == id && $0.isAvailable })
+    {
+      return entry
+    }
+    return rendererEntries.first { $0.isAvailable }
+  }
+
+  /// Non-nil when the user's preferred renderer exists in the catalog
+  /// but its underlying tool is not installed — UI surfaces this so the
+  /// fallback isn't silent.
+  var preferredButUnavailableEntry: RendererEntry? {
+    guard let id = selectedRendererID,
+          let entry = rendererEntries.first(where: { $0.id == id }),
+          !entry.isAvailable
+    else { return nil }
+    return entry
   }
 
   /// Re-runs discovery (e.g. after the user installs a new tool).
@@ -76,18 +95,20 @@ final class AppModel {
   }
 
   private func discoverRenderers() async {
-    let renderers = await MarkdownRendererCatalog.discoverAll()
-    self.availableRenderers = renderers
-    if selectedRendererID == nil || !renderers.contains(where: { $0.id == selectedRendererID }) {
-      selectedRendererID = renderers.first?.id
+    let entries = await MarkdownRendererCatalog.discoverAll()
+    self.rendererEntries = entries
+    // First launch only: pick a default. Otherwise keep the user's
+    // preference even if it is currently unavailable, so reinstalling
+    // the tool brings the selection back without further input.
+    if selectedRendererID == nil {
+      selectedRendererID = entries.first { $0.isAvailable }?.id
     } else {
       updateCurrentRenderer()
     }
   }
 
   private func updateCurrentRenderer() {
-    let renderer = availableRenderers.first { $0.id == selectedRendererID }
-    currentRenderer.set(renderer)
+    currentRenderer.set(activeEntry?.renderer)
   }
 
   private func restartServerIfRunning() {

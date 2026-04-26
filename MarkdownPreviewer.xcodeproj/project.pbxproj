@@ -11,6 +11,7 @@
 		626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */; };
 		626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD52F9DDC9B00BD51F9 /* ALCombine */; };
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
+		626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 626E96E22F9E8DFE00BD51F9 /* Markdown */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,6 +78,7 @@
 				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
 				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
 				626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */,
+				626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */,
 				626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -156,6 +158,7 @@
 				626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */,
 				626E8DD52F9DDC9B00BD51F9 /* ALCombine */,
 				626E8DD72F9DDC9B00BD51F9 /* ALFoundation */,
+				626E96E22F9E8DFE00BD51F9 /* Markdown */,
 			);
 			productName = MarkdownPreviewer;
 			productReference = 626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */;
@@ -241,6 +244,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */,
+				626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 626E8D502F9DD1C700BD51F9 /* Products */;
@@ -644,6 +648,14 @@
 				minimumVersion = 0.26.2;
 			};
 		};
+		626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/swiftlang/swift-markdown";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.7.3;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -682,6 +694,11 @@
 		626E8DD72F9DDC9B00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ALFoundation;
+		};
+		626E96E22F9E8DFE00BD51F9 /* Markdown */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */;
+			productName = Markdown;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

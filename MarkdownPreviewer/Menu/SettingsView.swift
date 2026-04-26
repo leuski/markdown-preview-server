@@ -31,36 +31,53 @@ struct SettingsView: View {
 
   @ViewBuilder
   private var rendererPicker: some View {
-    if model.availableRenderers.isEmpty {
-      Text("No markdown processor found on your PATH.")
-        .foregroundStyle(.red)
-      Text("Install one (e.g. `brew install multimarkdown`) and click Rescan.")
+    LabeledContent("Processor") {
+      Menu {
+        ForEach(model.rendererEntries) { entry in
+          Button {
+            model.selectedRendererID = entry.id
+          } label: {
+            if entry.id == activeID {
+              Label(entry.displayName, systemImage: "checkmark")
+            } else {
+              Text(entry.displayName)
+            }
+          }
+          .disabled(!entry.isAvailable)
+        }
+      } label: {
+        Text(activeDisplayName)
+      }
+      .fixedSize()
+    }
+
+    if let stale = model.preferredButUnavailableEntry {
+      let fallback = model.activeEntry?.displayName ?? "no installed processor"
+      Text(staleMessage(for: stale, fallback: fallback))
         .font(.caption)
         .foregroundStyle(.secondary)
-      Button("Rescan") {
-        Task { await model.rediscoverRenderers() }
-      }
-    } else {
-      Picker(
-        "Processor",
-        selection: Binding(
-          get: { model.selectedRendererID ?? model.availableRenderers.first?.id ?? "" },
-          set: { newID in
-            if let r = model.availableRenderers.first(where: { $0.id == newID }) {
-              model.selectRenderer(r)
-            }
-          })
-      ) {
-        ForEach(model.availableRenderers, id: \.id) { renderer in
-          Text(renderer.displayName).tag(renderer.id)
-        }
-      }
-      .pickerStyle(.menu)
-      Button("Rescan") {
-        Task { await model.rediscoverRenderers() }
-      }
-      .help("Re-run shell-based discovery — useful after installing a new processor.")
     }
+
+    Button("Rescan") {
+      Task { await model.rediscoverRenderers() }
+    }
+    .help("Re-run shell-based discovery — useful after installing a new processor.")
+  }
+
+  private var activeID: String? {
+    model.activeEntry?.id
+  }
+
+  private var activeDisplayName: String {
+    model.activeEntry?.displayName ?? "No processor available"
+  }
+
+  private func staleMessage(for entry: RendererEntry, fallback: String) -> String {
+    if let hint = entry.installHint {
+      return "\(entry.displayName) is not installed — using \(fallback). "
+        + "Install with `\(hint)`, then click Rescan."
+    }
+    return "\(entry.displayName) is not installed — using \(fallback)."
   }
 
   private func commitPort() {
