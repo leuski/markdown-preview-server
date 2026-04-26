@@ -19,6 +19,7 @@ struct SettingsView: View {
         Text("Default: 8089. The server binds to 127.0.0.1 only.")
           .font(.caption)
           .foregroundStyle(.secondary)
+        Toggle("Launch at login", isOn: $model.launchAtLogin)
       }
       Section("Markdown Processor") {
         rendererPicker

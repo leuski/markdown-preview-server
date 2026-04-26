@@ -24,6 +24,15 @@ final class AppModel {
     }
   }
 
+  var launchAtLogin: Bool {
+    didSet {
+      let applied = LoginItem.setEnabled(launchAtLogin)
+      if applied != launchAtLogin {
+        launchAtLogin = applied
+      }
+    }
+  }
+
   @ObservationIgnored let templateStore: TemplateStore
   @ObservationIgnored let server: PreviewServerController
   @ObservationIgnored private let currentRenderer = CurrentRenderer()
@@ -39,6 +48,7 @@ final class AppModel {
     let storedPort = UserDefaults.standard.object(forKey: Keys.port) as? Int
     self.port = storedPort.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
     self.selectedRendererID = UserDefaults.standard.string(forKey: Keys.rendererID)
+    self.launchAtLogin = LoginItem.isEnabled
 
     let store = TemplateStore()
     self.templateStore = store
