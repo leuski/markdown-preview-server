@@ -35,8 +35,6 @@
 		626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Markdown Preview Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		626E8D792F9DD63000BD51F9 /* swift-core-kit */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-core-kit"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-core-kit"; sourceTree = "<absolute>"; };
-		626E8D7A2F9DD66800BD51F9 /* swift-argument-parser */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-argument-parser"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-argument-parser"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -103,8 +101,6 @@
 		626E8D462F9DD1C700BD51F9 = {
 			isa = PBXGroup;
 			children = (
-				626E8D7A2F9DD66800BD51F9 /* swift-argument-parser */,
-				626E8D792F9DD63000BD51F9 /* swift-core-kit */,
 				626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */,
 				626E8D5F2F9DD1C800BD51F9 /* MarkdownPreviewerTests */,
 				626E8D692F9DD1C800BD51F9 /* MarkdownPreviewerUITests */,
@@ -138,8 +134,10 @@
 			buildConfigurationList = 626E8D702F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewer" */;
 			buildPhases = (
 				626E8D4B2F9DD1C700BD51F9 /* Sources */,
+				626E975B2F9E985B00BD51F9 /* Lint */,
 				626E8D4C2F9DD1C700BD51F9 /* Frameworks */,
 				626E8D4D2F9DD1C700BD51F9 /* Resources */,
+				626E975A2F9E982900BD51F9 /* Instal Release */,
 			);
 			buildRules = (
 			);
@@ -245,6 +243,7 @@
 			packageReferences = (
 				626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */,
+				626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 626E8D502F9DD1C700BD51F9 /* Products */;
@@ -281,6 +280,47 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		626E975A2F9E982900BD51F9 /* Instal Release */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Instal Release";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Only run for Release builds\nif [ \"$CONFIGURATION\" != \"Release\" ]; then\n    exit 0\nfi\n\nset -e\n\nAPP_NAME=\"${FULL_PRODUCT_NAME}\"\nBUILD_PATH=\"${TARGET_BUILD_DIR}/${APP_NAME}\"\nINSTALL_DIR=\"/Applications\"\nINSTALL_PATH=\"${INSTALL_DIR}/${APP_NAME}\"\n\necho \"Installing ${APP_NAME} to ${INSTALL_DIR}...\"\n\n# Remove existing app\nif [ -d \"${INSTALL_PATH}\" ]; then\n    echo \"Removing existing app...\"\n    rm -rf \"${INSTALL_PATH}\"\nfi\n\n# Copy new build\nditto \"${BUILD_PATH}\" \"${INSTALL_PATH}\"\n\necho \"Installed ${APP_NAME} to ${INSTALL_PATH}\"\n";
+		};
+		626E975B2F9E985B00BD51F9 /* Lint */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = Lint;
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "export PATH=\"$PATH:/opt/homebrew/bin:/usr/local/bin\"\n\nif which swiftlint > /dev/null; then\n  swiftlint\nelse\n  echo \"warning: SwiftLint not installed, download from https://github.com/realm/SwiftLint\"\nfi\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		626E8D4B2F9DD1C700BD51F9 /* Sources */ = {
@@ -468,6 +508,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -499,6 +540,7 @@
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
@@ -656,15 +698,25 @@
 				minimumVersion = 0.7.3;
 			};
 		};
+		626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/leuski/swift-core-kit.git";
+			requirement = {
+				branch = main;
+				kind = branch;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		626E8D8B2F9DD98A00BD51F9 /* ALCombine */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
 			productName = ALCombine;
 		};
 		626E8D8D2F9DD98A00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
 			productName = ALFoundation;
 		};
 		626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */ = {
@@ -689,10 +741,12 @@
 		};
 		626E8DD52F9DDC9B00BD51F9 /* ALCombine */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
 			productName = ALCombine;
 		};
 		626E8DD72F9DDC9B00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
 			productName = ALFoundation;
 		};
 		626E96E22F9E8DFE00BD51F9 /* Markdown */ = {
