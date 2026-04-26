@@ -13,14 +13,13 @@ struct MultiMarkdownRenderer: MarkdownRenderer {
   /// `~/.zshrc`/`~/.bash_profile` is honoured. Returns `nil` if the tool
   /// is not installed.
   static func discover() async -> MultiMarkdownRenderer? {
-    guard let path = await ShellLookup.locate(toolName), !path.isEmpty,
-          FileManager.default.isExecutableFile(atPath: path)
+    guard let url = try? await URL(command: toolName), url.isExecutable
     else { return nil }
-    return MultiMarkdownRenderer(executableURL: URL(fileURLWithPath: path))
+    return MultiMarkdownRenderer(executableURL: url)
   }
 
   func render(_ source: String, baseURL: URL) async throws -> String {
-    guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
+    guard executableURL.isExecutable else {
       throw RendererError.executableNotFound(name: Self.toolName)
     }
 
