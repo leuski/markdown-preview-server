@@ -1,0 +1,53 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Xcode user state
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad/
+*.xccheckout
+*.moved-aside
+
+# Xcode build output
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Code coverage
+*.profraw
+*.profdata
+*.gcno
+*.gcda
+*.coverage.txt
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.pins
+Packages/
+
+# CocoaPods (not used here, but standard hygiene)
+Pods/
+
+# Carthage
+Carthage/Build/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Tools / agents
+.claude/
+
+# Editor scratch
+*.swp
+*~
