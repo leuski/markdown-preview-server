@@ -38,9 +38,22 @@
 		626E8D7A2F9DD66800BD51F9 /* swift-argument-parser */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = "swift-argument-parser"; path = "/Users/leuski/Synced/General/Workbench-dev/swift-argument-parser"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		626E96DE2F9E871700BD51F9 /* Exceptions for "MarkdownPreviewer" folder in "MarkdownPreviewer" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Resources/MenuBarIcon.pcvd,
+			);
+			target = 626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				626E96DE2F9E871700BD51F9 /* Exceptions for "MarkdownPreviewer" folder in "MarkdownPreviewer" target */,
+			);
 			path = MarkdownPreviewer;
 			sourceTree = "<group>";
 		};

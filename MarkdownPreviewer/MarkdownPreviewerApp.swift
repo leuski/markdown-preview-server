@@ -36,15 +36,14 @@ private struct MenuBarLabel: View {
   let state: PreviewServerController.State
 
   var body: some View {
+    Image("MenuBarIcon")
+  }
+
+  private var tint: AnyShapeStyle {
     switch state {
-    case .running:
-      Text("MD")
-    case .stopped:
-      Text("MD")
-        .foregroundStyle(.secondary)
-    case .failed:
-      Text("MD!")
-        .foregroundStyle(.red)
+    case .running: AnyShapeStyle(.primary)
+    case .stopped: AnyShapeStyle(.secondary)
+    case .failed: AnyShapeStyle(.red)
     }
   }
 }
