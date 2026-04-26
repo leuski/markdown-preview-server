@@ -15,19 +15,23 @@ enum HTTPResponses {
   }
 
   static func errorPage(title: String, detail: String, source: String) -> HTTPResponse {
-    let html = """
-        <!DOCTYPE html><html><head><meta charset="utf-8"><title>\(title)</title>
-        <style>body{font-family:-apple-system,sans-serif;padding:2rem;max-width:60rem;margin:auto}
-        pre{background:#f4f4f4;padding:1rem;border-radius:6px;overflow:auto}
-        h1{color:#c00}</style></head><body>
-        <h1>\(title)</h1><pre>\(escape(detail))</pre>
-        <h2>Source</h2><pre>\(escape(source))</pre></body></html>
-        """
+    let html = errorPageTemplate
+      .replacingOccurrences(of: "#TITLE#", with: escape(title))
+      .replacingOccurrences(of: "#DETAIL#", with: escape(detail))
+      .replacingOccurrences(of: "#SOURCE#", with: escape(source))
     return HTTPResponse(
       statusCode: .internalServerError,
       headers: [.contentType: "text/html; charset=utf-8"],
       body: Data(html.utf8))
   }
+
+  private static let errorPageTemplate: String = {
+    guard let url = Bundle.main.url(forResource: "ErrorPage", withExtension: "html"),
+          let html = try? String(contentsOf: url, encoding: .utf8) else {
+      fatalError("ErrorPage.html missing from app bundle")
+    }
+    return html
+  }()
 
   private static func plainText(statusCode: HTTPStatusCode, message: String) -> HTTPResponse {
     HTTPResponse(
