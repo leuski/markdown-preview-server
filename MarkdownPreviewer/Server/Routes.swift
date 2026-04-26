@@ -303,18 +303,12 @@ enum Routes {
   // MARK: - Template asset rewriting
 
   // Tags that load resources (not navigation links).
-  private static let templateAssetPattern: NSRegularExpression? = {
-    try? NSRegularExpression(
-      pattern: #"(<\s*(?:link|script|img|source|track|video|audio|iframe|object|embed)\b[^>]*?\b(?:src|href|data)\s*=\s*")([^"]*)("[^>]*>)"#,
-      options: [.caseInsensitive])
-  }()
+  private static let templateAssetRegex =
+    #/(?i)(<\s*(?:link|script|img|source|track|video|audio|iframe|object|embed)\b[^>]*?\b(?:src|href|data)\s*=\s*")([^"]*)("[^>]*>)/#
 
   // url(...) inside <style> blocks. Matches url("…"), url('…'), url(…).
-  private static let cssUrlPattern: NSRegularExpression? = {
-    try? NSRegularExpression(
-      pattern: #"url\(\s*(['"]?)([^'")]+)\1\s*\)"#,
-      options: [.caseInsensitive])
-  }()
+  private static let cssUrlRegex =
+    #/(?i)url\(\s*(['"]?)([^'")]+)\1\s*\)/#
 
   static func rewriteTemplateAssets(html: String, templateID: String, origin: String) -> String {
     let encodedID = templateID
@@ -331,53 +325,32 @@ enum Routes {
   private static func rewriteAttributeURLs(
     html: String, templatePrefix: String, absolutePrefix: String
   ) -> String {
-    guard let regex = templateAssetPattern else { return html }
-    let ns = html as NSString
-    let fullRange = NSRange(location: 0, length: ns.length)
-    var result = ""
-    var cursor = 0
-    regex.enumerateMatches(in: html, options: [], range: fullRange) { match, _, _ in
-      guard let match else { return }
-      let openTag = match.range(at: 1)
-      let value = match.range(at: 2)
-      let closeTag = match.range(at: 3)
-      let original = ns.substring(with: value)
-
-      result += ns.substring(with: NSRange(location: cursor, length: openTag.location - cursor))
-      result += ns.substring(with: openTag)
-      result += rewriteAssetURL(
+    html.replacing(templateAssetRegex) { match in
+      let (_, openTag, value, closeTag) = match.output
+      let original = String(value)
+      let replaced = rewriteAssetURL(
         original,
         templatePrefix: templatePrefix,
         absolutePrefix: absolutePrefix) ?? original
-      result += ns.substring(with: closeTag)
-      cursor = match.range.location + match.range.length
+      return "\(openTag)\(replaced)\(closeTag)"
     }
-    result += ns.substring(with: NSRange(location: cursor, length: ns.length - cursor))
-    return result
   }
 
   private static func rewriteCSSURLs(
     html: String, templatePrefix: String, absolutePrefix: String
   ) -> String {
-    guard let regex = cssUrlPattern else { return html }
-    let ns = html as NSString
-    let fullRange = NSRange(location: 0, length: ns.length)
-    var result = ""
-    var cursor = 0
-    regex.enumerateMatches(in: html, options: [], range: fullRange) { match, _, _ in
-      guard let match else { return }
-      let value = match.range(at: 2)
-      let original = ns.substring(with: value)
-
-      result += ns.substring(with: NSRange(location: cursor, length: value.location - cursor))
-      result += rewriteAssetURL(
+    html.replacing(cssUrlRegex) { match in
+      let whole = match.output.0
+      let value = match.output.2
+      let original = String(value)
+      let replaced = rewriteAssetURL(
         original,
         templatePrefix: templatePrefix,
         absolutePrefix: absolutePrefix) ?? original
-      cursor = value.location + value.length
+      let prefix = whole[whole.startIndex..<value.startIndex]
+      let suffix = whole[value.endIndex..<whole.endIndex]
+      return "\(prefix)\(replaced)\(suffix)"
     }
-    result += ns.substring(with: NSRange(location: cursor, length: ns.length - cursor))
-    return result
   }
 
   private static func rewriteAssetURL(
