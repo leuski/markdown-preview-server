@@ -2,28 +2,34 @@ import Foundation
 import ALFoundation
 
 struct MultiMarkdownRenderer: MarkdownRenderer {
-  let executableURL: URL
-  let extraArguments: [String]
+  static let toolName = "multimarkdown"
 
-  init(executableURL: URL, extraArguments: [String] = []) {
-    self.executableURL = executableURL
-    self.extraArguments = extraArguments
+  let id = "multimarkdown"
+  let displayName = "MultiMarkdown"
+
+  let executableURL: URL
+
+  /// Locate the executable via the user's login shell so PATH from
+  /// `~/.zshrc`/`~/.bash_profile` is honoured. Returns `nil` if the tool
+  /// is not installed.
+  static func discover() async -> MultiMarkdownRenderer? {
+    guard let path = await ShellLookup.locate(toolName), !path.isEmpty,
+          FileManager.default.isExecutableFile(atPath: path)
+    else { return nil }
+    return MultiMarkdownRenderer(executableURL: URL(fileURLWithPath: path))
   }
 
   func render(_ source: String, baseURL: URL) async throws -> String {
     guard FileManager.default.isExecutableFile(atPath: executableURL.path) else {
-      throw RendererError.executableNotFound(executableURL.path)
+      throw RendererError.executableNotFound(name: Self.toolName)
     }
 
     let streams = ProcessStreams.inMemory
       .map(input: source.data(using: .utf8))
       .memorizedError()
 
-    let arguments: [ProcessArgument] = extraArguments.map { $0 as ProcessArgument }
-
     let result = try await Process.runAndCapture(
       executableURL,
-      with: arguments,
       at: baseURL.deletingLastPathComponent(),
       streams: streams)
 
@@ -32,7 +38,6 @@ struct MultiMarkdownRenderer: MarkdownRenderer {
         code: result.terminationStatus,
         stderr: result.error)
     }
-
     return result.output
   }
 }

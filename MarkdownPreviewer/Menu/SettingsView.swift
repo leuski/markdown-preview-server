@@ -21,21 +21,45 @@ struct SettingsView: View {
           .foregroundStyle(.secondary)
       }
       Section("Markdown Processor") {
-        TextField("Executable path", text: $model.rendererPath)
-        Text("Default: /usr/local/bin/multimarkdown. The processor must read from stdin and write HTML to stdout.")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-        TextField("Extra arguments", text: $model.rendererArgs)
-          .help("Whitespace-separated arguments passed to the processor.")
-      }
-      Section("Templates") {
-        Text("Drop template folders into the Application Support directory; symlinks are followed. Each template is a folder containing Template.html.")
-          .font(.caption)
-          .foregroundStyle(.secondary)
+        rendererPicker
       }
     }
     .formStyle(.grouped)
-    .frame(width: 480, height: 360)
+    .frame(minWidth: 480, maxWidth: 480, minHeight: 360)
+  }
+
+  @ViewBuilder
+  private var rendererPicker: some View {
+    if model.availableRenderers.isEmpty {
+      Text("No markdown processor found on your PATH.")
+        .foregroundStyle(.red)
+      Text("Install one (e.g. `brew install multimarkdown`) and click Rescan.")
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      Button("Rescan") {
+        Task { await model.rediscoverRenderers() }
+      }
+    } else {
+      Picker(
+        "Processor",
+        selection: Binding(
+          get: { model.selectedRendererID ?? model.availableRenderers.first?.id ?? "" },
+          set: { newID in
+            if let r = model.availableRenderers.first(where: { $0.id == newID }) {
+              model.selectRenderer(r)
+            }
+          })
+      ) {
+        ForEach(model.availableRenderers, id: \.id) { renderer in
+          Text(renderer.displayName).tag(renderer.id)
+        }
+      }
+      .pickerStyle(.menu)
+      Button("Rescan") {
+        Task { await model.rediscoverRenderers() }
+      }
+      .help("Re-run shell-based discovery — useful after installing a new processor.")
+    }
   }
 
   private func commitPort() {

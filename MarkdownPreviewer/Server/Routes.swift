@@ -16,7 +16,7 @@ enum Routes {
   static func register(
     on server: HTTPServer,
     templateStore: TemplateStore,
-    rendererProvider: @Sendable @escaping () -> any MarkdownRenderer,
+    rendererProvider: @Sendable @escaping () -> (any MarkdownRenderer)?,
     watcher: DocumentWatcher
   ) async {
     let storeRef = TemplateStoreRef(templateStore)
@@ -49,7 +49,7 @@ enum Routes {
   private static func previewOrAssetResponse(
     request: HTTPRequest,
     templateStore: TemplateStoreRef,
-    renderer: any MarkdownRenderer
+    renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
     guard let documentURL = decodeFilePath(from: request.path, prefix: "/preview")
     else {
@@ -58,6 +58,12 @@ enum Routes {
 
     let ext = documentURL.pathExtension.lowercased()
     if markdownExtensions.contains(ext) {
+      guard let renderer else {
+        return errorPage(
+          title: "No markdown processor configured",
+          detail: "Install a supported processor (e.g. multimarkdown via Homebrew) and pick it in Settings.",
+          source: "")
+      }
       return await renderPreview(
         documentURL: documentURL,
         request: request,

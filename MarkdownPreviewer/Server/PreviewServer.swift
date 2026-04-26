@@ -20,11 +20,11 @@ final class PreviewServerController {
   @ObservationIgnored let watcher = DocumentWatcher()
 
   @ObservationIgnored private let templateStore: TemplateStore
-  @ObservationIgnored private let rendererProvider: @Sendable () -> any MarkdownRenderer
+  @ObservationIgnored private let rendererProvider: @Sendable () -> (any MarkdownRenderer)?
 
   init(
     templateStore: TemplateStore,
-    rendererProvider: @escaping @Sendable () -> any MarkdownRenderer
+    rendererProvider: @escaping @Sendable () -> (any MarkdownRenderer)?
   ) {
     self.templateStore = templateStore
     self.rendererProvider = rendererProvider

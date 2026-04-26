@@ -11,78 +11,73 @@ final class AppModel {
       restartServerIfRunning()
     }
   }
-  var rendererPath: String {
+
+  /// All renderers whose underlying tools were detected at launch.
+  private(set) var availableRenderers: [any MarkdownRenderer] = []
+
+  /// Persisted identifier of the user's chosen renderer. May not match
+  /// any currently-available renderer until discovery completes.
+  var selectedRendererID: String? {
     didSet {
-      UserDefaults.standard.set(rendererPath, forKey: Keys.rendererPath)
-      rendererSettings.update(path: rendererPath, args: rendererArgs)
-    }
-  }
-  var rendererArgs: String {
-    didSet {
-      UserDefaults.standard.set(rendererArgs, forKey: Keys.rendererArgs)
-      rendererSettings.update(path: rendererPath, args: rendererArgs)
+      UserDefaults.standard.set(selectedRendererID, forKey: Keys.rendererID)
+      updateCurrentRenderer()
     }
   }
 
   @ObservationIgnored let templateStore: TemplateStore
   @ObservationIgnored let server: PreviewServerController
-  @ObservationIgnored private let rendererSettings: RendererSettings
+  @ObservationIgnored private let currentRenderer = CurrentRenderer()
 
   private enum Keys {
     static let port = "MarkdownPreviewer.port"
-    static let rendererPath = "MarkdownPreviewer.rendererPath"
-    static let rendererArgs = "MarkdownPreviewer.rendererArgs"
+    static let rendererID = "MarkdownPreviewer.rendererID"
   }
 
   static let defaultPort: UInt16 = 8089
-  static var defaultRendererPath: String {
-    let candidates = [
-      "/opt/homebrew/bin/multimarkdown",
-      "/usr/local/bin/multimarkdown",
-    ]
-    return candidates.first { FileManager.default.isExecutableFile(atPath: $0) }
-      ?? "/usr/local/bin/multimarkdown"
-  }
 
   init() {
     let storedPort = UserDefaults.standard.object(forKey: Keys.port) as? Int
-    let initialPort = storedPort.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
-    let initialPath = UserDefaults.standard.string(forKey: Keys.rendererPath)
-      ?? Self.defaultRendererPath
-    let initialArgs = UserDefaults.standard.string(forKey: Keys.rendererArgs) ?? ""
-
-    self.port = initialPort
-    self.rendererPath = initialPath
-    self.rendererArgs = initialArgs
+    self.port = storedPort.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
+    self.selectedRendererID = UserDefaults.standard.string(forKey: Keys.rendererID)
 
     let store = TemplateStore()
     self.templateStore = store
 
-    let settings = RendererSettings()
-    settings.update(path: initialPath, args: initialArgs)
-    self.rendererSettings = settings
-
-    let provider: @Sendable () -> any MarkdownRenderer = {
-      let snapshot = settings.snapshot()
-      return MultiMarkdownRenderer(
-        executableURL: URL(fileURLWithPath: snapshot.path),
-        extraArguments: snapshot.args
-          .split(whereSeparator: { $0.isWhitespace })
-          .map(String.init))
-    }
+    let box = currentRenderer
+    let provider: @Sendable () -> (any MarkdownRenderer)? = { box.get() }
     self.server = PreviewServerController(
       templateStore: store,
       rendererProvider: provider)
 
-    self.server.start(port: initialPort)
+    self.server.start(port: self.port)
+
+    Task { @MainActor in
+      await self.discoverRenderers()
+    }
   }
 
-  func startServer() {
-    server.start(port: port)
+  func selectRenderer(_ renderer: any MarkdownRenderer) {
+    selectedRendererID = renderer.id
   }
 
-  func restartServer() {
-    server.start(port: port)
+  /// Re-runs discovery (e.g. after the user installs a new tool).
+  func rediscoverRenderers() async {
+    await discoverRenderers()
+  }
+
+  private func discoverRenderers() async {
+    let renderers = await MarkdownRendererCatalog.discoverAll()
+    self.availableRenderers = renderers
+    if selectedRendererID == nil || !renderers.contains(where: { $0.id == selectedRendererID }) {
+      selectedRendererID = renderers.first?.id
+    } else {
+      updateCurrentRenderer()
+    }
+  }
+
+  private func updateCurrentRenderer() {
+    let renderer = availableRenderers.first { $0.id == selectedRendererID }
+    currentRenderer.set(renderer)
   }
 
   private func restartServerIfRunning() {
