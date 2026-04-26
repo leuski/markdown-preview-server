@@ -73,7 +73,7 @@ enum MarkdownRendererCatalog {
             "--extension", "table",
             "--extension", "strikethrough",
             "--extension", "tasklist",
-            "--extension", "autolink",
+            "--extension", "autolink"
           ])
       }),
     Spec(
@@ -85,7 +85,7 @@ enum MarkdownRendererCatalog {
           id: "classic",
           displayName: "Classic (Markdown.pl)",
           toolName: "Markdown.pl")
-      }),
+      })
   ]
 
   static func discoverAll() async -> [RendererEntry] {

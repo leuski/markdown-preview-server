@@ -39,9 +39,9 @@ final class TemplateStore {
   }
 
   func reload() {
-    let fm = FileManager.default
+    let manager = FileManager.default
     let listingDir = directoryURL.resolvingSymlinksInPath()
-    let contents = (try? fm.contentsOfDirectory(
+    let contents = (try? manager.contentsOfDirectory(
       at: listingDir,
       includingPropertiesForKeys: [.isDirectoryKey],
       options: [.skipsHiddenFiles])) ?? []
@@ -59,16 +59,16 @@ final class TemplateStore {
   }
 
   private func makeTemplate(at url: URL) -> Template? {
-    let fm = FileManager.default
+    let manager = FileManager.default
     let resolved = url.resolvingSymlinksInPath()
     var isDir: ObjCBool = false
-    guard fm.fileExists(atPath: resolved.path, isDirectory: &isDir) else { return nil }
+    guard manager.fileExists(atPath: resolved.path, isDirectory: &isDir) else { return nil }
 
     if isDir.boolValue {
       // Folder template: must contain Template.html (or template.html).
       for candidate in ["Template.html", "template.html"] {
         let html = resolved / candidate
-        if fm.fileExists(atPath: html.path) {
+        if manager.fileExists(atPath: html.path) {
           let name = url.lastPathComponent
           return Template(
             id: name,

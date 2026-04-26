@@ -188,31 +188,31 @@ private struct HTMLVisitor: MarkupVisitor {
     }
   }
 
-  private func escapeText(_ s: String) -> String {
+  private func escapeText(_ value: String) -> String {
     var out = ""
-    out.reserveCapacity(s.count)
-    for c in s {
-      switch c {
+    out.reserveCapacity(value.count)
+    for char in value {
+      switch char {
       case "&": out += "&amp;"
       case "<": out += "&lt;"
       case ">": out += "&gt;"
-      default: out.append(c)
+      default: out.append(char)
       }
     }
     return out
   }
 
-  private func escapeAttribute(_ s: String) -> String {
+  private func escapeAttribute(_ value: String) -> String {
     var out = ""
-    out.reserveCapacity(s.count)
-    for c in s {
-      switch c {
+    out.reserveCapacity(value.count)
+    for char in value {
+      switch char {
       case "&": out += "&amp;"
       case "<": out += "&lt;"
       case ">": out += "&gt;"
       case "\"": out += "&quot;"
       case "'": out += "&#39;"
-      default: out.append(c)
+      default: out.append(char)
       }
     }
     return out

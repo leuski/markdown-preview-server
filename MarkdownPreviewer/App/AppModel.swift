@@ -71,8 +71,7 @@ final class AppModel {
   /// `nil` only when no renderer at all is available.
   var activeEntry: RendererEntry? {
     if let id = selectedRendererID,
-       let entry = rendererEntries.first(where: { $0.id == id && $0.isAvailable })
-    {
+       let entry = rendererEntries.first(where: { $0.id == id && $0.isAvailable }) {
       return entry
     }
     return rendererEntries.first { $0.isAvailable }

@@ -6,17 +6,17 @@ struct PlaceholderContext: Sendable {
   let origin: String
 
   static let dateFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateStyle = .medium
-    f.timeStyle = .none
-    return f
+    let formatter = DateFormatter()
+    formatter.dateStyle = .medium
+    formatter.timeStyle = .none
+    return formatter
   }()
 
   static let timeFormatter: DateFormatter = {
-    let f = DateFormatter()
-    f.dateStyle = .none
-    f.timeStyle = .medium
-    return f
+    let formatter = DateFormatter()
+    formatter.dateStyle = .none
+    formatter.timeStyle = .medium
+    return formatter
   }()
 
   func substitute(into template: String, now: Date = Date()) -> String {
@@ -38,7 +38,7 @@ struct PlaceholderContext: Sendable {
       "#BASENAME#": htmlEscape(baseName),
       "#FILE_EXTENSION#": htmlEscape(ext),
       "#DATE#": htmlEscape(Self.dateFormatter.string(from: now)),
-      "#TIME#": htmlEscape(Self.timeFormatter.string(from: now)),
+      "#TIME#": htmlEscape(Self.timeFormatter.string(from: now))
     ]
 
     var output = template
@@ -48,8 +48,8 @@ struct PlaceholderContext: Sendable {
     return output
   }
 
-  private func htmlEscape(_ s: String) -> String {
-    s.replacingOccurrences(of: "&", with: "&amp;")
+  private func htmlEscape(_ value: String) -> String {
+    value.replacingOccurrences(of: "&", with: "&amp;")
       .replacingOccurrences(of: "<", with: "&lt;")
       .replacingOccurrences(of: ">", with: "&gt;")
       .replacingOccurrences(of: "\"", with: "&quot;")
