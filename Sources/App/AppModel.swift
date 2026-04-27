@@ -93,6 +93,13 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
+  func selectedEntryBinding(_ entry: RendererEntry) -> Binding<Bool> {
+    Binding(
+      get: { entry.id == self.activeEntry?.id },
+      set: { _ in self.selectedRendererID = entry.id }
+    )
+  }
+
   var selectedEntry: RendererEntry? {
     selectedRendererID.flatMap { id in
       rendererEntries.first { $0.id == id && $0.isAvailable }

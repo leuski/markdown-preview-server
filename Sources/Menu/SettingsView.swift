@@ -41,6 +41,14 @@ struct SettingsView: View {
             .fixedSize(horizontal: true, vertical: false)
         }
       }
+
+      LabeledContent {
+        Button("Install scripts…") {
+          ScriptInstaller.installScripts(model: model)
+        }
+      } label: {
+        Text("BBEdit integration")
+      }
     }
     .formStyle(.grouped)
     .frame(minWidth: 480, maxWidth: 480, minHeight: 360)
@@ -59,32 +67,9 @@ struct SettingsView: View {
   }
 
   @ViewBuilder
-  private func rendererButton(_ entry: RendererEntry) -> some View {
-    // we want
-    // 1. text show as disabled as needed
-    // 2. items align across built-in and non-built-in groups
-    Toggle(entry.displayName, isOn: Binding(
-      get: { entry.id == activeID },
-      set: { _ in model.selectedRendererID = entry.id }
-    ))
-    .disabled(!entry.isAvailable)
-  }
-
-  @ViewBuilder
-  private func rendererSection(_ entries: [RendererEntry]) -> some View {
-    ForEach(entries) { entry in
-      rendererButton(entry)
-    }
-  }
-
-  @ViewBuilder
   private var rendererPicker: some View {
-    Menu {
-      rendererSection(model.rendererEntries.filter({$0.isBuiltIn}))
-      Divider()
-      rendererSection(model.rendererEntries.filter({!$0.isBuiltIn}))
-    } label: {
-      Text(activeDisplayName)
+    Menu(activeDisplayName) {
+      RendererMenu(model: model)
     }
     .fixedSize()
   }
@@ -111,6 +96,36 @@ struct SettingsView: View {
       return
     }
     model.port = value
+  }
+}
+
+struct RendererMenu: View {
+  @Bindable var model: AppModel
+
+  var body: some View {
+    DividedSections(sections: [
+      model.rendererEntries.filter({$0.isBuiltIn}),
+      model.rendererEntries.filter({!$0.isBuiltIn})
+    ], id: \.id) { item in
+      Toggle(item.displayName, isOn: model.selectedEntryBinding(item))
+        .disabled(!item.isAvailable)
+    }
+  }
+}
+
+struct DividedSections<Item, ID, Content: View>: View
+where ID: Hashable
+{
+  let sections: [[Item]]
+  let id: KeyPath<Item, ID>
+  @ViewBuilder let content: (Item) -> Content
+
+  var body: some View {
+    let nonEmpty = sections.filter { !$0.isEmpty }
+    ForEach(Array(nonEmpty.enumerated()), id: \.offset) { index, section in
+      if index > 0 { Divider() }
+      ForEach(section, id: id) { content($0) }
+    }
   }
 }
 

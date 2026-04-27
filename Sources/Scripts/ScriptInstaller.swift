@@ -1,5 +1,6 @@
 import Foundation
 import ALFoundation
+import SwiftUI
 
 enum ScriptInstaller {
   enum InstallError: LocalizedError {
@@ -80,5 +81,46 @@ enum ScriptInstaller {
       script = script.replacingOccurrences(of: key, with: value)
     }
     return script
+  }
+
+  @MainActor
+  static func installScripts(model: AppModel) {
+    let panel = NSOpenPanel()
+    panel.canChooseFiles = false
+    panel.canChooseDirectories = true
+    panel.canCreateDirectories = true
+    panel.allowsMultipleSelection = false
+    panel.prompt = "Install"
+    panel.title = "Install BBEdit Scripts"
+    panel.message = """
+      Choose the destination folder. Defaults to BBEdit's Scripts folder.
+      """
+
+    let defaultDestination = ScriptInstaller.defaultBBEditDestination
+    panel.directoryURL = nearestExistingDirectory(for: defaultDestination)
+
+    NSApp.activate(ignoringOtherApps: true)
+    guard panel.runModal() == .OK, let destination = panel.url else { return }
+
+    do {
+      try ScriptInstaller.install(to: destination, context: [
+        "__LOCATION__": model.hostURL.appendingPreviewPath().absoluteString
+      ])
+      NSWorkspace.shared.activateFileViewerSelecting([destination])
+    } catch {
+      let alert = NSAlert(error: error)
+      alert.messageText = "Could not install scripts"
+      alert.runModal()
+    }
+  }
+
+  private static func nearestExistingDirectory(for url: URL) -> URL {
+    var current = url
+    while !current.itemExists {
+      let parent = current.parent
+      if parent == current { break }
+      current = parent
+    }
+    return current
   }
 }

@@ -17,25 +17,12 @@ struct MenuBarContent: View {
       Divider()
 
       templatesMenu
+      rendererMenu
 
       Divider()
 
       Button("Open File…") { openFile() }
         .keyboardShortcut("o")
-
-      Button("Reveal Templates Folder") {
-        NSWorkspace.shared
-          .activateFileViewerSelecting([templateStore.directoryURL])
-      }
-
-      Button("Install BBEdit Scripts…") { installScripts() }
-
-      if let url = server.serverURL {
-        Button("Copy Server URL") {
-          NSPasteboard.general.clearContents()
-          NSPasteboard.general.setString(url.absoluteString, forType: .string)
-        }
-      }
 
       Divider()
 
@@ -65,81 +52,45 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var templatesMenu: some View {
     Menu("Template") {
-      ForEach(templateStore.templates, id: \.id) { template in
-        Button {
-          templateStore.select(template)
-        } label: {
-          HStack {
-            Text(template.name)
-            if template.id == templateStore.selectedID {
-              Spacer()
-              Image(systemName: "checkmark")
-            }
-          }
-        }
+      DividedSections(sections: [
+        templateStore.templates.filter({$0 is BuiltInTemplate}),
+        templateStore.templates.filter({$0 is UserTemplate})
+      ], id: \.id) { item in
+        Toggle(item.name, isOn: Binding(
+          get: { item.id == templateStore.selectedID },
+          set: { _ in templateStore.select(item) }
+        ))
       }
+      Divider()
+      Button("Reveal Templates Folder") {
+        NSWorkspace.shared
+          .activateFileViewerSelecting([templateStore.directoryURL])
+      }
+    }
+  }
+
+  @ViewBuilder
+  private var rendererMenu: some View {
+    Menu("Processor") {
+      RendererMenu(model: model)
     }
   }
 
   private func openFile() {
     let panel = NSOpenPanel()
-    panel.allowedContentTypes = [
-      UTType(filenameExtension: "md"),
-      UTType(filenameExtension: "markdown"),
-      UTType(filenameExtension: "mdown"),
-      UTType(filenameExtension: "mmd"),
-      UTType.plainText
-    ].compactMap { $0 }
+    panel.allowedContentTypes = Routes.markdownExtensions
+      .compactMap { ext in UTType(filenameExtension: ext) }
+    + [ UTType.plainText ]
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
     panel.allowsMultipleSelection = false
 
-    guard panel.runModal() == .OK, let url = panel.url else { return }
-    openInBrowser(documentURL: url)
-  }
+    guard
+      panel.runModal() == .OK,
+      let url = panel.url,
+      let base = server.serverURL
+    else { return }
 
-  private func installScripts() {
-    let panel = NSOpenPanel()
-    panel.canChooseFiles = false
-    panel.canChooseDirectories = true
-    panel.canCreateDirectories = true
-    panel.allowsMultipleSelection = false
-    panel.prompt = "Install"
-    panel.title = "Install BBEdit Scripts"
-    panel.message = """
-      Choose the destination folder. Defaults to BBEdit's Scripts folder.
-      """
-
-    let defaultDestination = ScriptInstaller.defaultBBEditDestination
-    panel.directoryURL = nearestExistingDirectory(for: defaultDestination)
-
-    NSApp.activate(ignoringOtherApps: true)
-    guard panel.runModal() == .OK, let destination = panel.url else { return }
-
-    do {
-      try ScriptInstaller.install(to: destination, context: [
-        "__LOCATION__": model.hostURL.appendingPreviewPath().absoluteString
-      ])
-      NSWorkspace.shared.activateFileViewerSelecting([destination])
-    } catch {
-      let alert = NSAlert(error: error)
-      alert.messageText = "Could not install scripts"
-      alert.runModal()
-    }
-  }
-
-  private func nearestExistingDirectory(for url: URL) -> URL {
-    var current = url
-    while !current.itemExists {
-      let parent = current.parent
-      if parent == current { break }
-      current = parent
-    }
-    return current
-  }
-
-  private func openInBrowser(documentURL: URL) {
-    guard let base = server.serverURL else { return }
-    NSWorkspace.shared.open(base.appendingPreviewPath(documentURL.path))
+    NSWorkspace.shared.open(base.appendingPreviewPath(url.path))
   }
 }

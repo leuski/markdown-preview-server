@@ -2,7 +2,7 @@ import Foundation
 
 struct BuiltInTemplate: Template {
   static let id = "__builtin__"
-  static let name = "(Default)"
+  static let name = "Default"
   static let shared = BuiltInTemplate()
 
   var id: String { Self.id }
