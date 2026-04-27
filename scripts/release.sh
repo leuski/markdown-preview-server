@@ -58,6 +58,18 @@ if [[ ! -d "$APP_SRC" ]]; then
   exit 1
 fi
 
+echo "==> Ad-hoc re-signing (strips free-tier dev cert)"
+codesign --remove-signature "$APP_SRC" 2>/dev/null || true
+find "$APP_SRC/Contents/Frameworks" -maxdepth 1 -type d \( -name "*.framework" -o -name "*.dylib" \) 2>/dev/null \
+  | while read -r f; do codesign --remove-signature "$f" 2>/dev/null || true; done
+codesign --force --deep --sign - "$APP_SRC"
+codesign --verify --deep --strict --verbose=2 "$APP_SRC"
+
+echo "==> Refreshing /Applications copy"
+INSTALLED="/Applications/$APP_NAME"
+if [[ -d "$INSTALLED" ]]; then rm -rf "$INSTALLED"; fi
+ditto "$APP_SRC" "$INSTALLED"
+
 echo "==> Zipping $APP_NAME"
 ditto -c -k --keepParent --sequesterRsrc "$APP_SRC" "$ZIP_PATH"
 
@@ -70,14 +82,15 @@ NOTES_FILE="$BUILD_DIR/NOTES.md"
 cat > "$NOTES_FILE" <<EOF
 ## $TAG
 
-**Unsigned build** — macOS Gatekeeper will block this on first launch.
+**Ad-hoc signed build** (no Apple Developer account). macOS will block the
+download until you remove the quarantine attribute.
 
-To open:
-1. Download and unzip.
-2. Move \`Markdown Preview Server.app\` to \`/Applications\`.
-3. Right-click the app → **Open** → confirm.
-
-(Or in Terminal: \`xattr -dr com.apple.quarantine "/Applications/Markdown Preview Server.app"\`.)
+\`\`\`
+unzip MarkdownPreviewer-$TAG.zip
+mv "Markdown Preview Server.app" /Applications/
+xattr -dr com.apple.quarantine "/Applications/Markdown Preview Server.app"
+open "/Applications/Markdown Preview Server.app"
+\`\`\`
 EOF
 
 gh release create "$TAG" "$ZIP_PATH" \
