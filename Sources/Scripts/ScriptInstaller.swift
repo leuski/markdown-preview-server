@@ -30,7 +30,7 @@ enum ScriptInstaller {
   /// Copies the bundled Scripts folder into `destination`, customizing the
   /// hardcoded loopback port in shell scripts to match the running server.
   /// Files at the destination with the same relative path are overwritten.
-  static func install(to destination: URL, port: UInt16) throws {
+  static func install(to destination: URL, context: [String: String]) throws {
     guard let source = bundledSourceURL, source.itemExists else {
       throw InstallError.sourceMissing
     }
@@ -45,7 +45,7 @@ enum ScriptInstaller {
       let target = destination.appending(path: url.relativePath)
 
       do {
-        try installFile(from: url, to: target, port: port)
+        try installFile(from: url, to: target, context: context)
       } catch {
         throw InstallError.copyFailed(url, error)
       }
@@ -53,13 +53,13 @@ enum ScriptInstaller {
   }
 
   private static func installFile(
-    from source: URL, to target: URL, port: UInt16
+    from source: URL, to target: URL, context: [String: String]
   ) throws {
     try target.parent.createDirectory()
 
     if isShellScript(source) {
       let original = try String(contentsOf: source, encoding: .utf8)
-      let customized = customize(script: original, port: port)
+      let customized = customize(script: original, context: context)
       try? target.remove()
       try customized.write(to: target, atomically: true, encoding: .utf8)
       try target.setPosixPermissions(0o755)
@@ -74,9 +74,11 @@ enum ScriptInstaller {
 
   /// Replaces the loopback host:port literal embedded in bundled scripts so
   /// the installed copy targets the user's currently configured port.
-  static func customize(script: String, port: UInt16) -> String {
-    script.replacingOccurrences(
-      of: "__LOCATION__",
-      with: "http://\(AppModel.defaultHost):\(port)/preview")
+  static func customize(script: String, context: [String: String]) -> String {
+    var script = script
+    for (key, value) in context {
+      script = script.replacingOccurrences(of: key, with: value)
+    }
+    return script
   }
 }
