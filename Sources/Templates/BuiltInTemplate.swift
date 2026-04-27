@@ -10,7 +10,7 @@ struct BuiltInTemplate: Template {
 
   func loadHTML() throws -> String { Self.html }
 
-  func rewriteAssets(in html: String, origin: String) -> String { html }
+  func rewriteAssets(in html: String, origin: URL) -> String { html }
 
   func resolveAsset(file: String) -> URL? { nil }
 

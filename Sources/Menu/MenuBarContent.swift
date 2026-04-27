@@ -117,7 +117,9 @@ struct MenuBarContent: View {
     guard panel.runModal() == .OK, let destination = panel.url else { return }
 
     do {
-      try ScriptInstaller.install(to: destination, port: model.port)
+      try ScriptInstaller.install(to: destination, context: [
+        "__LOCATION__": model.hostURL().appendingPreviewPath().absoluteString
+      ])
       NSWorkspace.shared.activateFileViewerSelecting([destination])
     } catch {
       let alert = NSAlert(error: error)
@@ -138,9 +140,6 @@ struct MenuBarContent: View {
 
   private func openInBrowser(documentURL: URL) {
     guard let base = server.serverURL else { return }
-    let encoded = documentURL.path.percentEncodedForPath
-    guard let url = URL(string: base.absoluteString + "/preview" + encoded)
-    else { return }
-    NSWorkspace.shared.open(url)
+    NSWorkspace.shared.open(base.appendingPreviewPath(documentURL.path))
   }
 }

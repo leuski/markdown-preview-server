@@ -2,6 +2,10 @@ import Foundation
 import FlyingFox
 
 enum Routes {
+  static let preview = "preview"
+  static let template = "template"
+  static let events = "events"
+
   static let markdownExtensions: Set<String> = [
     "md", "markdown", "mdown", "mmd"]
 
@@ -22,18 +26,21 @@ enum Routes {
   ) async {
     let storeRef = TemplateStoreRef(templateStore)
 
-    await server.appendRoute("GET /preview/*") { request in
-      await previewOrAssetResponse(
-        request: request,
-        templateStore: storeRef,
-        renderer: rendererProvider())
-    }
+    await server.appendRoute(
+      .init(method: .GET, path: "/\(preview)/*")) { request in
+        await previewOrAssetResponse(
+          request: request,
+          templateStore: storeRef,
+          renderer: rendererProvider())
+      }
 
-    await server.appendRoute("GET /template/*") { request in
+    await server.appendRoute(
+      .init(method: .GET, path: "/\(template)/*")) { request in
       await templateAssetResponse(request: request, templateStore: storeRef)
     }
 
-    await server.appendRoute("GET /events/*") { request in
+    await server.appendRoute(
+      .init(method: .GET, path: "/\(events)/*")) { request in
       await eventsResponse(request: request, watcher: watcher)
     }
 
@@ -53,7 +60,7 @@ enum Routes {
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
     guard let documentURL = decodeFilePath(
-      from: request.path, prefix: "/preview")
+      from: request.path, prefix: "/\(preview)")
     else {
       return HTTPResponses.badRequest("Invalid path")
     }
@@ -123,7 +130,9 @@ enum Routes {
         source: renderedBody)
     }
 
-    let origin = request.headers[.host].map { "http://\($0)" } ?? ""
+    let origin: URL = request.headers[.host]
+      .flatMap { URL(string: "http://\($0)") }
+    ?? AppModel.hostURL()
     let processedTemplate = template.rewriteAssets(
       in: templateHTML, origin: origin)
     let context = PlaceholderContext(

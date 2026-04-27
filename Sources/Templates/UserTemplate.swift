@@ -14,9 +14,10 @@ struct UserTemplate: Template {
     let templatePrefix: String
     let absolutePrefix: String
 
-    init(id: String, origin: String) {
-      self.templatePrefix = "\(origin)/template/\(id.percentEncodedForPath)/"
-      self.absolutePrefix = "\(origin)/preview"
+    init(id: String, origin: URL) {
+      self.templatePrefix =
+        origin.appendingTemplatePath(id: id).absoluteString.appendingSlash
+      self.absolutePrefix = origin.appendingPreviewPath().absoluteString
     }
 
     func rewriteAssets(in html: String) -> String {
@@ -88,19 +89,14 @@ struct UserTemplate: Template {
     }
   }
 
-  func rewriteAssets(in html: String, origin: String) -> String {
+  func rewriteAssets(in html: String, origin: URL) -> String {
     Rewriter(id: id, origin: origin).rewriteAssets(in: html)
   }
 
   func resolveAsset(file: String) -> URL? {
     let directoryURL = self.directoryURL.safe
-
     let candidate = directoryURL.appendingPathComponent(file).safe
-
-    let dirPath = directoryURL.path.hasSuffix("/")
-    ? directoryURL.path
-    : directoryURL.path + "/"
-    guard candidate.path.hasPrefix(dirPath) else { return nil }
-    return candidate
+    return candidate.path.hasPrefix(directoryURL.path.appendingSlash)
+    ? candidate : nil
   }
 }

@@ -78,6 +78,21 @@ final class AppModel {
     }
   }
 
+  nonisolated static func hostURL(port: UInt16? = nil) -> URL {
+    var components = URLComponents()
+    components.scheme = "http"
+    components.host = Self.defaultHost
+    components.port = Int(port ?? Self.defaultPort)
+    guard let url = components.url else {
+      preconditionFailure("hostURL components produced no URL")
+    }
+    return url
+  }
+
+  func hostURL(port: UInt16? = nil) -> URL {
+    Self.hostURL(port: port ?? self.port)
+  }
+
   /// The entry actually used for rendering: the user's preferred entry if
   /// it is currently available, otherwise the first available entry.
   /// `nil` only when no renderer at all is available.

@@ -83,6 +83,6 @@ final class PreviewServerController {
 
   var serverURL: URL? {
     guard case .running(let port) = state else { return nil }
-    return URL(string: "http://\(AppModel.defaultHost):\(port)")
+    return AppModel.hostURL(port: port)
   }
 }
