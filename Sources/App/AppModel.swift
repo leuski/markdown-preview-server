@@ -6,8 +6,15 @@ import Observation
 @MainActor
 final class AppModel {
   var port: UInt16 {
-    didSet {
-      UserDefaults.standard.set(Int(port), forKey: Keys.port)
+    get {
+      access(keyPath: \.port)
+      let stored = UserDefaults.standard.object(forKey: Keys.port) as? Int
+      return stored.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
+    }
+    set {
+      withMutation(keyPath: \.port) {
+        UserDefaults.standard.set(Int(newValue), forKey: Keys.port)
+      }
       restartServerIfRunning()
     }
   }
@@ -18,17 +25,26 @@ final class AppModel {
   /// Persisted identifier of the user's chosen renderer. May not match
   /// any currently-available renderer until discovery completes.
   var selectedRendererID: String? {
-    didSet {
-      UserDefaults.standard.set(selectedRendererID, forKey: Keys.rendererID)
+    get {
+      access(keyPath: \.selectedRendererID)
+      return UserDefaults.standard.string(forKey: Keys.rendererID)
+    }
+    set {
+      withMutation(keyPath: \.selectedRendererID) {
+        UserDefaults.standard.set(newValue, forKey: Keys.rendererID)
+      }
       updateCurrentRenderer()
     }
   }
 
   var launchAtLogin: Bool {
-    didSet {
-      let applied = LoginItem.setEnabled(launchAtLogin)
-      if applied != launchAtLogin {
-        launchAtLogin = applied
+    get {
+      access(keyPath: \.launchAtLogin)
+      return LoginItem.isEnabled
+    }
+    set {
+      withMutation(keyPath: \.launchAtLogin) {
+        _ = LoginItem.setEnabled(newValue)
       }
     }
   }
@@ -46,12 +62,6 @@ final class AppModel {
   nonisolated static let defaultHost: String = "127.0.0.1"
 
   init() {
-    let storedPort = UserDefaults.standard.object(forKey: Keys.port) as? Int
-    self.port = storedPort.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
-    self.selectedRendererID = UserDefaults.standard.string(
-      forKey: Keys.rendererID)
-    self.launchAtLogin = LoginItem.isEnabled
-
     let store = TemplateStore()
     self.templateStore = store
 
