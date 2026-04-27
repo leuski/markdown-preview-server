@@ -6,7 +6,7 @@ import os
 /// app set to launch at login?" without importing ServiceManagement.
 enum LoginItem {
   private static let logger = Logger(
-    subsystem: "net.leuski.MarkdownPreviewer",
+    subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.MarkdownPreviewer",
     category: "LoginItem")
 
   static var isEnabled: Bool {

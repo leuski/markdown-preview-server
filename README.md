@@ -1,4 +1,4 @@
-# MarkdownPreviewer
+# Markdown Preview Server
 
 A small macOS menu bar app that serves a live, browser-based preview of Markdown
 files from your editor. Point it at a `.md` file and it renders the document
