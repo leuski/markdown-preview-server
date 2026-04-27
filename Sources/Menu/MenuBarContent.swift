@@ -138,7 +138,7 @@ struct MenuBarContent: View {
 
   private func openInBrowser(documentURL: URL) {
     guard let base = server.serverURL else { return }
-    let encoded = documentURL.path.percentEncodedForPath()
+    let encoded = documentURL.path.percentEncodedForPath
     guard let url = URL(string: base.absoluteString + "/preview" + encoded)
     else { return }
     NSWorkspace.shared.open(url)

@@ -36,7 +36,7 @@ final class TemplateStore {
 
   func reload() {
     let manager = FileManager.default
-    let listingDir = directoryURL.resolvingSymlinksInPath()
+    let listingDir = directoryURL.safe
     let contents = (try? manager.contentsOfDirectory(
       at: listingDir,
       includingPropertiesForKeys: [.isDirectoryKey],
@@ -56,7 +56,7 @@ final class TemplateStore {
   }
 
   private func makeTemplate(at url: URL) -> UserTemplate? {
-    let resolved = url.resolvingSymlinksInPath()
+    let resolved = url.safe
 
     if resolved.directoryExists {
       // Folder template: must contain Template.html (or template.html).

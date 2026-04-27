@@ -1,7 +1,13 @@
 import Foundation
 
 extension String {
-  func percentEncodedForPath() -> String {
+  var percentEncodedForPath: String {
     addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? self
+  }
+}
+
+extension URL {
+  var safe: URL {
+    standardizedFileURL.resolvingSymlinksInPath()
   }
 }

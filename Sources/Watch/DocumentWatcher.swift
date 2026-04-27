@@ -11,7 +11,7 @@ actor DocumentWatcher {
   private var entries: [String: Entry] = [:]
 
   func subscribe(to url: URL) -> AsyncStream<Void> {
-    let key = url.standardizedFileURL.path
+    let key = url.safe.path
     let id = UUID()
 
     let stream = AsyncStream<Void> { [weak self] continuation in

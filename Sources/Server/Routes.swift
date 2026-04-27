@@ -244,8 +244,7 @@ enum Routes {
     guard tail.hasPrefix("/") else { return nil }
 
     let decoded = tail.removingPercentEncoding ?? tail
-    let url = URL(fileURLWithPath: decoded)
-      .standardizedFileURL.resolvingSymlinksInPath()
+    let url = URL(fileURLWithPath: decoded).safe
     guard url.path.hasPrefix("/") else { return nil }
     return url
   }
@@ -253,7 +252,7 @@ enum Routes {
   private static func injectReloadScript(
     into html: String, documentURL: URL) -> String
   {
-    let encodedPath = documentURL.path.percentEncodedForPath()
+    let encodedPath = documentURL.path.percentEncodedForPath
     let script = """
         <script>
         (function() {
