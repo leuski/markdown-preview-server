@@ -1,5 +1,6 @@
 import Foundation
 import FlyingFox
+import Security
 
 enum Routes {
   static let preview = "preview"
@@ -29,7 +30,10 @@ enum Routes {
 
     await server.appendRoute(
       .init(method: .GET, path: "/\(preview)/*")) { request in
-        await previewOrAssetResponse(
+        if let denied = guardRequest(request, hostURL: hostURL) {
+          return denied
+        }
+        return await previewOrAssetResponse(
           request: request,
           hostURL: hostURL,
           templateStore: storeRef,
@@ -38,16 +42,26 @@ enum Routes {
 
     await server.appendRoute(
       .init(method: .GET, path: "/\(template)/*")) { request in
-      await templateAssetResponse(request: request, templateStore: storeRef)
-    }
+        if let denied = guardRequest(request, hostURL: hostURL) {
+          return denied
+        }
+        return await templateAssetResponse(
+          request: request, templateStore: storeRef)
+      }
 
     await server.appendRoute(
       .init(method: .GET, path: "/\(events)/*")) { request in
-      await eventsResponse(request: request, watcher: watcher)
-    }
+        if let denied = guardRequest(request, hostURL: hostURL) {
+          return denied
+        }
+        return await eventsResponse(request: request, watcher: watcher)
+      }
 
-    await server.appendRoute("GET /") { _ in
-      HTTPResponse(
+    await server.appendRoute("GET /") { request in
+      if let denied = guardRequest(request, hostURL: hostURL) {
+        return denied
+      }
+      return HTTPResponse(
         statusCode: .ok,
         headers: [.contentType: "text/plain; charset=utf-8"],
         body: Data("MarkdownPreviewer is running.\n".utf8))
@@ -135,9 +149,7 @@ enum Routes {
         source: renderedBody)
     }
 
-    let origin: URL = request.headers[.host]
-      .flatMap { URL(string: "http://\($0)") }
-    ?? hostURL
+    let origin = hostURL
     let processedTemplate = template.rewriteAssets(
       in: templateHTML, origin: origin)
     let context = PlaceholderContext(
@@ -145,15 +157,13 @@ enum Routes {
       documentURL: documentURL,
       origin: origin)
     let substituted = context.substitute(into: processedTemplate)
+    let nonce = generateNonce()
     let withReload = injectReloadScript(
-      into: substituted, documentURL: documentURL)
+      into: substituted, documentURL: documentURL, nonce: nonce)
 
     return HTTPResponse(
       statusCode: .ok,
-      headers: [
-        .contentType: "text/html; charset=utf-8",
-        HTTPHeader("Cache-Control"): "no-store"
-      ],
+      headers: htmlSecurityHeaders(scriptNonce: nonce),
       body: Data(withReload.utf8))
   }
 
@@ -167,13 +177,20 @@ enum Routes {
     } catch {
       return HTTPResponses.notFound(error.localizedDescription)
     }
-    return HTTPResponse(
-      statusCode: .ok,
-      headers: [
-        .contentType: MIMETypes.mimeType(for: url),
-        HTTPHeader("Cache-Control"): "no-store"
-      ],
-      body: data)
+    let mime = MIMETypes.mimeType(for: url)
+    var headers: HTTPHeaders = [
+      .contentType: mime,
+      HTTPHeader("Cache-Control"): "no-store",
+      HTTPHeader("X-Content-Type-Options"): "nosniff",
+      HTTPHeader("Cross-Origin-Resource-Policy"): "same-origin",
+      HTTPHeader("Cross-Origin-Opener-Policy"): "same-origin"
+    ]
+    if mime.lowercased().hasPrefix("text/html") {
+      headers[HTTPHeader("Content-Security-Policy")] = strictAssetCSP
+      headers[HTTPHeader("X-Frame-Options")] = "DENY"
+      headers[HTTPHeader("Referrer-Policy")] = "no-referrer"
+    }
+    return HTTPResponse(statusCode: .ok, headers: headers, body: data)
   }
 
   // MARK: - /template/<id>/<file>
@@ -249,7 +266,8 @@ enum Routes {
   /// Extracts a filesystem path from `request.path` (e.g.
   /// "/preview/Users/foo.md") by stripping `prefix` ("/preview"). Returns
   /// the resolved file URL or nil if the extracted path is not absolute,
-  /// escapes the filesystem root, or has no extension.
+  /// escapes the filesystem root, has no extension, or refers to a
+  /// dotfile (last path component starts with ".").
   private static func decodeFilePath(
     from requestPath: String, prefix: String) -> URL?
   {
@@ -260,15 +278,16 @@ enum Routes {
     let decoded = tail.removingPercentEncoding ?? tail
     let url = URL(fileURLWithPath: decoded).safe
     guard url.path.hasPrefix("/") else { return nil }
+    if url.lastPathComponent.hasPrefix(".") { return nil }
     return url
   }
 
   private static func injectReloadScript(
-    into html: String, documentURL: URL) -> String
+    into html: String, documentURL: URL, nonce: String) -> String
   {
     let encodedPath = documentURL.path.percentEncodedForPath
     let script = """
-        <script>
+        <script nonce="\(nonce)">
         (function() {
           try {
             var src = new EventSource('/events\(encodedPath)');
@@ -282,6 +301,96 @@ enum Routes {
     }
     return html + "\n" + script
   }
+
+  // MARK: - Security
+
+  /// Rejects requests whose `Host` header is not a loopback alias on the
+  /// expected port (DNS-rebinding defence) or that originate from another
+  /// site (`Sec-Fetch-Site: cross-site` / `same-site`). Returns nil when
+  /// the request is acceptable.
+  private static func guardRequest(
+    _ request: HTTPRequest, hostURL: URL) -> HTTPResponse?
+  {
+    let expectedPort = hostURL.port ?? 80
+    let hostHeader = request.headers[.host] ?? ""
+    if !isHostAllowed(hostHeader, expectedPort: expectedPort) {
+      return HTTPResponses.forbidden("Host header not allowed")
+    }
+    if let site = request.headers[HTTPHeader("Sec-Fetch-Site")]?.lowercased(),
+       site != "same-origin", site != "none" {
+      return HTTPResponses.forbidden("Cross-site request rejected")
+    }
+    return nil
+  }
+
+  private static func isHostAllowed(
+    _ value: String, expectedPort: Int) -> Bool
+  {
+    let trimmed = value.trimmingCharacters(in: .whitespaces)
+    guard !trimmed.isEmpty,
+          let url = URL(string: "http://\(trimmed)/")
+    else { return false }
+    let allowed: Set<String> = ["127.0.0.1", "localhost", "::1"]
+    guard let host = url.host?.lowercased(), allowed.contains(host)
+    else { return false }
+    return (url.port ?? 80) == expectedPort
+  }
+
+  private static func generateNonce() -> String {
+    var bytes = [UInt8](repeating: 0, count: 16)
+    let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+    if status != errSecSuccess {
+      // Fallback: SystemRandomNumberGenerator is cryptographically secure
+      // on Apple platforms, but SecRandomCopyBytes essentially never fails.
+      var rng = SystemRandomNumberGenerator()
+      for index in bytes.indices {
+        bytes[index] = UInt8.random(in: 0...255, using: &rng)
+      }
+    }
+    return Data(bytes).base64EncodedString()
+  }
+
+  private static func htmlSecurityHeaders(
+    scriptNonce nonce: String) -> HTTPHeaders
+  {
+    let csp = [
+      "default-src 'none'",
+      "script-src 'nonce-\(nonce)' 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob:",
+      "font-src 'self' data:",
+      "media-src 'self' data: blob:",
+      "connect-src 'self'",
+      "frame-src 'self'",
+      "form-action 'self'",
+      "base-uri 'self'",
+      "object-src 'none'"
+    ].joined(separator: "; ")
+    return [
+      .contentType: "text/html; charset=utf-8",
+      HTTPHeader("Cache-Control"): "no-store",
+      HTTPHeader("Content-Security-Policy"): csp,
+      HTTPHeader("X-Content-Type-Options"): "nosniff",
+      HTTPHeader("X-Frame-Options"): "DENY",
+      HTTPHeader("Referrer-Policy"): "no-referrer",
+      HTTPHeader("Cross-Origin-Resource-Policy"): "same-origin",
+      HTTPHeader("Cross-Origin-Opener-Policy"): "same-origin"
+    ]
+  }
+
+  private static let strictAssetCSP: String = [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "media-src 'self' data: blob:",
+    "connect-src 'self'",
+    "frame-src 'self'",
+    "form-action 'self'",
+    "base-uri 'self'",
+    "object-src 'none'"
+  ].joined(separator: "; ")
 
 }
 
