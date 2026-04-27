@@ -74,6 +74,7 @@ final class PreviewServerController {
     Task { [weak self] in
       await Routes.register(
         on: server,
+        hostURL: fullURL,
         templateStore: store,
         rendererProvider: provider,
         watcher: watcher)

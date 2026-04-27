@@ -20,6 +20,7 @@ enum Routes {
 
   static func register(
     on server: HTTPServer,
+    hostURL: URL,
     templateStore: TemplateStore,
     rendererProvider: @Sendable @escaping () -> (any MarkdownRenderer)?,
     watcher: DocumentWatcher
@@ -30,6 +31,7 @@ enum Routes {
       .init(method: .GET, path: "/\(preview)/*")) { request in
         await previewOrAssetResponse(
           request: request,
+          hostURL: hostURL,
           templateStore: storeRef,
           renderer: rendererProvider())
       }
@@ -56,6 +58,7 @@ enum Routes {
 
   private static func previewOrAssetResponse(
     request: HTTPRequest,
+    hostURL: URL,
     templateStore: TemplateStoreRef,
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
@@ -79,6 +82,7 @@ enum Routes {
       return await renderPreview(
         documentURL: documentURL,
         request: request,
+        hostURL: hostURL,
         templateStore: templateStore,
         renderer: renderer)
     }
@@ -91,6 +95,7 @@ enum Routes {
   private static func renderPreview(
     documentURL: URL,
     request: HTTPRequest,
+    hostURL: URL,
     templateStore: TemplateStoreRef,
     renderer: any MarkdownRenderer
   ) async -> HTTPResponse {
@@ -132,7 +137,7 @@ enum Routes {
 
     let origin: URL = request.headers[.host]
       .flatMap { URL(string: "http://\($0)") }
-    ?? AppModel.hostURL()
+    ?? hostURL
     let processedTemplate = template.rewriteAssets(
       in: templateHTML, origin: origin)
     let context = PlaceholderContext(

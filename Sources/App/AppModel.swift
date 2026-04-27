@@ -78,7 +78,7 @@ final class AppModel {
     }
   }
 
-  nonisolated static func hostURL(port: UInt16? = nil) -> URL {
+  nonisolated private static func hostURL(port: UInt16? = nil) -> URL {
     var components = URLComponents()
     components.scheme = "http"
     components.host = Self.defaultHost
@@ -93,17 +93,17 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
+  var selectedEntry: RendererEntry? {
+    selectedRendererID.flatMap { id in
+      rendererEntries.first { $0.id == id && $0.isAvailable }
+    }
+  }
+
   /// The entry actually used for rendering: the user's preferred entry if
   /// it is currently available, otherwise the first available entry.
   /// `nil` only when no renderer at all is available.
   var activeEntry: RendererEntry? {
-    if let id = selectedRendererID,
-       let entry = rendererEntries.first(
-        where: { $0.id == id && $0.isAvailable })
-    {
-      return entry
-    }
-    return rendererEntries.first { $0.isAvailable }
+    selectedEntry ?? rendererEntries.first { $0.isAvailable }
   }
 
   /// Non-nil when the user's preferred renderer exists in the catalog
