@@ -14,7 +14,9 @@ enum HTTPResponses {
     plainText(statusCode: .forbidden, message: message)
   }
 
-  static func errorPage(title: String, detail: String, source: String) -> HTTPResponse {
+  static func errorPage(
+    title: String, detail: String, source: String) -> HTTPResponse
+  {
     let html = errorPageTemplate
       .replacingOccurrences(of: "#TITLE#", with: escape(title))
       .replacingOccurrences(of: "#DETAIL#", with: escape(detail))
@@ -26,14 +28,19 @@ enum HTTPResponses {
   }
 
   private static let errorPageTemplate: String = {
-    guard let url = Bundle.main.url(forResource: "ErrorPage", withExtension: "html"),
-          let html = try? String(contentsOf: url, encoding: .utf8) else {
+    guard
+      let url = Bundle.main.url(
+        forResource: "ErrorPage", withExtension: "html"),
+      let html = try? String(contentsOf: url, encoding: .utf8) else
+    {
       fatalError("ErrorPage.html missing from app bundle")
     }
     return html
   }()
 
-  private static func plainText(statusCode: HTTPStatusCode, message: String) -> HTTPResponse {
+  private static func plainText(
+    statusCode: HTTPStatusCode, message: String) -> HTTPResponse
+  {
     HTTPResponse(
       statusCode: statusCode,
       headers: [.contentType: "text/plain; charset=utf-8"],

@@ -77,12 +77,12 @@ struct SettingsView: View {
     model.activeEntry?.displayName ?? "No processor available"
   }
 
-  private func staleMessage(for entry: RendererEntry, fallback: String) -> String {
-    if let hint = entry.installHint {
-      return "\(entry.displayName) is not installed — using \(fallback). "
-        + "Install with `\(hint)`, then click Rescan."
-    }
-    return "\(entry.displayName) is not installed — using \(fallback)."
+  private func staleMessage(
+    for entry: RendererEntry, fallback: String) -> String
+  {
+    "\(entry.displayName) is not installed — using \(fallback)."
+    + (entry.installHint.map { hint in
+      " Install with `\(hint)`, then click Rescan."} ?? "")
   }
 
   private func commitPort() {

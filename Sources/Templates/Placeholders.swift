@@ -23,7 +23,8 @@ struct PlaceholderContext: Sendable {
   func substitute(into template: String, now: Date = Date()) -> String {
     let docDirPath = documentURL.parent.path
     let encodedDir = docDirPath
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? docDirPath
+      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+    ?? docDirPath
     let trailing = encodedDir.hasSuffix("/") ? "" : "/"
     let baseHref = "\(origin)/preview\(encodedDir)\(trailing)"
 

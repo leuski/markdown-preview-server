@@ -2,7 +2,8 @@ import Foundation
 import FlyingFox
 
 enum Routes {
-  static let markdownExtensions: Set<String> = ["md", "markdown", "mdown", "mmd"]
+  static let markdownExtensions: Set<String> = [
+    "md", "markdown", "mdown", "mmd"]
 
   static let assetExtensions: Set<String> = [
     "txt", "html", "htm",
@@ -51,7 +52,8 @@ enum Routes {
     templateStore: TemplateStoreRef,
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
-    guard let documentURL = decodeFilePath(from: request.path, prefix: "/preview")
+    guard let documentURL = decodeFilePath(
+      from: request.path, prefix: "/preview")
     else {
       return HTTPResponses.badRequest("Invalid path")
     }
@@ -61,7 +63,10 @@ enum Routes {
       guard let renderer else {
         return HTTPResponses.errorPage(
           title: "No markdown processor configured",
-          detail: "Install a supported processor (e.g. multimarkdown via Homebrew) and pick it in Settings.",
+          detail: """
+            Install a supported processor (e.g. multimarkdown via Homebrew) \
+            and pick it in Settings.
+            """,
           source: "")
       }
       return await renderPreview(
@@ -90,7 +95,8 @@ enum Routes {
     do {
       source = try String(contentsOf: documentURL, encoding: .utf8)
     } catch {
-      return HTTPResponses.notFound("Cannot read \(documentURL.path): \(error.localizedDescription)")
+      return HTTPResponses.notFound(
+        "Cannot read \(documentURL.path): \(error.localizedDescription)")
     }
 
     let renderedBody: String
@@ -110,20 +116,25 @@ enum Routes {
     } catch {
       return HTTPResponses.errorPage(
         title: "Template error",
-        detail: "Cannot load template '\(template.name)': \(error.localizedDescription)",
+        detail: """
+          Cannot load template '\(template.name)': \
+          \(error.localizedDescription)
+          """,
         source: renderedBody)
     }
 
     let origin = request.headers[.host].map { "http://\($0)" } ?? ""
     let processedTemplate = template.isBuiltIn
-      ? templateHTML
-      : TemplateAssetRewriter.rewrite(html: templateHTML, templateID: template.id, origin: origin)
+    ? templateHTML
+    : TemplateAssetRewriter.rewrite(
+      html: templateHTML, templateID: template.id, origin: origin)
     let context = PlaceholderContext(
       documentContent: renderedBody,
       documentURL: documentURL,
       origin: origin)
     let substituted = context.substitute(into: processedTemplate)
-    let withReload = injectReloadScript(into: substituted, documentURL: documentURL)
+    let withReload = injectReloadScript(
+      into: substituted, documentURL: documentURL)
 
     return HTTPResponse(
       statusCode: .ok,
@@ -179,7 +190,8 @@ enum Routes {
       return HTTPResponses.notFound("Template not found: \(templateID)")
     }
 
-    guard let assetURL = resolveAsset(in: template.directoryURL, file: file) else {
+    guard let assetURL = resolveAsset(in: template.directoryURL, file: file)
+    else {
       return HTTPResponses.forbidden("Asset path escapes template directory")
     }
     return serveFile(at: assetURL)
@@ -191,8 +203,9 @@ enum Routes {
     request: HTTPRequest,
     watcher: DocumentWatcher
   ) async -> HTTPResponse {
-    guard let documentURL = decodeFilePath(from: request.path, prefix: "/events"),
-          markdownExtensions.contains(documentURL.pathExtension.lowercased())
+    guard
+      let documentURL = decodeFilePath(from: request.path, prefix: "/events"),
+      markdownExtensions.contains(documentURL.pathExtension.lowercased())
     else {
       return HTTPResponses.badRequest("Invalid event path")
     }
@@ -224,16 +237,20 @@ enum Routes {
 
   // MARK: - Helpers
 
-  /// Extracts a filesystem path from `request.path` (e.g. "/preview/Users/foo.md") by
-  /// stripping `prefix` ("/preview"). Returns the resolved file URL or nil if the
-  /// extracted path is not absolute, escapes the filesystem root, or has no extension.
-  private static func decodeFilePath(from requestPath: String, prefix: String) -> URL? {
+  /// Extracts a filesystem path from `request.path` (e.g.
+  /// "/preview/Users/foo.md") by stripping `prefix` ("/preview"). Returns
+  /// the resolved file URL or nil if the extracted path is not absolute,
+  /// escapes the filesystem root, or has no extension.
+  private static func decodeFilePath(
+    from requestPath: String, prefix: String) -> URL?
+  {
     guard requestPath.hasPrefix(prefix) else { return nil }
     let tail = String(requestPath.dropFirst(prefix.count))
     guard tail.hasPrefix("/") else { return nil }
 
     let decoded = tail.removingPercentEncoding ?? tail
-    let url = URL(fileURLWithPath: decoded).standardizedFileURL.resolvingSymlinksInPath()
+    let url = URL(fileURLWithPath: decoded)
+      .standardizedFileURL.resolvingSymlinksInPath()
     guard url.path.hasPrefix("/") else { return nil }
     return url
   }
@@ -252,7 +269,9 @@ enum Routes {
     return candidate
   }
 
-  private static func injectReloadScript(into html: String, documentURL: URL) -> String {
+  private static func injectReloadScript(
+    into html: String, documentURL: URL) -> String
+  {
     let encodedPath = documentURL.path
       .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
     let script = """

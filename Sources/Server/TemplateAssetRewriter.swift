@@ -14,15 +14,20 @@ enum TemplateAssetRewriter {
   private static let cssUrlRegex =
     #/(?i)url\(\s*(['"]?)([^'")]+)\1\s*\)/#
 
-  static func rewrite(html: String, templateID: String, origin: String) -> String {
+  static func rewrite(
+    html: String, templateID: String, origin: String) -> String
+  {
     let encodedID = templateID
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? templateID
+      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+    ?? templateID
     let templatePrefix = "\(origin)/template/\(encodedID)/"
     let absolutePrefix = "\(origin)/preview"
     var result = rewriteAttributeURLs(
-      html: html, templatePrefix: templatePrefix, absolutePrefix: absolutePrefix)
+      html: html, templatePrefix: templatePrefix,
+      absolutePrefix: absolutePrefix)
     result = rewriteCSSURLs(
-      html: result, templatePrefix: templatePrefix, absolutePrefix: absolutePrefix)
+      html: result, templatePrefix: templatePrefix,
+      absolutePrefix: absolutePrefix)
     return result
   }
 
@@ -63,7 +68,9 @@ enum TemplateAssetRewriter {
     guard !value.isEmpty else { return nil }
 
     // Skip BBEdit-style placeholders (e.g. #DOCUMENT_CONTENT#, #BASE#).
-    if value.hasPrefix("#"), value.hasSuffix("#"), value.count >= 2 { return nil }
+    if value.hasPrefix("#"), value.hasSuffix("#"), value.count >= 2 {
+      return nil
+    }
     // Skip in-page anchors.
     if value.hasPrefix("#") { return nil }
     // Skip protocol-relative URLs.
@@ -74,7 +81,8 @@ enum TemplateAssetRewriter {
     }
 
     if value.hasPrefix("/") {
-      // BBEdit convention: literal absolute filesystem paths. Route through /preview.
+      // BBEdit convention: literal absolute filesystem paths. Route through
+      // /preview.
       let encoded = value
         .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? value
       return absolutePrefix + encoded

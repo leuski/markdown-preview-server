@@ -43,7 +43,8 @@ final class TemplateStore {
       options: [.skipsHiddenFiles])) ?? []
 
     let discovered: [Template] = contents.compactMap(makeTemplate(at:))
-      .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+      .sorted { $0.name.localizedCaseInsensitiveCompare($1.name)
+        == .orderedAscending }
 
     let combined = [Template.builtIn] + discovered
     if combined.map(\.id) != templates.map(\.id) {

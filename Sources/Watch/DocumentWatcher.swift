@@ -16,7 +16,10 @@ actor DocumentWatcher {
 
     let stream = AsyncStream<Void> { [weak self] continuation in
       guard let self else { continuation.finish(); return }
-      Task { await self.attach(id: id, url: url, key: key, continuation: continuation) }
+      Task {
+        await self.attach(
+          id: id, url: url, key: key, continuation: continuation)
+      }
       continuation.onTermination = { [weak self] _ in
         Task { await self?.detach(id: id, key: key) }
       }

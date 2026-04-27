@@ -166,7 +166,9 @@ private struct HTMLVisitor: MarkupVisitor {
     let src = image.source ?? ""
     let alt = image.plainText
     let title = image.title.map { " title=\"\(escapeAttribute($0))\"" } ?? ""
-    html += "<img src=\"\(escapeAttribute(src))\" alt=\"\(escapeAttribute(alt))\"\(title)>"
+    html += """
+      <img src="\(escapeAttribute(src))" alt="\(escapeAttribute(alt))"\(title)>
+      """
   }
 
   mutating func visitLineBreak(_ lineBreak: LineBreak) {
@@ -179,7 +181,9 @@ private struct HTMLVisitor: MarkupVisitor {
 
   // MARK: - Helpers
 
-  private func alignmentAttribute(_ alignment: Table.ColumnAlignment?) -> String {
+  private func alignmentAttribute(
+    _ alignment: Table.ColumnAlignment?) -> String
+  {
     switch alignment {
     case .left: return " style=\"text-align: left\""
     case .center: return " style=\"text-align: center\""

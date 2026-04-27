@@ -1,0 +1,68 @@
+disabled_rules: # rule identifiers to exclude from running
+- opening_brace
+- todo
+- function_parameter_count
+- unneeded_synthesized_initializer
+
+opt_in_rules:
+- force_unwrapping
+
+force_unwrapping: warning
+
+identifier_name:
+  allowed_symbols: "≡"
+  excluded: # excluded via string array
+  - x
+  - y
+  - z
+  - id
+  - dx
+  - dy
+  - no
+  - in
+  - a0
+  - a1
+  - a2
+  - matrix_float2x2
+  - matrix_float3x2
+  - matrix_float4x2
+  - matrix_float2x3
+  - matrix_float3x3
+  - matrix_float4x3
+  - matrix_float2x4
+  - matrix_float3x4
+  - matrix_float4x4
+  - matrix_double2x2
+  - matrix_double3x2
+  - matrix_double4x2
+  - matrix_double2x3
+  - matrix_double3x3
+  - matrix_double4x3
+  - matrix_double2x4
+  - matrix_double3x4
+  - matrix_double4x4
+  - ≡
+  - v1
+
+type_name:
+  excluded:
+  - ID
+
+nesting:
+  type_level: 3
+
+type_body_length:
+  warning: 700
+  error: 1200
+
+file_length:
+  warning: 800
+  error: 2000
+
+function_body_length:
+  warning: 65
+
+line_length: 80
+  #warning: 80
+  #error: 80
+

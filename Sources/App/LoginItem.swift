@@ -28,8 +28,10 @@ enum LoginItem {
         }
       }
     } catch {
-      logger.error(
-        "Failed to \(enabled ? "register" : "unregister") login item: \(error.localizedDescription)")
+      logger.error("""
+        Failed to \(enabled ? "register" : "unregister") \
+        login item: \(error.localizedDescription)
+        """)
     }
     return isEnabled
   }

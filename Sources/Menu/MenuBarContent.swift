@@ -24,7 +24,8 @@ struct MenuBarContent: View {
         .keyboardShortcut("o")
 
       Button("Reveal Templates Folder") {
-        NSWorkspace.shared.activateFileViewerSelecting([templateStore.directoryURL])
+        NSWorkspace.shared
+          .activateFileViewerSelecting([templateStore.directoryURL])
       }
 
       Button("Install BBEdit Scripts…") { installScripts() }
@@ -105,7 +106,9 @@ struct MenuBarContent: View {
     panel.allowsMultipleSelection = false
     panel.prompt = "Install"
     panel.title = "Install BBEdit Scripts"
-    panel.message = "Choose the destination folder. Defaults to BBEdit's Scripts folder."
+    panel.message = """
+      Choose the destination folder. Defaults to BBEdit's Scripts folder.
+      """
 
     let defaultDestination = ScriptInstaller.defaultBBEditDestination
     panel.directoryURL = nearestExistingDirectory(for: defaultDestination)
@@ -136,8 +139,10 @@ struct MenuBarContent: View {
   private func openInBrowser(documentURL: URL) {
     guard let base = server.serverURL else { return }
     let encoded = documentURL.path
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? documentURL.path
-    guard let url = URL(string: base.absoluteString + "/preview" + encoded) else { return }
+      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
+    ?? documentURL.path
+    guard let url = URL(string: base.absoluteString + "/preview" + encoded)
+    else { return }
     NSWorkspace.shared.open(url)
   }
 }

@@ -5,7 +5,8 @@ import os
 /// from request handlers; written from the main actor when the user
 /// changes the selection or when discovery completes.
 final class CurrentRenderer: @unchecked Sendable {
-  private let lock = OSAllocatedUnfairLock<(any MarkdownRenderer)?>(initialState: nil)
+  private let lock = OSAllocatedUnfairLock<(any MarkdownRenderer)?>(
+    initialState: nil)
 
   func get() -> (any MarkdownRenderer)? {
     lock.withLock { $0 }

@@ -48,7 +48,8 @@ final class AppModel {
   init() {
     let storedPort = UserDefaults.standard.object(forKey: Keys.port) as? Int
     self.port = storedPort.flatMap { UInt16(exactly: $0) } ?? Self.defaultPort
-    self.selectedRendererID = UserDefaults.standard.string(forKey: Keys.rendererID)
+    self.selectedRendererID = UserDefaults.standard.string(
+      forKey: Keys.rendererID)
     self.launchAtLogin = LoginItem.isEnabled
 
     let store = TemplateStore()
@@ -72,7 +73,9 @@ final class AppModel {
   /// `nil` only when no renderer at all is available.
   var activeEntry: RendererEntry? {
     if let id = selectedRendererID,
-       let entry = rendererEntries.first(where: { $0.id == id && $0.isAvailable }) {
+       let entry = rendererEntries.first(
+        where: { $0.id == id && $0.isAvailable })
+    {
       return entry
     }
     return rendererEntries.first { $0.isAvailable }

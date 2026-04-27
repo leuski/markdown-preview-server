@@ -20,7 +20,8 @@ final class PreviewServerController {
   @ObservationIgnored let watcher = DocumentWatcher()
 
   @ObservationIgnored private let templateStore: TemplateStore
-  @ObservationIgnored private let rendererProvider: @Sendable () -> (any MarkdownRenderer)?
+  @ObservationIgnored private let rendererProvider: @Sendable ()
+  -> (any MarkdownRenderer)?
 
   init(
     templateStore: TemplateStore,
@@ -41,7 +42,9 @@ final class PreviewServerController {
     do {
       address = try sockaddr_in.inet(ip4: AppModel.defaultHost, port: port)
     } catch {
-      state = .failed(message: "Cannot create loopback address: \(error.localizedDescription)")
+      state = .failed(message: """
+        Cannot create loopback address: \(error.localizedDescription)
+        """)
       return
     }
     let server = HTTPServer(address: address)

@@ -11,7 +11,10 @@ enum ScriptInstaller {
       case .sourceMissing:
         "The bundled Scripts folder is missing from the application."
       case .copyFailed(let url, let error):
-        "Failed to install \(url.lastPathComponent): \(error.localizedDescription)"
+        """
+        Failed to install \(url.lastPathComponent): \
+        \(error.localizedDescription)
+        """
       }
     }
   }
