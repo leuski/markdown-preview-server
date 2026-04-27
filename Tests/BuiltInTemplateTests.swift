@@ -2,10 +2,11 @@ import Foundation
 import Testing
 
 @testable import Markdown_Preview_Server
+internal import ALFoundation
 
 @Suite("BuiltInTemplate")
 struct BuiltInTemplateTests {
-  private let origin = URL(string: "http://127.0.0.1:8089")!
+  private let origin: URL = "http://127.0.0.1:8089"
 
   @Test("rewriteAssets returns html unchanged")
   func rewriteIsNoOp() {

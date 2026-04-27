@@ -2,10 +2,11 @@ import Foundation
 import Testing
 
 @testable import Markdown_Preview_Server
+internal import ALFoundation
 
 @Suite("URL path helpers")
 struct URLPathHelpersTests {
-  private let base = URL(string: "http://127.0.0.1:8089")!
+  private let base: URL = "http://127.0.0.1:8089"
 
   @Test("appendingPreviewPath without arg yields /preview")
   func previewBase() {

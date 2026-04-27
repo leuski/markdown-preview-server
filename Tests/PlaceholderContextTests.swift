@@ -2,10 +2,11 @@ import Foundation
 import Testing
 
 @testable import Markdown_Preview_Server
+internal import ALFoundation
 
 @Suite("PlaceholderContext.substitute")
 struct PlaceholderContextTests {
-  private let origin = URL(string: "http://127.0.0.1:8089")!
+  private let origin: URL = "http://127.0.0.1:8089"
 
   @Test("#BASE# resolves to /preview/<docDir>/ with encoded spaces")
   func baseHref() {
