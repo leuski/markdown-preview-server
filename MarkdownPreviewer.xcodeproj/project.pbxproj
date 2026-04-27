@@ -511,7 +511,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownPreviewer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownPreviewer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Markdown Preview Server.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Markdown Preview Server";
 			};
 			name = Debug;
 		};
@@ -532,7 +532,7 @@
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MarkdownPreviewer.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/MarkdownPreviewer";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Markdown Preview Server.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Markdown Preview Server";
 			};
 			name = Release;
 		};
