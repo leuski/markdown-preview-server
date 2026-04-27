@@ -18,12 +18,8 @@ final class TemplateStore {
     self.selectedID = UserDefaults.standard.string(forKey: Self.selectionKey)
     ?? Template.builtIn.id
 
-    do {
-      try FileManager.default.createDirectory(
-        at: directoryURL, withIntermediateDirectories: true)
-    } catch {
-      // Non-fatal: built-in template still works.
-    }
+    // Non-fatal: built-in template still works if this fails.
+    try? directoryURL.createDirectory()
 
     reload()
     startWatching()
@@ -59,16 +55,13 @@ final class TemplateStore {
   }
 
   private func makeTemplate(at url: URL) -> Template? {
-    let manager = FileManager.default
     let resolved = url.resolvingSymlinksInPath()
-    var isDir: ObjCBool = false
-    guard manager.fileExists(atPath: resolved.path, isDirectory: &isDir) else { return nil }
 
-    if isDir.boolValue {
+    if resolved.directoryExists {
       // Folder template: must contain Template.html (or template.html).
       for candidate in ["Template.html", "template.html"] {
         let html = resolved / candidate
-        if manager.fileExists(atPath: html.path) {
+        if html.itemExists {
           let name = url.lastPathComponent
           return Template(
             id: name,
@@ -80,15 +73,17 @@ final class TemplateStore {
       return nil
     }
 
+    guard resolved.itemExists else { return nil }
+
     // File template: a top-level .html or .htm file (BBEdit convention).
     let ext = resolved.pathExtension.lowercased()
     guard ext == "html" || ext == "htm" else { return nil }
 
-    let baseName = url.deletingPathExtension().lastPathComponent
+    let baseName = url.fileName
     return Template(
       id: baseName,
       name: baseName,
-      directoryURL: resolved.deletingLastPathComponent(),
+      directoryURL: resolved.parent,
       htmlURL: resolved)
   }
 

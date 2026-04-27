@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
+import ALFoundation
 
 struct MenuBarContent: View {
   let model: AppModel
@@ -124,9 +125,8 @@ struct MenuBarContent: View {
 
   private func nearestExistingDirectory(for url: URL) -> URL {
     var current = url
-    let manager = FileManager.default
-    while !manager.fileExists(atPath: current.path) {
-      let parent = current.deletingLastPathComponent()
+    while !current.itemExists {
+      let parent = current.parent
       if parent == current { break }
       current = parent
     }

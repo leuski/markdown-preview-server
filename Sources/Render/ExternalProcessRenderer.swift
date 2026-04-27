@@ -39,7 +39,7 @@ struct ExternalProcessRenderer: MarkdownRenderer {
     let result = try await Process.runAndCapture(
       executableURL,
       with: arguments as [ProcessArgument],
-      at: baseURL.deletingLastPathComponent(),
+      at: baseURL.parent,
       streams: streams)
 
     if result.terminationStatus != 0 {

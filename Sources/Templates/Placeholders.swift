@@ -1,4 +1,5 @@
 import Foundation
+import ALFoundation
 
 struct PlaceholderContext: Sendable {
   let documentContent: String
@@ -20,14 +21,14 @@ struct PlaceholderContext: Sendable {
   }()
 
   func substitute(into template: String, now: Date = Date()) -> String {
-    let docDirPath = documentURL.deletingLastPathComponent().path
+    let docDirPath = documentURL.parent.path
     let encodedDir = docDirPath
       .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? docDirPath
     let trailing = encodedDir.hasSuffix("/") ? "" : "/"
     let baseHref = "\(origin)/preview\(encodedDir)\(trailing)"
 
     let fileName = documentURL.lastPathComponent
-    let baseName = documentURL.deletingPathExtension().lastPathComponent
+    let baseName = documentURL.fileName
     let ext = documentURL.pathExtension
 
     let replacements: KeyValuePairs<String, String> = [

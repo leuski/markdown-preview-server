@@ -1,4 +1,5 @@
 import Foundation
+import ALFoundation
 
 enum ScriptInstaller {
   enum InstallError: LocalizedError {
@@ -16,70 +17,51 @@ enum ScriptInstaller {
   }
 
   static var bundledSourceURL: URL? {
-    Bundle.main.resourceURL?.appending(path: "Scripts")
+    Bundle.main.url(forResource: "Scripts", withExtension: nil)
   }
 
   static var defaultBBEditDestination: URL {
-    URL.homeDirectory
-      .appending(path: "Library/Application Support/BBEdit/Scripts")
+    URL.applicationSupportDirectory/"BBEdit"/"Scripts"
   }
 
   /// Copies the bundled Scripts folder into `destination`, customizing the
   /// hardcoded loopback port in shell scripts to match the running server.
   /// Files at the destination with the same relative path are overwritten.
   static func install(to destination: URL, port: UInt16) throws {
-    guard let source = bundledSourceURL,
-          FileManager.default.fileExists(atPath: source.path)
-    else { throw InstallError.sourceMissing }
+    guard let source = bundledSourceURL, source.itemExists else {
+      throw InstallError.sourceMissing
+    }
 
-    let manager = FileManager.default
-    try manager.createDirectory(at: destination, withIntermediateDirectories: true)
+    try destination.createDirectory()
 
-    guard let enumerator = manager.enumerator(
-      at: source,
+    let walker = source.enumerator(
       includingPropertiesForKeys: [.isDirectoryKey],
-      options: [.skipsHiddenFiles])
-    else { return }
+      options: [.skipsHiddenFiles, .producesRelativePathURLs])
 
-    for case let url as URL in enumerator {
-      let relative = url.path.replacingOccurrences(
-        of: source.path + "/", with: "")
-      let target = destination.appending(path: relative)
-
-      let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?
-        .isDirectory ?? false
+    for url in walker {
+      let target = destination.appending(path: url.relativePath)
 
       do {
-        if isDirectory {
-          try manager.createDirectory(at: target, withIntermediateDirectories: true)
-        } else {
-          try installFile(from: url, to: target, port: port)
-        }
+        try installFile(from: url, to: target, port: port)
       } catch {
         throw InstallError.copyFailed(url, error)
       }
     }
   }
 
-  private static func installFile(from source: URL, to target: URL, port: UInt16) throws {
-    let manager = FileManager.default
-    try manager.createDirectory(
-      at: target.deletingLastPathComponent(),
-      withIntermediateDirectories: true)
+  private static func installFile(
+    from source: URL, to target: URL, port: UInt16
+  ) throws {
+    try target.parent.createDirectory()
 
     if isShellScript(source) {
       let original = try String(contentsOf: source, encoding: .utf8)
       let customized = customize(script: original, port: port)
-      if manager.fileExists(atPath: target.path) {
-        try manager.removeItem(at: target)
-      }
+      try? target.remove()
       try customized.write(to: target, atomically: true, encoding: .utf8)
-      try manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: target.path)
+      try target.setPosixPermissions(0o755)
     } else {
-      if manager.fileExists(atPath: target.path) {
-        try manager.removeItem(at: target)
-      }
-      try manager.copyItem(at: source, to: target)
+      try source.copy(to: target, overwrite: true)
     }
   }
 
