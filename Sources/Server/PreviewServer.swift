@@ -39,7 +39,7 @@ final class PreviewServerController {
 
     let address: sockaddr_in
     do {
-      address = try sockaddr_in.inet(ip4: "127.0.0.1", port: port)
+      address = try sockaddr_in.inet(ip4: AppModel.defaultHost, port: port)
     } catch {
       state = .failed(message: "Cannot create loopback address: \(error.localizedDescription)")
       return
@@ -80,6 +80,6 @@ final class PreviewServerController {
 
   var serverURL: URL? {
     guard case .running(let port) = state else { return nil }
-    return URL(string: "http://127.0.0.1:\(port)")
+    return URL(string: "http://\(AppModel.defaultHost):\(port)")
   }
 }

@@ -1,0 +1,97 @@
+import Foundation
+
+enum ScriptInstaller {
+  enum InstallError: LocalizedError {
+    case sourceMissing
+    case copyFailed(URL, any Error)
+
+    var errorDescription: String? {
+      switch self {
+      case .sourceMissing:
+        "The bundled Scripts folder is missing from the application."
+      case .copyFailed(let url, let error):
+        "Failed to install \(url.lastPathComponent): \(error.localizedDescription)"
+      }
+    }
+  }
+
+  static var bundledSourceURL: URL? {
+    Bundle.main.resourceURL?.appending(path: "Scripts")
+  }
+
+  static var defaultBBEditDestination: URL {
+    URL.homeDirectory
+      .appending(path: "Library/Application Support/BBEdit/Scripts")
+  }
+
+  /// Copies the bundled Scripts folder into `destination`, customizing the
+  /// hardcoded loopback port in shell scripts to match the running server.
+  /// Files at the destination with the same relative path are overwritten.
+  static func install(to destination: URL, port: UInt16) throws {
+    guard let source = bundledSourceURL,
+          FileManager.default.fileExists(atPath: source.path)
+    else { throw InstallError.sourceMissing }
+
+    let manager = FileManager.default
+    try manager.createDirectory(at: destination, withIntermediateDirectories: true)
+
+    guard let enumerator = manager.enumerator(
+      at: source,
+      includingPropertiesForKeys: [.isDirectoryKey],
+      options: [.skipsHiddenFiles])
+    else { return }
+
+    for case let url as URL in enumerator {
+      let relative = url.path.replacingOccurrences(
+        of: source.path + "/", with: "")
+      let target = destination.appending(path: relative)
+
+      let isDirectory = (try? url.resourceValues(forKeys: [.isDirectoryKey]))?
+        .isDirectory ?? false
+
+      do {
+        if isDirectory {
+          try manager.createDirectory(at: target, withIntermediateDirectories: true)
+        } else {
+          try installFile(from: url, to: target, port: port)
+        }
+      } catch {
+        throw InstallError.copyFailed(url, error)
+      }
+    }
+  }
+
+  private static func installFile(from source: URL, to target: URL, port: UInt16) throws {
+    let manager = FileManager.default
+    try manager.createDirectory(
+      at: target.deletingLastPathComponent(),
+      withIntermediateDirectories: true)
+
+    if isShellScript(source) {
+      let original = try String(contentsOf: source, encoding: .utf8)
+      let customized = customize(script: original, port: port)
+      if manager.fileExists(atPath: target.path) {
+        try manager.removeItem(at: target)
+      }
+      try customized.write(to: target, atomically: true, encoding: .utf8)
+      try manager.setAttributes([.posixPermissions: 0o755], ofItemAtPath: target.path)
+    } else {
+      if manager.fileExists(atPath: target.path) {
+        try manager.removeItem(at: target)
+      }
+      try manager.copyItem(at: source, to: target)
+    }
+  }
+
+  private static func isShellScript(_ url: URL) -> Bool {
+    ["sh", "bash", "zsh", "command"].contains(url.pathExtension.lowercased())
+  }
+
+  /// Replaces the loopback host:port literal embedded in bundled scripts so
+  /// the installed copy targets the user's currently configured port.
+  static func customize(script: String, port: UInt16) -> String {
+    script.replacingOccurrences(
+      of: "__LOCATION__",
+      with: "http://\(AppModel.defaultHost):\(port)/preview")
+  }
+}

@@ -16,7 +16,10 @@ struct SettingsView: View {
         TextField("Port", text: $portString)
           .onSubmit { commitPort() }
           .frame(maxWidth: 120)
-        Text("Default: 8089. The server binds to 127.0.0.1 only.")
+        Text("""
+          Default: \(AppModel.defaultPort). \
+          The server binds to \(AppModel.defaultHost) only.
+          """)
           .font(.caption)
           .foregroundStyle(.secondary)
         Toggle("Launch at login", isOn: $model.launchAtLogin)
@@ -61,7 +64,9 @@ struct SettingsView: View {
     Button("Rescan") {
       Task { await model.rediscoverRenderers() }
     }
-    .help("Re-run shell-based discovery — useful after installing a new processor.")
+    .help("""
+      Re-run shell-based discovery — useful after installing a new processor.
+      """)
   }
 
   private var activeID: String? {

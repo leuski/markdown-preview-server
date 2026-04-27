@@ -42,7 +42,8 @@ final class AppModel {
     static let rendererID = "MarkdownPreviewer.rendererID"
   }
 
-  static let defaultPort: UInt16 = 8089
+  nonisolated static let defaultPort: UInt16 = 8089
+  nonisolated static let defaultHost: String = "127.0.0.1"
 
   init() {
     let storedPort = UserDefaults.standard.object(forKey: Keys.port) as? Int
