@@ -53,8 +53,8 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var statusItem: some View {
     switch server.state {
-    case .running(let port):
-      Text("Listening on \(AppModel.defaultHost):\(String(port))")
+    case .running(let url):
+      Text("Listening on \(url.hostAndPort)")
     case .stopped:
       Text("Server stopped")
     case .failed(let message):
@@ -118,7 +118,7 @@ struct MenuBarContent: View {
 
     do {
       try ScriptInstaller.install(to: destination, context: [
-        "__LOCATION__": model.hostURL().appendingPreviewPath().absoluteString
+        "__LOCATION__": model.hostURL.appendingPreviewPath().absoluteString
       ])
       NSWorkspace.shared.activateFileViewerSelecting([destination])
     } catch {

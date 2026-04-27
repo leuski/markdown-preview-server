@@ -11,6 +11,12 @@ extension String {
 }
 
 extension URL {
+  var hostAndPort: String {
+    host.map { host in
+      host + (port.map { port in ":\(port)" } ?? "")
+    } ?? ""
+  }
+
   var safe: URL {
     standardizedFileURL.resolvingSymlinksInPath()
   }

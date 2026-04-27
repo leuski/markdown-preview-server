@@ -8,7 +8,7 @@ import FlyingSocks
 final class PreviewServerController {
   enum State: Equatable {
     case stopped
-    case running(port: UInt16)
+    case running(url: URL)
     case failed(message: String)
   }
 
@@ -31,16 +31,37 @@ final class PreviewServerController {
     self.rendererProvider = rendererProvider
   }
 
-  func start(port: UInt16) {
+  func start(url: URL) {
     stop()
 
     let store = templateStore
     let provider = rendererProvider
     let watcher = self.watcher
 
+    guard let components = URLComponents(
+      url: url, resolvingAgainstBaseURL: false)
+    else {
+      state = .failed(message: "Cannot resolve url: \(url)")
+      return
+    }
+
+    let host = components.host ?? AppModel.defaultHost
+    let port = components.port.map { port in UInt16(port) }
+    ?? AppModel.defaultPort
+
+    var fullComponents = URLComponents()
+    fullComponents.scheme = "http"
+    fullComponents.host = host
+    fullComponents.port = Int(port)
+
+    guard let fullURL = components.url else {
+      state = .failed(message: "Cannot resolve url: \(components)")
+      return
+    }
+
     let address: sockaddr_in
     do {
-      address = try sockaddr_in.inet(ip4: AppModel.defaultHost, port: port)
+      address = try sockaddr_in.inet(ip4: host, port: port)
     } catch {
       state = .failed(message: """
         Cannot create loopback address: \(error.localizedDescription)
@@ -58,7 +79,7 @@ final class PreviewServerController {
         watcher: watcher)
 
       do {
-        self?.publish(state: .running(port: port))
+        self?.publish(state: .running(url: fullURL))
         try await server.run()
         self?.publish(state: .stopped)
       } catch {
@@ -82,7 +103,7 @@ final class PreviewServerController {
   }
 
   var serverURL: URL? {
-    guard case .running(let port) = state else { return nil }
-    return AppModel.hostURL(port: port)
+    guard case .running(let url) = state else { return nil }
+    return url
   }
 }

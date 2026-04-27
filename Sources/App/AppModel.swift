@@ -71,7 +71,7 @@ final class AppModel {
       templateStore: store,
       rendererProvider: provider)
 
-    self.server.start(port: self.port)
+    startServer()
 
     Task { @MainActor in
       await self.discoverRenderers()
@@ -89,8 +89,8 @@ final class AppModel {
     return url
   }
 
-  func hostURL(port: UInt16? = nil) -> URL {
-    Self.hostURL(port: port ?? self.port)
+  var hostURL: URL {
+    Self.hostURL(port: self.port)
   }
 
   /// The entry actually used for rendering: the user's preferred entry if
@@ -139,9 +139,13 @@ final class AppModel {
     currentRenderer.set(activeEntry?.renderer)
   }
 
+  private func startServer() {
+    server.start(url: hostURL)
+  }
+
   private func restartServerIfRunning() {
     if case .running = server.state {
-      server.start(port: port)
+      startServer()
     }
   }
 }
