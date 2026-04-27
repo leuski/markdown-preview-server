@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		6243E9692F9FB811007814D6 /* ALCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD52F9DDC9B00BD51F9 /* ALCombine */; };
 		626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */; };
 		626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */; };
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
@@ -21,19 +22,11 @@
 			remoteGlobalIDString = 626E8D4E2F9DD1C700BD51F9;
 			remoteInfo = MarkdownPreviewer;
 		};
-		626E8D672F9DD1C800BD51F9 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 626E8D472F9DD1C700BD51F9 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 626E8D4E2F9DD1C700BD51F9;
-			remoteInfo = MarkdownPreviewer;
-		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
 		626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Markdown Preview Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		626E8D662F9DD1C800BD51F9 /* UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,11 +45,6 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		626EAA372F9FB5AA00BD51F9 /* UITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = UITests;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +52,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6243E9692F9FB811007814D6 /* ALCombine in Frameworks */,
 				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
 				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
 				626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */,
@@ -72,13 +61,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		626E8D592F9DD1C800BD51F9 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		626E8D632F9DD1C800BD51F9 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -94,7 +76,6 @@
 				626EAA182F9FB59000BD51F9 /* Sources */,
 				626EA9FA2F9FB59000BD51F9 /* Resources */,
 				626EAA332F9FB5A000BD51F9 /* Tests */,
-				626EAA372F9FB5AA00BD51F9 /* UITests */,
 				626E8DD42F9DDC9B00BD51F9 /* Frameworks */,
 				626E8D502F9DD1C700BD51F9 /* Products */,
 			);
@@ -105,7 +86,6 @@
 			children = (
 				626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */,
 				626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */,
-				626E8D662F9DD1C800BD51F9 /* UITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -176,29 +156,6 @@
 			productReference = 626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		626E8D652F9DD1C800BD51F9 /* UITests */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = 626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "UITests" */;
-			buildPhases = (
-				626E8D622F9DD1C800BD51F9 /* Sources */,
-				626E8D632F9DD1C800BD51F9 /* Frameworks */,
-				626E8D642F9DD1C800BD51F9 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-				626E8D682F9DD1C800BD51F9 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				626EAA372F9FB5AA00BD51F9 /* UITests */,
-			);
-			name = UITests;
-			packageProductDependencies = (
-			);
-			productName = MarkdownPreviewerUITests;
-			productReference = 626E8D662F9DD1C800BD51F9 /* UITests.xctest */;
-			productType = "com.apple.product-type.bundle.ui-testing";
-		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -213,10 +170,6 @@
 						CreatedOnToolsVersion = 26.4.1;
 					};
 					626E8D5B2F9DD1C800BD51F9 = {
-						CreatedOnToolsVersion = 26.4.1;
-						TestTargetID = 626E8D4E2F9DD1C700BD51F9;
-					};
-					626E8D652F9DD1C800BD51F9 = {
 						CreatedOnToolsVersion = 26.4.1;
 						TestTargetID = 626E8D4E2F9DD1C700BD51F9;
 					};
@@ -243,7 +196,6 @@
 			targets = (
 				626E8D4E2F9DD1C700BD51F9 /* App */,
 				626E8D5B2F9DD1C800BD51F9 /* Tests */,
-				626E8D652F9DD1C800BD51F9 /* UITests */,
 			);
 		};
 /* End PBXProject section */
@@ -257,13 +209,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		626E8D5A2F9DD1C800BD51F9 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		626E8D642F9DD1C800BD51F9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -328,13 +273,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		626E8D622F9DD1C800BD51F9 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -342,11 +280,6 @@
 			isa = PBXTargetDependency;
 			target = 626E8D4E2F9DD1C700BD51F9 /* App */;
 			targetProxy = 626E8D5D2F9DD1C800BD51F9 /* PBXContainerItemProxy */;
-		};
-		626E8D682F9DD1C800BD51F9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 626E8D4E2F9DD1C700BD51F9 /* App */;
-			targetProxy = 626E8D672F9DD1C800BD51F9 /* PBXContainerItemProxy */;
 		};
 		626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -591,44 +524,6 @@
 			};
 			name = Release;
 		};
-		626E8D772F9DD1C800BD51F9 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FS73MHCS98;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewerUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = MarkdownPreviewer;
-			};
-			name = Debug;
-		};
-		626E8D782F9DD1C800BD51F9 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = FS73MHCS98;
-				GENERATE_INFOPLIST_FILE = YES;
-				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewerUITests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				STRING_CATALOG_GENERATE_SYMBOLS = NO;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = NO;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TEST_TARGET_NAME = MarkdownPreviewer;
-			};
-			name = Release;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -655,15 +550,6 @@
 			buildConfigurations = (
 				626E8D742F9DD1C800BD51F9 /* Debug */,
 				626E8D752F9DD1C800BD51F9 /* Release */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "UITests" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				626E8D772F9DD1C800BD51F9 /* Debug */,
-				626E8D782F9DD1C800BD51F9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
