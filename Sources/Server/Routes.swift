@@ -272,8 +272,7 @@ enum Routes {
   private static func injectReloadScript(
     into html: String, documentURL: URL) -> String
   {
-    let encodedPath = documentURL.path
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? ""
+    let encodedPath = documentURL.path.percentEncodedForPath()
     let script = """
         <script>
         (function() {

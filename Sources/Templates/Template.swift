@@ -27,12 +27,7 @@ enum TemplateLoader {
     return try String(contentsOf: template.htmlURL, encoding: .utf8)
   }
 
-  static let builtInHTML: String = {
-    guard let url = Bundle.main.url(
-      forResource: "DefaultTemplate", withExtension: "html"),
-      let html = try? String(contentsOf: url, encoding: .utf8) else {
-      fatalError("DefaultTemplate.html missing from app bundle")
-    }
-    return html
-  }()
+  static let builtInHTML: String =
+    Bundle.main.requiredString(
+      forResource: "DefaultTemplate", withExtension: "html")
 }

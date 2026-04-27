@@ -17,9 +17,7 @@ enum TemplateAssetRewriter {
   static func rewrite(
     html: String, templateID: String, origin: String) -> String
   {
-    let encodedID = templateID
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
-    ?? templateID
+    let encodedID = templateID.percentEncodedForPath()
     let templatePrefix = "\(origin)/template/\(encodedID)/"
     let absolutePrefix = "\(origin)/preview"
     var result = rewriteAttributeURLs(
@@ -83,14 +81,10 @@ enum TemplateAssetRewriter {
     if value.hasPrefix("/") {
       // BBEdit convention: literal absolute filesystem paths. Route through
       // /preview.
-      let encoded = value
-        .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? value
-      return absolutePrefix + encoded
+      return absolutePrefix + value.percentEncodedForPath()
     }
 
     // Template-relative path. Encode the value to handle spaces, etc.
-    let encoded = value
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed) ?? value
-    return templatePrefix + encoded
+    return templatePrefix + value.percentEncodedForPath()
   }
 }

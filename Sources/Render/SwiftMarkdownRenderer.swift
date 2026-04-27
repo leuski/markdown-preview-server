@@ -57,10 +57,10 @@ private struct HTMLVisitor: MarkupVisitor {
 
   mutating func visitCodeBlock(_ codeBlock: CodeBlock) {
     let langClass = codeBlock.language.flatMap {
-      $0.isEmpty ? nil : " class=\"language-\(escapeAttribute($0))\""
+      $0.isEmpty ? nil : " class=\"language-\($0.htmlAttributeEscaped)\""
     } ?? ""
     html += "<pre><code\(langClass)>"
-    html += escapeText(codeBlock.code)
+    html += codeBlock.code.htmlEscaped
     html += "</code></pre>\n"
   }
 
@@ -125,7 +125,7 @@ private struct HTMLVisitor: MarkupVisitor {
   // MARK: - Inline elements
 
   mutating func visitText(_ text: Text) {
-    html += escapeText(text.string)
+    html += text.string.htmlEscaped
   }
 
   mutating func visitEmphasis(_ emphasis: Emphasis) {
@@ -147,7 +147,7 @@ private struct HTMLVisitor: MarkupVisitor {
   }
 
   mutating func visitInlineCode(_ inlineCode: InlineCode) {
-    html += "<code>\(escapeText(inlineCode.code))</code>"
+    html += "<code>\(inlineCode.code.htmlEscaped)</code>"
   }
 
   mutating func visitInlineHTML(_ inlineHTML: InlineHTML) {
@@ -156,19 +156,18 @@ private struct HTMLVisitor: MarkupVisitor {
 
   mutating func visitLink(_ link: Link) {
     let href = link.destination ?? ""
-    let title = link.title.map { " title=\"\(escapeAttribute($0))\"" } ?? ""
-    html += "<a href=\"\(escapeAttribute(href))\"\(title)>"
+    let title = link.title.map { " title=\"\($0.htmlAttributeEscaped)\"" } ?? ""
+    html += "<a href=\"\(href.htmlAttributeEscaped)\"\(title)>"
     visitChildren(of: link)
     html += "</a>"
   }
 
   mutating func visitImage(_ image: Image) {
-    let src = image.source ?? ""
-    let alt = image.plainText
-    let title = image.title.map { " title=\"\(escapeAttribute($0))\"" } ?? ""
-    html += """
-      <img src="\(escapeAttribute(src))" alt="\(escapeAttribute(alt))"\(title)>
-      """
+    let src = (image.source ?? "").htmlAttributeEscaped
+    let alt = image.plainText.htmlAttributeEscaped
+    let title = image.title
+      .map { " title=\"\($0.htmlAttributeEscaped)\"" } ?? ""
+    html += "<img src=\"\(src)\" alt=\"\(alt)\"\(title)>"
   }
 
   mutating func visitLineBreak(_ lineBreak: LineBreak) {
@@ -190,35 +189,5 @@ private struct HTMLVisitor: MarkupVisitor {
     case .right: return " style=\"text-align: right\""
     case nil: return ""
     }
-  }
-
-  private func escapeText(_ value: String) -> String {
-    var out = ""
-    out.reserveCapacity(value.count)
-    for char in value {
-      switch char {
-      case "&": out += "&amp;"
-      case "<": out += "&lt;"
-      case ">": out += "&gt;"
-      default: out.append(char)
-      }
-    }
-    return out
-  }
-
-  private func escapeAttribute(_ value: String) -> String {
-    var out = ""
-    out.reserveCapacity(value.count)
-    for char in value {
-      switch char {
-      case "&": out += "&amp;"
-      case "<": out += "&lt;"
-      case ">": out += "&gt;"
-      case "\"": out += "&quot;"
-      case "'": out += "&#39;"
-      default: out.append(char)
-      }
-    }
-    return out
   }
 }

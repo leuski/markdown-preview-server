@@ -22,9 +22,7 @@ struct PlaceholderContext: Sendable {
 
   func substitute(into template: String, now: Date = Date()) -> String {
     let docDirPath = documentURL.parent.path
-    let encodedDir = docDirPath
-      .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
-    ?? docDirPath
+    let encodedDir = docDirPath.percentEncodedForPath()
     let trailing = encodedDir.hasSuffix("/") ? "" : "/"
     let baseHref = "\(origin)/preview\(encodedDir)\(trailing)"
 
@@ -34,13 +32,13 @@ struct PlaceholderContext: Sendable {
 
     let replacements: KeyValuePairs<String, String> = [
       "#DOCUMENT_CONTENT#": documentContent,
-      "#TITLE#": htmlEscape(baseName),
-      "#BASE#": htmlEscape(baseHref),
-      "#FILE#": htmlEscape(fileName),
-      "#BASENAME#": htmlEscape(baseName),
-      "#FILE_EXTENSION#": htmlEscape(ext),
-      "#DATE#": htmlEscape(Self.dateFormatter.string(from: now)),
-      "#TIME#": htmlEscape(Self.timeFormatter.string(from: now))
+      "#TITLE#": baseName.htmlAttributeEscaped,
+      "#BASE#": baseHref.htmlAttributeEscaped,
+      "#FILE#": fileName.htmlAttributeEscaped,
+      "#BASENAME#": baseName.htmlAttributeEscaped,
+      "#FILE_EXTENSION#": ext.htmlAttributeEscaped,
+      "#DATE#": Self.dateFormatter.string(from: now).htmlAttributeEscaped,
+      "#TIME#": Self.timeFormatter.string(from: now).htmlAttributeEscaped
     ]
 
     var output = template
@@ -48,12 +46,5 @@ struct PlaceholderContext: Sendable {
       output = output.replacingOccurrences(of: token, with: value)
     }
     return output
-  }
-
-  private func htmlEscape(_ value: String) -> String {
-    value.replacingOccurrences(of: "&", with: "&amp;")
-      .replacingOccurrences(of: "<", with: "&lt;")
-      .replacingOccurrences(of: ">", with: "&gt;")
-      .replacingOccurrences(of: "\"", with: "&quot;")
   }
 }
