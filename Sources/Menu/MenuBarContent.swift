@@ -65,7 +65,7 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var templatesMenu: some View {
     Menu("Template") {
-      ForEach(templateStore.templates) { template in
+      ForEach(templateStore.templates, id: \.id) { template in
         Button {
           templateStore.select(template)
         } label: {

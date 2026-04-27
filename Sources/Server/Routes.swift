@@ -112,7 +112,7 @@ enum Routes {
     let template = await templateStore.selected
     let templateHTML: String
     do {
-      templateHTML = try TemplateLoader.loadHTML(from: template)
+      templateHTML = try template.loadHTML()
     } catch {
       return HTTPResponses.errorPage(
         title: "Template error",
@@ -124,10 +124,8 @@ enum Routes {
     }
 
     let origin = request.headers[.host].map { "http://\($0)" } ?? ""
-    let processedTemplate = template.isBuiltIn
-    ? templateHTML
-    : TemplateAssetRewriter.rewrite(
-      html: templateHTML, templateID: template.id, origin: origin)
+    let processedTemplate = template.rewriteAssets(
+      in: templateHTML, origin: origin)
     let context = PlaceholderContext(
       documentContent: renderedBody,
       documentURL: documentURL,
@@ -184,15 +182,12 @@ enum Routes {
     let templateID = rawID.removingPercentEncoding ?? rawID
     let file = rawFile.removingPercentEncoding ?? rawFile
 
-    guard let template = await templateStore.template(id: templateID),
-          !template.isBuiltIn
-    else {
+    guard let template = await templateStore.template(id: templateID) else {
       return HTTPResponses.notFound("Template not found: \(templateID)")
     }
-
-    guard let assetURL = resolveAsset(in: template.directoryURL, file: file)
-    else {
-      return HTTPResponses.forbidden("Asset path escapes template directory")
+    guard let assetURL = template.resolveAsset(file: file) else {
+      return HTTPResponses.notFound(
+        "No such asset in template '\(template.name)': \(file)")
     }
     return serveFile(at: assetURL)
   }
@@ -255,20 +250,6 @@ enum Routes {
     return url
   }
 
-  private static func resolveAsset(in directory: URL, file: String) -> URL? {
-    let normalizedDir = directory.standardizedFileURL.resolvingSymlinksInPath()
-    let candidate = normalizedDir
-      .appendingPathComponent(file)
-      .standardizedFileURL
-      .resolvingSymlinksInPath()
-
-    let dirPath = normalizedDir.path.hasSuffix("/")
-    ? normalizedDir.path
-    : normalizedDir.path + "/"
-    guard candidate.path.hasPrefix(dirPath) else { return nil }
-    return candidate
-  }
-
   private static func injectReloadScript(
     into html: String, documentURL: URL) -> String
   {
@@ -298,11 +279,11 @@ private struct TemplateStoreRef: Sendable {
     self.store = store
   }
 
-  var selected: Template {
+  var selected: any Template {
     get async { await MainActor.run { store.selected } }
   }
 
-  func template(id: String) async -> Template? {
+  func template(id: String) async -> (any Template)? {
     await MainActor.run { store.templates.first { $0.id == id } }
   }
 }

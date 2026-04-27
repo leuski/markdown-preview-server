@@ -5,7 +5,7 @@ import ALFoundation
 @Observable
 @MainActor
 final class TemplateStore {
-  private(set) var templates: [Template] = []
+  private(set) var templates: [any Template] = []
   var selectedID: String
 
   @ObservationIgnored let directoryURL: URL
@@ -16,7 +16,7 @@ final class TemplateStore {
   init() {
     self.directoryURL = URL.ourApplicationSupportDirectory / "Templates"
     self.selectedID = UserDefaults.standard.string(forKey: Self.selectionKey)
-    ?? Template.builtIn.id
+    ?? BuiltInTemplate.id
 
     // Non-fatal: built-in template still works if this fails.
     try? directoryURL.createDirectory()
@@ -25,11 +25,11 @@ final class TemplateStore {
     startWatching()
   }
 
-  var selected: Template {
-    templates.first { $0.id == selectedID } ?? Template.builtIn
+  var selected: any Template {
+    templates.first { $0.id == selectedID } ?? BuiltInTemplate.shared
   }
 
-  func select(_ template: Template) {
+  func select(_ template: any Template) {
     selectedID = template.id
     UserDefaults.standard.set(template.id, forKey: Self.selectionKey)
   }
@@ -42,20 +42,20 @@ final class TemplateStore {
       includingPropertiesForKeys: [.isDirectoryKey],
       options: [.skipsHiddenFiles])) ?? []
 
-    let discovered: [Template] = contents.compactMap(makeTemplate(at:))
+    let discovered: [any Template] = contents.compactMap(makeTemplate(at:))
       .sorted { $0.name.localizedCaseInsensitiveCompare($1.name)
         == .orderedAscending }
 
-    let combined = [Template.builtIn] + discovered
+    let combined: [any Template] = [BuiltInTemplate.shared] + discovered
     if combined.map(\.id) != templates.map(\.id) {
       templates = combined
     }
     if !combined.contains(where: { $0.id == selectedID }) {
-      selectedID = Template.builtIn.id
+      selectedID = BuiltInTemplate.id
     }
   }
 
-  private func makeTemplate(at url: URL) -> Template? {
+  private func makeTemplate(at url: URL) -> UserTemplate? {
     let resolved = url.resolvingSymlinksInPath()
 
     if resolved.directoryExists {
@@ -64,7 +64,7 @@ final class TemplateStore {
         let html = resolved / candidate
         if html.itemExists {
           let name = url.lastPathComponent
-          return Template(
+          return UserTemplate(
             id: name,
             name: name,
             directoryURL: resolved,
@@ -81,7 +81,7 @@ final class TemplateStore {
     guard ext == "html" || ext == "htm" else { return nil }
 
     let baseName = url.fileName
-    return Template(
+    return UserTemplate(
       id: baseName,
       name: baseName,
       directoryURL: resolved.parent,
