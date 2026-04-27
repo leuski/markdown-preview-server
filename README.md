@@ -5,9 +5,9 @@ files from your editor. Point it at a `.md` file and it renders the document
 through your chosen processor, wraps it in a styleable HTML template, and
 auto-reloads the page whenever the file changes on disk.
 
-It is designed to pair with **BBEdit**'s "Preview in Browser" hook, but the
-preview URL is a plain HTTP endpoint, so any editor that can open a URL on save
-works.
+It ships with helper scripts for **BBEdit** that open the preview from the
+Scripts menu, but the preview URL is a plain HTTP endpoint, so any editor that
+can open a URL works.
 
 ## How it works
 
