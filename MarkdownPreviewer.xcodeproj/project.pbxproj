@@ -253,7 +253,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# Only run for Release builds\nif [ \"$CONFIGURATION\" != \"Release\" ]; then\n    exit 0\nfi\n\nset -e\n\nAPP_NAME=\"${FULL_PRODUCT_NAME}\"\nBUILD_PATH=\"${TARGET_BUILD_DIR}/${APP_NAME}\"\nINSTALL_DIR=\"/Applications\"\nINSTALL_PATH=\"${INSTALL_DIR}/${APP_NAME}\"\n\necho \"Installing ${APP_NAME} to ${INSTALL_DIR}...\"\n\n# Remove existing app\nif [ -d \"${INSTALL_PATH}\" ]; then\n    echo \"Removing existing app...\"\n    rm -rf \"${INSTALL_PATH}\"\nfi\n\n# Copy new build\nditto \"${BUILD_PATH}\" \"${INSTALL_PATH}\"\n\necho \"Installed ${APP_NAME} to ${INSTALL_PATH}\"\n";
+			shellScript = "# Only run for Release builds, and skip during archive (release.sh handles install).\nif [ \"$CONFIGURATION\" != \"Release\" ]; then\n    exit 0\nfi\nif [ \"$ACTION\" = \"install\" ]; then\n    echo \"Skipping /Applications install during archive (release.sh handles it).\"\n    exit 0\nfi\n\nset -e\n\nAPP_NAME=\"${FULL_PRODUCT_NAME}\"\nBUILD_PATH=\"${TARGET_BUILD_DIR}/${APP_NAME}\"\nINSTALL_DIR=\"/Applications\"\nINSTALL_PATH=\"${INSTALL_DIR}/${APP_NAME}\"\n\necho \"Installing ${APP_NAME} to ${INSTALL_DIR}...\"\n\n# Remove existing app\nif [ -d \"${INSTALL_PATH}\" ]; then\n    echo \"Removing existing app...\"\n    rm -rf \"${INSTALL_PATH}\"\nfi\n\n# Copy new build\nditto \"${BUILD_PATH}\" \"${INSTALL_PATH}\"\n\necho \"Installed ${APP_NAME} to ${INSTALL_PATH}\"\n";
 		};
 		626E975B2F9E985B00BD51F9 /* Lint */ = {
 			isa = PBXShellScriptBuildPhase;

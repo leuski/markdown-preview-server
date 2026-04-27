@@ -4,14 +4,21 @@
 # zip it, and publish a GitHub release.
 #
 # Usage:
-#   scripts/release.sh v0.1.0
+#   scripts/release.sh v0.1.0              # build, install, tag, publish
+#   scripts/release.sh --dry-run v0.1.0    # build, install, zip — no tag, no publish
 #
-# Requirements: Xcode, gh CLI authenticated, clean git tree.
+# Requirements: Xcode, gh CLI authenticated, clean git tree (unless --dry-run).
 
 set -euo pipefail
 
+DRY_RUN=0
+if [[ "${1:-}" == "--dry-run" ]]; then
+  DRY_RUN=1
+  shift
+fi
+
 if [[ $# -ne 1 ]]; then
-  echo "usage: $0 <tag>   e.g. $0 v0.1.0" >&2
+  echo "usage: $0 [--dry-run] <tag>   e.g. $0 v0.1.0" >&2
   exit 1
 fi
 
@@ -19,7 +26,7 @@ TAG="$1"
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-if [[ -n "$(git status --porcelain)" ]]; then
+if [[ $DRY_RUN -eq 0 && -n "$(git status --porcelain)" ]]; then
   echo "error: working tree is dirty. commit or stash first." >&2
   exit 1
 fi
@@ -58,20 +65,25 @@ if [[ ! -d "$APP_SRC" ]]; then
   exit 1
 fi
 
-echo "==> Ad-hoc re-signing (strips free-tier dev cert)"
-codesign --remove-signature "$APP_SRC" 2>/dev/null || true
-find "$APP_SRC/Contents/Frameworks" -maxdepth 1 -type d \( -name "*.framework" -o -name "*.dylib" \) 2>/dev/null \
-  | while read -r f; do codesign --remove-signature "$f" 2>/dev/null || true; done
+echo "==> Stripping provenance attrs and ad-hoc re-signing"
+xattr -cr "$APP_SRC"
 codesign --force --deep --sign - "$APP_SRC"
 codesign --verify --deep --strict --verbose=2 "$APP_SRC"
 
-echo "==> Refreshing /Applications copy"
+echo "==> Refreshing /Applications copy (overwrites the build phase's intermediate copy)"
 INSTALLED="/Applications/$APP_NAME"
 if [[ -d "$INSTALLED" ]]; then rm -rf "$INSTALLED"; fi
 ditto "$APP_SRC" "$INSTALLED"
+xattr -cr "$INSTALLED"
+codesign --force --deep --sign - "$INSTALLED"
 
 echo "==> Zipping $APP_NAME"
 ditto -c -k --keepParent --sequesterRsrc "$APP_SRC" "$ZIP_PATH"
+
+if [[ $DRY_RUN -eq 1 ]]; then
+  echo "==> Dry run complete (no tag, no publish): $ZIP_PATH"
+  exit 0
+fi
 
 echo "==> Tagging $TAG"
 git tag -a "$TAG" -m "$TAG"
