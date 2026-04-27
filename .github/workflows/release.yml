@@ -1,0 +1,128 @@
+# Phase 2: signed + notarized release on tag push.
+#
+# DISABLED until the following repo secrets are configured:
+#   GH_PACKAGES_PAT        — fine-grained PAT with read access to leuski/swift-core-kit
+#   MAC_CERT_P12_BASE64    — Developer ID Application .p12, base64-encoded
+#   MAC_CERT_PASSWORD      — password for the .p12
+#   KEYCHAIN_PASSWORD      — any random string; used for the temporary CI keychain
+#   NOTARY_APPLE_ID        — Apple ID email used for notarization
+#   NOTARY_TEAM_ID         — Apple Developer team ID (e.g. FS73MHCS98)
+#   NOTARY_PASSWORD        — app-specific password for that Apple ID
+#
+# To enable: switch the trigger from `workflow_dispatch` to `push: tags: ['v*']`.
+
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v0.1.0)'
+        required: true
+  # push:
+  #   tags:
+  #     - 'v*'
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    env:
+      SCHEME: MarkdownPreviewer
+      APP_NAME: Markdown Preview Server.app
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        run: |
+          if [[ -n "${{ github.event.inputs.tag }}" ]]; then
+            TAG="${{ github.event.inputs.tag }}"
+          else
+            TAG="${GITHUB_REF#refs/tags/}"
+          fi
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "error: tag must look like v1.2.3 (got '$TAG')" >&2
+            exit 1
+          fi
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "marketing_version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          echo "build_number=$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_16.app
+
+      - name: Authenticate git for private SwiftPM dependency
+        run: |
+          git config --global url."https://${{ secrets.GH_PACKAGES_PAT }}@github.com/".insteadOf "https://github.com/"
+
+      - name: Import signing certificate
+        env:
+          CERT_B64: ${{ secrets.MAC_CERT_P12_BASE64 }}
+          CERT_PWD: ${{ secrets.MAC_CERT_PASSWORD }}
+          KC_PWD: ${{ secrets.KEYCHAIN_PASSWORD }}
+        run: |
+          KEYCHAIN=build.keychain
+          security create-keychain -p "$KC_PWD" "$KEYCHAIN"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN"
+          security unlock-keychain -p "$KC_PWD" "$KEYCHAIN"
+          security list-keychains -d user -s "$KEYCHAIN" $(security list-keychains -d user | tr -d '"')
+
+          echo "$CERT_B64" | base64 --decode > /tmp/cert.p12
+          security import /tmp/cert.p12 -k "$KEYCHAIN" -P "$CERT_PWD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PWD" "$KEYCHAIN"
+          rm /tmp/cert.p12
+
+      - name: Archive
+        run: |
+          xcodebuild \
+            -project MarkdownPreviewer.xcodeproj \
+            -scheme "$SCHEME" \
+            -configuration Release \
+            -archivePath build/MarkdownPreviewer.xcarchive \
+            -destination "generic/platform=macOS" \
+            MARKETING_VERSION="${{ steps.tag.outputs.marketing_version }}" \
+            CURRENT_PROJECT_VERSION="${{ steps.tag.outputs.build_number }}" \
+            archive
+
+      - name: Export signed .app
+        run: |
+          xcodebuild \
+            -exportArchive \
+            -archivePath build/MarkdownPreviewer.xcarchive \
+            -exportOptionsPlist scripts/ExportOptions.plist \
+            -exportPath build/export
+
+      - name: Notarize
+        env:
+          APPLE_ID: ${{ secrets.NOTARY_APPLE_ID }}
+          TEAM_ID: ${{ secrets.NOTARY_TEAM_ID }}
+          APP_PWD: ${{ secrets.NOTARY_PASSWORD }}
+        run: |
+          APP_PATH="build/export/$APP_NAME"
+          ZIP_PATH="build/notarize.zip"
+          ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+          xcrun notarytool submit "$ZIP_PATH" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$TEAM_ID" \
+            --password "$APP_PWD" \
+            --wait
+          xcrun stapler staple "$APP_PATH"
+
+      - name: Package release zip
+        id: pkg
+        run: |
+          TAG="${{ steps.tag.outputs.tag }}"
+          OUT="build/MarkdownPreviewer-$TAG.zip"
+          ditto -c -k --keepParent --sequesterRsrc "build/export/$APP_NAME" "$OUT"
+          echo "zip=$OUT" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" "${{ steps.pkg.outputs.zip }}" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --generate-notes
