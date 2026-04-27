@@ -9,6 +9,7 @@ struct RendererEntry: Sendable, Identifiable {
   let installHint: String?
   let renderer: (any MarkdownRenderer)?
 
+  var isBuiltIn: Bool { installHint == nil }
   var isAvailable: Bool { renderer != nil }
 }
 

@@ -12,20 +12,34 @@ struct SettingsView: View {
 
   var body: some View {
     Form {
-      Section("Server") {
-        TextField("Port", text: $portString)
+      Toggle("Launch at login", isOn: $model.launchAtLogin)
+
+      LabeledContent {
+        TextField("", text: $portString)
+          .labelsHidden()
           .onSubmit { commitPort() }
-          .frame(maxWidth: 120)
+      } label: {
+        Text("Port")
+        // String(...), otherwise, you get a comma in the integer.
         Text("""
-          Default: \(AppModel.defaultPort). \
-          The server binds to \(AppModel.defaultHost) only.
-          """)
-          .font(.caption)
-          .foregroundStyle(.secondary)
-        Toggle("Launch at login", isOn: $model.launchAtLogin)
+            Default: \(String(AppModel.defaultPort)). \
+            The server binds to \(AppModel.defaultHost) only.
+            """)
+        // force the subtitle to span the whole row
+        .fixedSize(horizontal: true, vertical: false)
       }
-      Section("Markdown Processor") {
-        rendererPicker
+
+      LabeledContent {
+        HStack {
+          rendererPicker
+          rediscoverRenderersButton
+        }
+      } label: {
+        Text("Markdown processor")
+        if let stale = model.preferredButUnavailableEntry {
+          Text(staleMessage(for: stale, fallback: activeDisplayName))
+            .fixedSize(horizontal: true, vertical: false)
+        }
       }
     }
     .formStyle(.grouped)
@@ -33,40 +47,46 @@ struct SettingsView: View {
   }
 
   @ViewBuilder
-  private var rendererPicker: some View {
-    LabeledContent("Processor") {
-      Menu {
-        ForEach(model.rendererEntries) { entry in
-          Button {
-            model.selectedRendererID = entry.id
-          } label: {
-            if entry.id == activeID {
-              Label(entry.displayName, systemImage: "checkmark")
-            } else {
-              Text(entry.displayName)
-            }
-          }
-          .disabled(!entry.isAvailable)
-        }
-      } label: {
-        Text(activeDisplayName)
-      }
-      .fixedSize()
-    }
-
-    if let stale = model.preferredButUnavailableEntry {
-      let fallback = model.activeEntry?.displayName ?? "no installed processor"
-      Text(staleMessage(for: stale, fallback: fallback))
-        .font(.caption)
-        .foregroundStyle(.secondary)
-    }
-
-    Button("Rescan") {
+  private var rediscoverRenderersButton: some View {
+    Button {
       Task { await model.rediscoverRenderers() }
+    } label: {
+      Image(systemName: "arrow.clockwise")
     }
     .help("""
       Re-run shell-based discovery — useful after installing a new processor.
       """)
+  }
+
+  @ViewBuilder
+  private func rendererButton(_ entry: RendererEntry) -> some View {
+    // we want
+    // 1. text show as disabled as needed
+    // 2. items align across built-in and non-built-in groups
+    Toggle(entry.displayName, isOn: Binding(
+      get: { entry.id == activeID },
+      set: { _ in model.selectedRendererID = entry.id }
+    ))
+    .disabled(!entry.isAvailable)
+  }
+
+  @ViewBuilder
+  private func rendererSection(_ entries: [RendererEntry]) -> some View {
+    ForEach(entries) { entry in
+      rendererButton(entry)
+    }
+  }
+
+  @ViewBuilder
+  private var rendererPicker: some View {
+    Menu {
+      rendererSection(model.rendererEntries.filter({$0.isBuiltIn}))
+      Divider()
+      rendererSection(model.rendererEntries.filter({!$0.isBuiltIn}))
+    } label: {
+      Text(activeDisplayName)
+    }
+    .fixedSize()
   }
 
   private var activeID: String? {
@@ -92,4 +112,8 @@ struct SettingsView: View {
     }
     model.port = value
   }
+}
+
+#Preview {
+  SettingsView(model: AppModel())
 }
