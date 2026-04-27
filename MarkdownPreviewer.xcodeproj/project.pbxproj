@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */; };
 		626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */; };
-		626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD52F9DDC9B00BD51F9 /* ALCombine */; };
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
 		626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 626E96E22F9E8DFE00BD51F9 /* Markdown */; };
 /* End PBXBuildFile section */
@@ -33,37 +32,29 @@
 
 /* Begin PBXFileReference section */
 		626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Markdown Preview Server.app"; sourceTree = BUILT_PRODUCTS_DIR; };
-		626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MarkdownPreviewerUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		626E8D662F9DD1C800BD51F9 /* UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		626E96DE2F9E871700BD51F9 /* Exceptions for "MarkdownPreviewer" folder in "MarkdownPreviewer" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Resources/MenuBarIcon.pcvd,
-			);
-			target = 626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */ = {
+		626EA9FA2F9FB59000BD51F9 /* Resources */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				626E96DE2F9E871700BD51F9 /* Exceptions for "MarkdownPreviewer" folder in "MarkdownPreviewer" target */,
-			);
-			path = MarkdownPreviewer;
+			path = Resources;
 			sourceTree = "<group>";
 		};
-		626E8D5F2F9DD1C800BD51F9 /* MarkdownPreviewerTests */ = {
+		626EAA182F9FB59000BD51F9 /* Sources */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MarkdownPreviewerTests;
+			path = Sources;
 			sourceTree = "<group>";
 		};
-		626E8D692F9DD1C800BD51F9 /* MarkdownPreviewerUITests */ = {
+		626EAA332F9FB5A000BD51F9 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = MarkdownPreviewerUITests;
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		626EAA372F9FB5AA00BD51F9 /* UITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = UITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,7 +66,6 @@
 			files = (
 				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
 				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
-				626E8DD62F9DDC9B00BD51F9 /* ALCombine in Frameworks */,
 				626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */,
 				626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */,
 			);
@@ -101,9 +91,10 @@
 		626E8D462F9DD1C700BD51F9 = {
 			isa = PBXGroup;
 			children = (
-				626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */,
-				626E8D5F2F9DD1C800BD51F9 /* MarkdownPreviewerTests */,
-				626E8D692F9DD1C800BD51F9 /* MarkdownPreviewerUITests */,
+				626EAA182F9FB59000BD51F9 /* Sources */,
+				626EA9FA2F9FB59000BD51F9 /* Resources */,
+				626EAA332F9FB5A000BD51F9 /* Tests */,
+				626EAA372F9FB5AA00BD51F9 /* UITests */,
 				626E8DD42F9DDC9B00BD51F9 /* Frameworks */,
 				626E8D502F9DD1C700BD51F9 /* Products */,
 			);
@@ -113,8 +104,8 @@
 			isa = PBXGroup;
 			children = (
 				626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */,
-				626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */,
-				626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */,
+				626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */,
+				626E8D662F9DD1C800BD51F9 /* UITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -129,9 +120,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */ = {
+		626E8D4E2F9DD1C700BD51F9 /* App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 626E8D702F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewer" */;
+			buildConfigurationList = 626E8D702F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "App" */;
 			buildPhases = (
 				626E8D4B2F9DD1C700BD51F9 /* Sources */,
 				626E975B2F9E985B00BD51F9 /* Lint */,
@@ -144,13 +135,13 @@
 			dependencies = (
 				626E8DD12F9DDC9100BD51F9 /* PBXTargetDependency */,
 				626E8DD32F9DDC9100BD51F9 /* PBXTargetDependency */,
-				626E8D8C2F9DD98A00BD51F9 /* PBXTargetDependency */,
 				626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				626E8D512F9DD1C700BD51F9 /* MarkdownPreviewer */,
+				626EA9FA2F9FB59000BD51F9 /* Resources */,
+				626EAA182F9FB59000BD51F9 /* Sources */,
 			);
-			name = MarkdownPreviewer;
+			name = App;
 			packageProductDependencies = (
 				626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */,
 				626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */,
@@ -162,9 +153,9 @@
 			productReference = 626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */;
 			productType = "com.apple.product-type.application";
 		};
-		626E8D5B2F9DD1C800BD51F9 /* MarkdownPreviewerTests */ = {
+		626E8D5B2F9DD1C800BD51F9 /* Tests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 626E8D732F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewerTests" */;
+			buildConfigurationList = 626E8D732F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "Tests" */;
 			buildPhases = (
 				626E8D582F9DD1C800BD51F9 /* Sources */,
 				626E8D592F9DD1C800BD51F9 /* Frameworks */,
@@ -176,18 +167,18 @@
 				626E8D5E2F9DD1C800BD51F9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				626E8D5F2F9DD1C800BD51F9 /* MarkdownPreviewerTests */,
+				626EAA332F9FB5A000BD51F9 /* Tests */,
 			);
-			name = MarkdownPreviewerTests;
+			name = Tests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownPreviewerTests;
-			productReference = 626E8D5C2F9DD1C800BD51F9 /* MarkdownPreviewerTests.xctest */;
+			productReference = 626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		626E8D652F9DD1C800BD51F9 /* MarkdownPreviewerUITests */ = {
+		626E8D652F9DD1C800BD51F9 /* UITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewerUITests" */;
+			buildConfigurationList = 626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "UITests" */;
 			buildPhases = (
 				626E8D622F9DD1C800BD51F9 /* Sources */,
 				626E8D632F9DD1C800BD51F9 /* Frameworks */,
@@ -199,13 +190,13 @@
 				626E8D682F9DD1C800BD51F9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				626E8D692F9DD1C800BD51F9 /* MarkdownPreviewerUITests */,
+				626EAA372F9FB5AA00BD51F9 /* UITests */,
 			);
-			name = MarkdownPreviewerUITests;
+			name = UITests;
 			packageProductDependencies = (
 			);
 			productName = MarkdownPreviewerUITests;
-			productReference = 626E8D662F9DD1C800BD51F9 /* MarkdownPreviewerUITests.xctest */;
+			productReference = 626E8D662F9DD1C800BD51F9 /* UITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -250,9 +241,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */,
-				626E8D5B2F9DD1C800BD51F9 /* MarkdownPreviewerTests */,
-				626E8D652F9DD1C800BD51F9 /* MarkdownPreviewerUITests */,
+				626E8D4E2F9DD1C700BD51F9 /* App */,
+				626E8D5B2F9DD1C800BD51F9 /* Tests */,
+				626E8D652F9DD1C800BD51F9 /* UITests */,
 			);
 		};
 /* End PBXProject section */
@@ -349,17 +340,13 @@
 /* Begin PBXTargetDependency section */
 		626E8D5E2F9DD1C800BD51F9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */;
+			target = 626E8D4E2F9DD1C700BD51F9 /* App */;
 			targetProxy = 626E8D5D2F9DD1C800BD51F9 /* PBXContainerItemProxy */;
 		};
 		626E8D682F9DD1C800BD51F9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 626E8D4E2F9DD1C700BD51F9 /* MarkdownPreviewer */;
+			target = 626E8D4E2F9DD1C700BD51F9 /* App */;
 			targetProxy = 626E8D672F9DD1C800BD51F9 /* PBXContainerItemProxy */;
-		};
-		626E8D8C2F9DD98A00BD51F9 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			productRef = 626E8D8B2F9DD98A00BD51F9 /* ALCombine */;
 		};
 		626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -516,6 +503,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
 				PRODUCT_NAME = "Markdown Preview Server";
@@ -548,6 +536,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
+				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
 				PRODUCT_NAME = "Markdown Preview Server";
@@ -652,7 +641,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		626E8D702F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewer" */ = {
+		626E8D702F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				626E8D712F9DD1C800BD51F9 /* Debug */,
@@ -661,7 +650,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		626E8D732F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewerTests" */ = {
+		626E8D732F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "Tests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				626E8D742F9DD1C800BD51F9 /* Debug */,
@@ -670,7 +659,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "MarkdownPreviewerUITests" */ = {
+		626E8D762F9DD1C800BD51F9 /* Build configuration list for PBXNativeTarget "UITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				626E8D772F9DD1C800BD51F9 /* Debug */,
@@ -709,11 +698,6 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		626E8D8B2F9DD98A00BD51F9 /* ALCombine */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
-			productName = ALCombine;
-		};
 		626E8D8D2F9DD98A00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
