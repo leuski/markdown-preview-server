@@ -16,6 +16,7 @@ final class ViewerModel {
   @ObservationIgnored let template: any Template
   @ObservationIgnored private let watcher = DocumentWatcher()
   @ObservationIgnored private let bridge = EditorBridge()
+  @ObservationIgnored private let linkBridge = LinkBridge()
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
@@ -26,10 +27,15 @@ final class ViewerModel {
 
   init() {
     let configuration = WebPage.Configuration()
-    configuration.userContentController.add(
-      bridge, name: EditorBridge.messageName)
-    configuration.userContentController.addUserScript(WKUserScript(
+    let controller = configuration.userContentController
+    controller.add(bridge, name: EditorBridge.messageName)
+    controller.add(linkBridge, name: LinkBridge.messageName)
+    controller.addUserScript(WKUserScript(
       source: EditorBridge.userScript,
+      injectionTime: .atDocumentEnd,
+      forMainFrameOnly: true))
+    controller.addUserScript(WKUserScript(
+      source: LinkBridge.userScript,
       injectionTime: .atDocumentEnd,
       forMainFrameOnly: true))
     self.page = WebPage(configuration: configuration)
@@ -44,6 +50,7 @@ final class ViewerModel {
     logger.notice("Binding to document: \(url.path, privacy: .public)")
     documentURL = url
     bridge.documentURL = url
+    linkBridge.documentURL = url
     await reload()
     let stream = await watcher.subscribe(to: url)
     for await _ in stream {
