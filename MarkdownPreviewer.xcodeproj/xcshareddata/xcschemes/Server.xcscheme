@@ -17,7 +17,7 @@
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "626E8D4E2F9DD1C700BD51F9"
                BuildableName = "Markdown Preview Server.app"
-               BlueprintName = "App"
+               BlueprintName = "Server"
                ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -60,7 +60,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "626E8D4E2F9DD1C700BD51F9"
             BuildableName = "Markdown Preview Server.app"
-            BlueprintName = "App"
+            BlueprintName = "Server"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -77,7 +77,7 @@
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "626E8D4E2F9DD1C700BD51F9"
             BuildableName = "Markdown Preview Server.app"
-            BlueprintName = "App"
+            BlueprintName = "Server"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
