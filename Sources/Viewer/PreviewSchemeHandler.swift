@@ -2,6 +2,7 @@ import Foundation
 import GalleyCoreKit
 import WebKit
 import os
+import ALFoundation
 
 /// Custom URL scheme that lets the Viewer's WebView load template
 /// assets (CSS, fonts, images) and document-relative files. The
@@ -16,10 +17,8 @@ import os
 /// in inline `<img>` markup the document author wrote) flow through
 /// the handler as well.
 struct PreviewSchemeHandler: URLSchemeHandler {
-  static let scheme = URLScheme("mdeye")
-    ?? URLScheme("x-mdeye")!  // swiftlint:disable:this force_unwrapping
-  static let originURL = URL(string: "mdeye://local")
-    ?? URL(string: "x-mdeye://local")!  // swiftlint:disable:this force_unwrapping
+  static let scheme = URLScheme("mdeye") !! "Should not happen"
+  static let originURL: URL = "mdeye://local"
 
   /// Reads the active template at request time. Avoids stale state
   /// when the user switches templates: the next asset request picks
@@ -64,49 +63,25 @@ struct PreviewSchemeHandler: URLSchemeHandler {
   @MainActor
   private func resolve(request: URLRequest) throws -> (Data, String) {
     guard let url = request.url else { throw URLError(.badURL) }
-    let path = url.path
-
-    if let after = path.dropPrefix("/template/") {
-      return try resolveTemplateAsset(path: after, requestURL: url)
+    guard let route = PreviewRoute(path: url.path) else {
+      throw URLError(.unsupportedURL)
     }
-    if let after = path.dropPrefix("/preview/") {
-      return try resolvePreviewAsset(path: after, requestURL: url)
-    }
-
-    throw URLError(.unsupportedURL)
-  }
-
-  @MainActor
-  private func resolveTemplateAsset(
-    path: String, requestURL: URL
-  ) throws -> (Data, String) {
-    guard let slash = path.firstIndex(of: "/") else {
-      throw URLError(.badURL)
-    }
-    let id = String(path[..<slash])
-    let file = String(path[path.index(after: slash)...])
-    let template = templateProvider()
-    guard template.id == id, let assetURL = template.resolveAsset(file: file)
-    else {
-      throw URLError(.fileDoesNotExist)
-    }
+    let assetURL = try resolveAssetURL(for: route)
     let data = try Data(contentsOf: assetURL)
     return (data, MIMETypes.mimeType(for: assetURL))
   }
 
-  private func resolvePreviewAsset(
-    path: String, requestURL: URL
-  ) throws -> (Data, String) {
-    let decoded = path.removingPercentEncoding ?? path
-    let absolute = decoded.hasPrefix("/") ? decoded : "/" + decoded
-    let fileURL = URL(fileURLWithPath: absolute)
-    let data = try Data(contentsOf: fileURL)
-    return (data, MIMETypes.mimeType(for: fileURL))
-  }
-}
-
-private extension String {
-  func dropPrefix(_ prefix: String) -> String? {
-    hasPrefix(prefix) ? String(dropFirst(prefix.count)) : nil
+  @MainActor
+  private func resolveAssetURL(for route: PreviewRoute) throws -> URL {
+    switch route {
+    case .templateAsset(let id, let file):
+      let template = templateProvider()
+      guard template.id == id,
+            let assetURL = template.resolveAsset(file: file)
+      else { throw URLError(.fileDoesNotExist) }
+      return assetURL
+    case .documentAsset(let absolutePath):
+      return URL(fileURLWithPath: absolutePath)
+    }
   }
 }

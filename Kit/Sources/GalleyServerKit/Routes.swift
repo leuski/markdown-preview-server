@@ -193,20 +193,11 @@ enum Routes {
     request: HTTPRequest,
     templateStore: TemplateStoreRef
   ) async -> HTTPResponse {
-    let prefix = "/\(RouteNames.template)/"
-    guard request.path.hasPrefix(prefix) else {
+    guard case .templateAsset(let templateID, let file)
+      = PreviewRoute(path: request.path)
+    else {
       return HTTPResponses.badRequest("Invalid template asset path")
     }
-    let tail = String(request.path.dropFirst(prefix.count))
-    guard let slash = tail.firstIndex(of: "/") else {
-      return HTTPResponses.notFound("Missing template id or file")
-    }
-
-    let rawID = String(tail[..<slash])
-    let rawFile = String(tail[tail.index(after: slash)...])
-    let templateID = rawID.removingPercentEncoding ?? rawID
-    let file = rawFile.removingPercentEncoding ?? rawFile
-
     guard let template = await templateStore.template(id: templateID) else {
       return HTTPResponses.notFound("Template not found: \(templateID)")
     }
