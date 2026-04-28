@@ -6,5 +6,8 @@ struct ViewerApp: App {
     DocumentGroup(viewing: ViewerDocument.self) { configuration in
       ContentView(fileURL: configuration.fileURL)
     }
+    .commands {
+      NavigationCommands()
+    }
   }
 }

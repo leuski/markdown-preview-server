@@ -23,7 +23,7 @@ struct ContentView: View {
             Label("Back", systemImage: "chevron.backward")
           }
           .disabled(!model.canGoBack)
-          .keyboardShortcut("[", modifiers: .command)
+          .help("Back (⌘[)")
 
           Button {
             Task { await model.goForward() }
@@ -31,7 +31,7 @@ struct ContentView: View {
             Label("Forward", systemImage: "chevron.forward")
           }
           .disabled(!model.canGoForward)
-          .keyboardShortcut("]", modifiers: .command)
+          .help("Forward (⌘])")
         }
         ToolbarItem(placement: .primaryAction) {
           Button {
@@ -39,20 +39,18 @@ struct ContentView: View {
           } label: {
             Label("Reload", systemImage: "arrow.clockwise")
           }
-          .keyboardShortcut("r", modifiers: .command)
+          .help("Reload (⌘R)")
         }
       }
+      .focusedSceneValue(\.viewerModel, model)
       .task(id: fileURL) {
         guard let fileURL else { return }
         await model.bind(to: fileURL)
       }
-      .navigationTitle(navigationTitle)
+      .navigationDocument(model.documentURL ?? fileURL ?? Self.placeholder)
   }
 
-  private var navigationTitle: String {
-    let url = model.documentURL ?? fileURL
-    return url?.deletingPathExtension().lastPathComponent ?? "Markdown Eye"
-  }
+  private static let placeholder = URL(string: "about:blank")!
 }
 
 #Preview {
