@@ -1,4 +1,4 @@
 // GalleyServerKit — embeddable HTTP preview server built on top of
-// GalleyCoreKit. Currently empty; receives PreviewServer, Routes, SSE,
-// HTTPResponses, and MIMETypes in a later refactor phase.
-import GalleyCoreKit
+// GalleyCoreKit. Public surface is the PreviewServerController in
+// PreviewServer.swift; everything else (Routes, SSE, MIMETypes,
+// HTTPResponses) is internal to this module.

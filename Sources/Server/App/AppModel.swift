@@ -2,6 +2,7 @@ import Foundation
 import SwiftUI
 import Observation
 import GalleyCoreKit
+import GalleyServerKit
 
 @Observable
 @MainActor

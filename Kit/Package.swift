@@ -38,6 +38,9 @@ let package = Package(
         "GalleyCoreKit",
         .product(name: "FlyingFox", package: "FlyingFox"),
         .product(name: "FlyingSocks", package: "FlyingFox")
+      ],
+      resources: [
+        .process("Resources")
       ]
     ),
     .testTarget(

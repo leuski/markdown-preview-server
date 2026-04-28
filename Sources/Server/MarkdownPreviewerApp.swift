@@ -6,6 +6,8 @@
 //
 
 import SwiftUI
+import GalleyCoreKit
+import GalleyServerKit
 
 @main
 struct MarkdownPreviewerApp: App {

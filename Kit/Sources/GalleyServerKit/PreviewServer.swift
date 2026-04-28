@@ -6,25 +6,28 @@ import GalleyCoreKit
 
 @Observable
 @MainActor
-final class PreviewServerController {
-  enum State: Equatable {
+public final class PreviewServerController {
+  public enum State: Equatable, Sendable {
     case stopped
     case running(url: URL)
     case failed(message: String)
   }
 
-  private(set) var state: State = .stopped
+  public private(set) var state: State = .stopped
 
   @ObservationIgnored private var task: Task<Void, Never>?
   @ObservationIgnored private var server: HTTPServer?
 
-  @ObservationIgnored let watcher = DocumentWatcher()
+  @ObservationIgnored public let watcher = DocumentWatcher()
 
   @ObservationIgnored private let templateStore: TemplateStore
   @ObservationIgnored private let rendererProvider: @Sendable ()
   -> (any MarkdownRenderer)?
 
-  init(
+  public static let defaultHost: String = "127.0.0.1"
+  public static let defaultPort: UInt16 = 8089
+
+  public init(
     templateStore: TemplateStore,
     rendererProvider: @escaping @Sendable () -> (any MarkdownRenderer)?
   ) {
@@ -32,7 +35,7 @@ final class PreviewServerController {
     self.rendererProvider = rendererProvider
   }
 
-  func start(url: URL) {
+  public func start(url: URL) {
     stop()
 
     let store = templateStore
@@ -46,9 +49,9 @@ final class PreviewServerController {
       return
     }
 
-    let host = components.host ?? AppModel.defaultHost
+    let host = components.host ?? Self.defaultHost
     let port = components.port.map { port in UInt16(port) }
-    ?? AppModel.defaultPort
+    ?? Self.defaultPort
 
     var fullComponents = URLComponents()
     fullComponents.scheme = "http"
@@ -90,7 +93,7 @@ final class PreviewServerController {
     }
   }
 
-  func stop() {
+  public func stop() {
     Task { [server] in
       await server?.stop()
     }
@@ -104,7 +107,7 @@ final class PreviewServerController {
     }
   }
 
-  var serverURL: URL? {
+  public var serverURL: URL? {
     guard case .running(let url) = state else { return nil }
     return url
   }

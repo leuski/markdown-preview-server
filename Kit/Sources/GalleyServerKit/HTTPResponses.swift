@@ -29,7 +29,8 @@ enum HTTPResponses {
   }
 
   private static let errorPageTemplate: String =
-    Bundle.main.requiredString(forResource: "ErrorPage", withExtension: "html")
+    Bundle.module.requiredString(
+      forResource: "ErrorPage", withExtension: "html")
 
   private static func plainText(
     statusCode: HTTPStatusCode, message: String) -> HTTPResponse

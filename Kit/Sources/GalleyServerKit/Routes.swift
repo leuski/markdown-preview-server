@@ -4,13 +4,6 @@ import Security
 import GalleyCoreKit
 
 enum Routes {
-  static let preview = RouteNames.preview
-  static let template = RouteNames.template
-  static let events = RouteNames.events
-
-  static let markdownExtensions: Set<String> = [
-    "md", "markdown", "mdown", "mmd"]
-
   static let assetExtensions: Set<String> = [
     "txt", "html", "htm",
     "css", "js", "json", "map",
@@ -30,7 +23,7 @@ enum Routes {
     let storeRef = TemplateStoreRef(templateStore)
 
     await server.appendRoute(
-      .init(method: .GET, path: "/\(preview)/*")) { request in
+      .init(method: .GET, path: "/\(RouteNames.preview)/*")) { request in
         if let denied = guardRequest(request, hostURL: hostURL) {
           return denied
         }
@@ -42,7 +35,7 @@ enum Routes {
       }
 
     await server.appendRoute(
-      .init(method: .GET, path: "/\(template)/*")) { request in
+      .init(method: .GET, path: "/\(RouteNames.template)/*")) { request in
         if let denied = guardRequest(request, hostURL: hostURL) {
           return denied
         }
@@ -51,7 +44,7 @@ enum Routes {
       }
 
     await server.appendRoute(
-      .init(method: .GET, path: "/\(events)/*")) { request in
+      .init(method: .GET, path: "/\(RouteNames.events)/*")) { request in
         if let denied = guardRequest(request, hostURL: hostURL) {
           return denied
         }
@@ -78,13 +71,13 @@ enum Routes {
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
     guard let documentURL = decodeFilePath(
-      from: request.path, prefix: "/\(preview)")
+      from: request.path, prefix: "/\(RouteNames.preview)")
     else {
       return HTTPResponses.badRequest("Invalid path")
     }
 
     let ext = documentURL.pathExtension.lowercased()
-    if markdownExtensions.contains(ext) {
+    if MarkdownFileTypes.extensions.contains(ext) {
       guard let renderer else {
         return HTTPResponses.errorPage(
           title: "No markdown processor configured",
@@ -200,7 +193,7 @@ enum Routes {
     request: HTTPRequest,
     templateStore: TemplateStoreRef
   ) async -> HTTPResponse {
-    let prefix = "/template/"
+    let prefix = "/\(RouteNames.template)/"
     guard request.path.hasPrefix(prefix) else {
       return HTTPResponses.badRequest("Invalid template asset path")
     }
@@ -231,8 +224,9 @@ enum Routes {
     watcher: DocumentWatcher
   ) async -> HTTPResponse {
     guard
-      let documentURL = decodeFilePath(from: request.path, prefix: "/events"),
-      markdownExtensions.contains(documentURL.pathExtension.lowercased())
+      let documentURL = decodeFilePath(
+        from: request.path, prefix: "/\(RouteNames.events)"),
+      MarkdownFileTypes.extensions.contains(documentURL.pathExtension.lowercased())
     else {
       return HTTPResponses.badRequest("Invalid event path")
     }

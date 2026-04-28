@@ -3,6 +3,7 @@ import AppKit
 import UniformTypeIdentifiers
 import ALFoundation
 import GalleyCoreKit
+import GalleyServerKit
 
 struct MenuBarContent: View {
   let model: AppModel
@@ -79,7 +80,7 @@ struct MenuBarContent: View {
 
   private func openFile() {
     let panel = NSOpenPanel()
-    panel.allowedContentTypes = Routes.markdownExtensions
+    panel.allowedContentTypes = MarkdownFileTypes.extensions
       .compactMap { ext in UTType(filenameExtension: ext) }
     + [ UTType.plainText ]
     panel.canChooseDirectories = false
