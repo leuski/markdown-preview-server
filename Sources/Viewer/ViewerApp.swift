@@ -26,6 +26,8 @@ struct ViewerApp: App {
 /// build it ourselves from the delegate's observed list.
 struct FileCommands: Commands {
   @Bindable var delegate: ViewerAppDelegate
+  @FocusedValue(\.viewerModel) private var model
+  @FocusedValue(\.viewerRenameContext) private var renameContext
 
   var body: some Commands {
     CommandGroup(replacing: .newItem) {
@@ -44,6 +46,49 @@ struct FileCommands: Commands {
         Button("Clear Menu") { delegate.clearRecents() }
           .disabled(delegate.recentURLs.isEmpty)
       }
+    }
+
+    CommandGroup(after: .saveItem) {
+      Button("Rename…") {
+        guard let model, let context = renameContext, let url = context.url
+        else { return }
+        runRenamePopup(currentURL: url, model: model, context: context)
+      }
+      .disabled(renameContext?.url == nil)
+    }
+  }
+}
+
+@MainActor
+private func runRenamePopup(
+  currentURL: URL,
+  model: ViewerModel,
+  context: RenameContext
+) {
+  let alert = NSAlert()
+  alert.messageText = "Rename Document"
+  alert.informativeText = "Enter a new file name for this document."
+  alert.alertStyle = .informational
+  alert.addButton(withTitle: "Rename")
+  alert.addButton(withTitle: "Cancel")
+
+  let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+  field.stringValue = currentURL.lastPathComponent
+  field.placeholderString = currentURL.lastPathComponent
+  alert.accessoryView = field
+  alert.window.initialFirstResponder = field
+
+  guard alert.runModal() == .alertFirstButtonReturn else { return }
+  let newName = field.stringValue
+    .trimmingCharacters(in: .whitespacesAndNewlines)
+  guard !newName.isEmpty, newName != currentURL.lastPathComponent else { return }
+
+  Task { @MainActor in
+    do {
+      let newURL = try await model.renameCurrentDocument(toName: newName)
+      context.apply(newURL)
+    } catch {
+      NSSound.beep()
     }
   }
 }

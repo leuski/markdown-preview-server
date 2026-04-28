@@ -14,6 +14,30 @@ extension FocusedValues {
   }
 }
 
+/// Bundle of state the File > Rename… command needs from the
+/// frontmost window — the URL to rename plus a callback that lets
+/// the window record the new URL with the system Open Recent list
+/// and update its WindowGroup presentation value.
+struct RenameContext: Equatable {
+  let url: URL?
+  let apply: @MainActor (URL) -> Void
+
+  static func == (lhs: RenameContext, rhs: RenameContext) -> Bool {
+    lhs.url == rhs.url
+  }
+}
+
+private struct RenameContextKey: FocusedValueKey {
+  typealias Value = RenameContext
+}
+
+extension FocusedValues {
+  var viewerRenameContext: RenameContext? {
+    get { self[RenameContextKey.self] }
+    set { self[RenameContextKey.self] = newValue }
+  }
+}
+
 /// Menu items that mirror the toolbar's navigation buttons. Lives in
 /// the View menu (replacing the system-provided sidebar group, which
 /// the Viewer doesn't use).
