@@ -3,13 +3,24 @@ import Markdown
 
 /// Built-in renderer backed by `swiftlang/swift-markdown`. Always available
 /// and used as the default fallback when no external processor is selected.
-struct SwiftMarkdownRenderer: MarkdownRenderer {
-  let id = "swift-markdown"
-  let displayName = "Default (swift-markdown)"
+///
+/// When `annotatesSourceLines` is `true`, every block element receives a
+/// `data-source-line="N"` attribute pointing back at the originating line
+/// in the markdown source. The attribute is invisible to readers but lets
+/// editor-coupling code map clicks in the rendered preview back to the
+/// source.
+public struct SwiftMarkdownRenderer: MarkdownRenderer {
+  public let id = "swift-markdown"
+  public let displayName = "Default (swift-markdown)"
+  public let annotatesSourceLines: Bool
 
-  func render(_ source: String, baseURL: URL) async throws -> String {
+  public init(annotatesSourceLines: Bool = false) {
+    self.annotatesSourceLines = annotatesSourceLines
+  }
+
+  public func render(_ source: String, baseURL: URL) async throws -> String {
     let document = Document(parsing: source)
-    var visitor = HTMLVisitor()
+    var visitor = HTMLVisitor(annotatesSourceLines: annotatesSourceLines)
     visitor.visit(document)
     return visitor.html
   }
@@ -18,6 +29,7 @@ struct SwiftMarkdownRenderer: MarkdownRenderer {
 private struct HTMLVisitor: MarkupVisitor {
   typealias Result = Void
 
+  let annotatesSourceLines: Bool
   var html = ""
 
   mutating func defaultVisit(_ markup: any Markup) {
@@ -30,6 +42,12 @@ private struct HTMLVisitor: MarkupVisitor {
     }
   }
 
+  private func sourceAttr(for markup: any Markup) -> String {
+    guard annotatesSourceLines, let line = markup.range?.lowerBound.line
+    else { return "" }
+    return " data-source-line=\"\(line)\""
+  }
+
   // MARK: - Block elements
 
   mutating func visitDocument(_ document: Document) {
@@ -38,19 +56,19 @@ private struct HTMLVisitor: MarkupVisitor {
 
   mutating func visitHeading(_ heading: Heading) {
     let level = max(1, min(heading.level, 6))
-    html += "<h\(level)>"
+    html += "<h\(level)\(sourceAttr(for: heading))>"
     visitChildren(of: heading)
     html += "</h\(level)>\n"
   }
 
   mutating func visitParagraph(_ paragraph: Paragraph) {
-    html += "<p>"
+    html += "<p\(sourceAttr(for: paragraph))>"
     visitChildren(of: paragraph)
     html += "</p>\n"
   }
 
   mutating func visitBlockQuote(_ blockQuote: BlockQuote) {
-    html += "<blockquote>\n"
+    html += "<blockquote\(sourceAttr(for: blockQuote))>\n"
     visitChildren(of: blockQuote)
     html += "</blockquote>\n"
   }
@@ -59,7 +77,7 @@ private struct HTMLVisitor: MarkupVisitor {
     let langClass = codeBlock.language.flatMap {
       $0.isEmpty ? nil : " class=\"language-\($0.htmlAttributeEscaped)\""
     } ?? ""
-    html += "<pre><code\(langClass)>"
+    html += "<pre\(sourceAttr(for: codeBlock))><code\(langClass)>"
     html += codeBlock.code.htmlEscaped
     html += "</code></pre>\n"
   }
@@ -69,24 +87,24 @@ private struct HTMLVisitor: MarkupVisitor {
   }
 
   mutating func visitThematicBreak(_ thematicBreak: ThematicBreak) {
-    html += "<hr>\n"
+    html += "<hr\(sourceAttr(for: thematicBreak))>\n"
   }
 
   mutating func visitOrderedList(_ list: OrderedList) {
     let start = list.startIndex == 1 ? "" : " start=\"\(list.startIndex)\""
-    html += "<ol\(start)>\n"
+    html += "<ol\(start)\(sourceAttr(for: list))>\n"
     visitChildren(of: list)
     html += "</ol>\n"
   }
 
   mutating func visitUnorderedList(_ list: UnorderedList) {
-    html += "<ul>\n"
+    html += "<ul\(sourceAttr(for: list))>\n"
     visitChildren(of: list)
     html += "</ul>\n"
   }
 
   mutating func visitListItem(_ listItem: ListItem) {
-    html += "<li>"
+    html += "<li\(sourceAttr(for: listItem))>"
     if let checked = listItem.checkbox {
       let attr = checked == .checked ? " checked" : ""
       html += "<input type=\"checkbox\" disabled\(attr)> "
@@ -97,7 +115,7 @@ private struct HTMLVisitor: MarkupVisitor {
 
   mutating func visitTable(_ table: Table) {
     let alignments = table.columnAlignments
-    html += "<table>\n<thead>\n<tr>\n"
+    html += "<table\(sourceAttr(for: table))>\n<thead>\n<tr>\n"
     for (index, child) in table.head.children.enumerated() {
       let alignment = index < alignments.count ? alignments[index] : nil
       html += "<th\(alignmentAttribute(alignment))>"

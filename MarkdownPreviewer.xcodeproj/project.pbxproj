@@ -39,10 +39,12 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Viewer/ContentView.swift,
+				Viewer/EditorBridge.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/Resources/Info.plist,
 				Viewer/ViewerApp.swift,
 				Viewer/ViewerDocument.swift,
+				Viewer/ViewerModel.swift,
 			);
 			target = 626E8D4E2F9DD1C700BD51F9 /* Server */;
 		};
@@ -50,9 +52,11 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Viewer/ContentView.swift,
+				Viewer/EditorBridge.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/ViewerApp.swift,
 				Viewer/ViewerDocument.swift,
+				Viewer/ViewerModel.swift,
 			);
 			target = 62D5CA182FA048F000CADD72 /* Viewer */;
 		};

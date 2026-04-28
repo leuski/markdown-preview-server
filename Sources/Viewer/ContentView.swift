@@ -1,20 +1,35 @@
-//
-//  ContentView.swift
-//  Markdown Eye
-//
-//  Created by Anton Leuski on 4/27/26.
-//
-
 import SwiftUI
+import WebKit
 
 struct ContentView: View {
-  @Binding var document: ViewerDocument
+  let fileURL: URL?
+  @State private var model = ViewerModel()
 
   var body: some View {
-    TextEditor(text: $document.text)
+    WebView(model.page)
+      .overlay(alignment: .bottom) {
+        if let error = model.lastError {
+          Text(error)
+            .padding(8)
+            .background(.regularMaterial, in: .rect(cornerRadius: 8))
+            .padding()
+        }
+      }
+      .onAppear { bindIfNeeded() }
+      .onChange(of: fileURL) { bindIfNeeded() }
+      .navigationTitle(navigationTitle)
+  }
+
+  private var navigationTitle: String {
+    fileURL?.deletingPathExtension().lastPathComponent ?? "Markdown Eye"
+  }
+
+  private func bindIfNeeded() {
+    guard let fileURL, fileURL != model.documentURL else { return }
+    model.bind(to: fileURL)
   }
 }
 
 #Preview {
-  ContentView(document: .constant(ViewerDocument()))
+  ContentView(fileURL: nil)
 }

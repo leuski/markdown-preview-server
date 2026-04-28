@@ -1,22 +1,20 @@
-//
-//  ViewerDocument.swift
-//  Markdown Eye
-//
-//  Created by Anton Leuski on 4/27/26.
-//
-
 import SwiftUI
 import UniformTypeIdentifiers
 
+/// Read-only document handle for the Viewer. Carries the source text
+/// only as a placeholder — the active rendering is driven by the file
+/// URL and a fresh on-disk read in `ViewerModel.reload()`. Using the
+/// `viewing:` form of `DocumentGroup` keeps the in-memory copy honest.
 nonisolated struct ViewerDocument: FileDocument {
   var text: String
 
-  init(text: String = "Hello, world!") {
+  init(text: String = "") {
     self.text = text
   }
 
-  static let readableContentTypes = [
-    UTType(importedAs: "com.example.plain-text")
+  static let readableContentTypes: [UTType] = [
+    UTType(importedAs: "net.daringfireball.markdown"),
+    UTType.plainText
   ]
 
   init(configuration: ReadConfiguration) throws {
@@ -29,7 +27,7 @@ nonisolated struct ViewerDocument: FileDocument {
   }
 
   func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-    let data = text.data(using: .utf8)!
+    let data = Data(text.utf8)
     return .init(regularFileWithContents: data)
   }
 }
