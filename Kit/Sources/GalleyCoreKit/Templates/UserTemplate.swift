@@ -1,12 +1,21 @@
 import Foundation
 
-struct UserTemplate: Template {
-  let id: String
-  let name: String
-  let directoryURL: URL
-  let htmlURL: URL
+public struct UserTemplate: Template {
+  public let id: String
+  public let name: String
+  public let directoryURL: URL
+  public let htmlURL: URL
 
-  func loadHTML() throws -> String {
+  public init(
+    id: String, name: String, directoryURL: URL, htmlURL: URL
+  ) {
+    self.id = id
+    self.name = name
+    self.directoryURL = directoryURL
+    self.htmlURL = htmlURL
+  }
+
+  public func loadHTML() throws -> String {
     try String(contentsOf: htmlURL, encoding: .utf8)
   }
 
@@ -27,7 +36,7 @@ struct UserTemplate: Template {
     // MARK: - Asset URL rewriting
 
     // Tags that load resources (not navigation links).
-    private static let templateAssetRegex = #/
+    nonisolated(unsafe) private static let templateAssetRegex = #/
     (?i)
     (<\s*(?:link|script|img|source|track|video|audio|iframe|object|embed)
     \b[^>]*?\b(?:src|href|data)\s*=\s*")
@@ -36,7 +45,7 @@ struct UserTemplate: Template {
     /#
 
     // url(...) inside <style> blocks. Matches url("…"), url('…'), url(…).
-    private static let cssUrlRegex =
+    nonisolated(unsafe) private static let cssUrlRegex =
     #/(?i)url\(\s*(['"]?)([^'")]+)\1\s*\)/#
 
     private func rewriteAttributeURLs(html: String) -> String {
@@ -89,11 +98,11 @@ struct UserTemplate: Template {
     }
   }
 
-  func rewriteAssets(in html: String, origin: URL) -> String {
+  public func rewriteAssets(in html: String, origin: URL) -> String {
     Rewriter(id: id, origin: origin).rewriteAssets(in: html)
   }
 
-  func resolveAsset(file: String) -> URL? {
+  public func resolveAsset(file: String) -> URL? {
     let directoryURL = self.directoryURL.safe
     let candidate = directoryURL.appendingPathComponent(file).safe
     return candidate.path.hasPrefix(directoryURL.path.appendingSlash)

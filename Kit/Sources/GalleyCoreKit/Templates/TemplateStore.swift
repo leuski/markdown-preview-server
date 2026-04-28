@@ -4,16 +4,16 @@ import ALFoundation
 
 @Observable
 @MainActor
-final class TemplateStore {
-  private(set) var templates: [any Template] = []
-  var selectedID: String
+public final class TemplateStore {
+  public private(set) var templates: [any Template] = []
+  public var selectedID: String
 
-  @ObservationIgnored let directoryURL: URL
+  @ObservationIgnored public let directoryURL: URL
   @ObservationIgnored private var watcherTask: Task<Void, Never>?
 
   private static let selectionKey = "MarkdownPreviewer.selectedTemplateID"
 
-  init() {
+  public init() {
     self.directoryURL = URL.ourApplicationSupportDirectory / "Templates"
     self.selectedID = UserDefaults.standard.string(forKey: Self.selectionKey)
     ?? BuiltInTemplate.id
@@ -25,16 +25,16 @@ final class TemplateStore {
     startWatching()
   }
 
-  var selected: any Template {
+  public var selected: any Template {
     templates.first { $0.id == selectedID } ?? BuiltInTemplate.shared
   }
 
-  func select(_ template: any Template) {
+  public func select(_ template: any Template) {
     selectedID = template.id
     UserDefaults.standard.set(template.id, forKey: Self.selectionKey)
   }
 
-  func reload() {
+  public func reload() {
     let manager = FileManager.default
     let listingDir = directoryURL.safe
     let contents = (try? manager.contentsOfDirectory(

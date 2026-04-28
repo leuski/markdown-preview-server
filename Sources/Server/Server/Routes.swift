@@ -4,9 +4,9 @@ import Security
 import GalleyCoreKit
 
 enum Routes {
-  static let preview = "preview"
-  static let template = "template"
-  static let events = "events"
+  static let preview = RouteNames.preview
+  static let template = RouteNames.template
+  static let events = RouteNames.events
 
   static let markdownExtensions: Set<String> = [
     "md", "markdown", "mdown", "mmd"]

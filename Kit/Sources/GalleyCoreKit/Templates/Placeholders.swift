@@ -1,11 +1,16 @@
 import Foundation
 import ALFoundation
-import GalleyCoreKit
 
-struct PlaceholderContext: Sendable {
-  let documentContent: String
-  let documentURL: URL
-  let origin: URL
+public struct PlaceholderContext: Sendable {
+  public let documentContent: String
+  public let documentURL: URL
+  public let origin: URL
+
+  public init(documentContent: String, documentURL: URL, origin: URL) {
+    self.documentContent = documentContent
+    self.documentURL = documentURL
+    self.origin = origin
+  }
 
   static let dateFormatter: DateFormatter = {
     let formatter = DateFormatter()
@@ -21,7 +26,7 @@ struct PlaceholderContext: Sendable {
     return formatter
   }()
 
-  func substitute(into template: String, now: Date = Date()) -> String {
+  public func substitute(into template: String, now: Date = Date()) -> String {
     let docDirPath = documentURL.parent.path
     let baseHref = origin.appendingPreviewPath(docDirPath)
       .absoluteString.appendingSlash

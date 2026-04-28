@@ -1,6 +1,6 @@
 import Foundation
 
-protocol Template: Identifiable, Sendable {
+public protocol Template: Identifiable, Sendable {
   var id: String { get }
   var name: String { get }
   func loadHTML() throws -> String

@@ -2,6 +2,7 @@ import SwiftUI
 import AppKit
 import UniformTypeIdentifiers
 import ALFoundation
+import GalleyCoreKit
 
 struct MenuBarContent: View {
   let model: AppModel

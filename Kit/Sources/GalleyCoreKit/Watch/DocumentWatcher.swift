@@ -1,7 +1,7 @@
 import Foundation
 import ALFoundation
 
-actor DocumentWatcher {
+public actor DocumentWatcher {
   private struct Entry {
     let url: URL
     var subscribers: [UUID: AsyncStream<Void>.Continuation]
@@ -10,7 +10,9 @@ actor DocumentWatcher {
 
   private var entries: [String: Entry] = [:]
 
-  func subscribe(to url: URL) -> AsyncStream<Void> {
+  public init() {}
+
+  public func subscribe(to url: URL) -> AsyncStream<Void> {
     let key = url.safe.path
     let id = UUID()
 

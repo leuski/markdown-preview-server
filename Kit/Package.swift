@@ -27,6 +27,9 @@ let package = Package(
       dependencies: [
         .product(name: "Markdown", package: "swift-markdown"),
         .product(name: "ALFoundation", package: "swift-core-kit")
+      ],
+      resources: [
+        .process("Resources")
       ]
     ),
     .target(
