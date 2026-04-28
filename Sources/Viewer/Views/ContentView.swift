@@ -5,6 +5,7 @@ import WebKit
 struct ContentView: View {
   let fileURL: URL?
   @Environment(ViewerSettings.self) private var settings
+  @Environment(ViewerAppDelegate.self) private var appDelegate
   @State private var model = ViewerModel()
 
   var body: some View {
@@ -24,7 +25,6 @@ struct ContentView: View {
       }
     }
     .toolbar { toolbarContent }
-    .presentedWindowToolbarStyle(.unifiedCompact)
     .focusedSceneValue(\.viewerModel, model)
     .navigationTitle(model.documentURL?.lastPathComponent
       ?? fileURL?.lastPathComponent
@@ -32,7 +32,7 @@ struct ContentView: View {
     .task(id: fileURL) {
       model.bindSettings(settings)
       guard let fileURL else { return }
-      NSDocumentController.shared.noteNewRecentDocumentURL(fileURL)
+      appDelegate.record(fileURL)
       await model.bind(to: fileURL)
     }
     .onChange(of: settings.selectedRendererID) { _, _ in

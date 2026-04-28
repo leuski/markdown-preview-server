@@ -1,5 +1,6 @@
 import AppKit
 import GalleyCoreKit
+import Observation
 import SwiftUI
 import UniformTypeIdentifiers
 
@@ -9,14 +10,31 @@ import UniformTypeIdentifiers
 /// only available inside a view — but `application(_:open:)` may fire
 /// before any window has appeared. We buffer URLs until a window comes
 /// up and installs its open handler, then flush.
+///
+/// Also tracks recently-opened URLs so the File > Open Recent menu can
+/// observe them. `WindowGroup` doesn't get the system Open Recent for
+/// free (that menu is wired to NSDocument), so we surface
+/// `NSDocumentController.shared.recentDocumentURLs` ourselves and
+/// refresh it whenever we note a new URL or clear the list.
 @MainActor
+@Observable
 final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
-  private(set) var openHandler: ((URL) -> Void)?
-  private var pending: [URL] = []
+  @ObservationIgnored private(set) var openHandler: ((URL) -> Void)?
+  @ObservationIgnored private var pending: [URL] = []
+
+  /// Mirrors `NSDocumentController.shared.recentDocumentURLs`. Updated
+  /// whenever we record or clear a recent URL. Bind from the File
+  /// menu's Open Recent submenu.
+  private(set) var recentURLs: [URL] = []
+
+  override init() {
+    super.init()
+    self.recentURLs = NSDocumentController.shared.recentDocumentURLs
+  }
 
   func application(_ application: NSApplication, open urls: [URL]) {
     for url in urls {
-      NSDocumentController.shared.noteNewRecentDocumentURL(url)
+      record(url)
       if let openHandler {
         openHandler(url)
       } else {
@@ -52,6 +70,26 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
     panel.allowedContentTypes = Self.openPanelContentTypes
     guard panel.runModal() == .OK else { return }
     application(NSApp, open: panel.urls)
+  }
+
+  /// Open a single previously-opened URL through the same dispatch
+  /// path as Finder/NSOpenPanel — used by the Open Recent menu.
+  func openRecent(_ url: URL) {
+    application(NSApp, open: [url])
+  }
+
+  /// Record a URL as recently opened. Called from
+  /// `application(_:open:)`, but also exposed so other entry points
+  /// (e.g. ContentView's task on initial bind) can keep the list in
+  /// sync.
+  func record(_ url: URL) {
+    NSDocumentController.shared.noteNewRecentDocumentURL(url)
+    recentURLs = NSDocumentController.shared.recentDocumentURLs
+  }
+
+  func clearRecents() {
+    NSDocumentController.shared.clearRecentDocuments(nil)
+    recentURLs = NSDocumentController.shared.recentDocumentURLs
   }
 
   private static let openPanelContentTypes: [UTType] = {
