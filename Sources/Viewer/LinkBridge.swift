@@ -60,18 +60,35 @@ final class LinkBridge: NSObject, WKScriptMessageHandler {
     }
     logger.notice("Opening link: \(target.absoluteString, privacy: .public)")
 
-    // NSWorkspace.open routes through LaunchServices, which picks the
-    // right handler app for the URL. For .md files, that's us (we
-    // registered the markdown UTI). For other URLs, it's the system
-    // default. LaunchServices grants the destination app sandboxed
-    // read access to the file as part of the launch, which is the
-    // sandbox-friendly way to do cross-document navigation.
-    let opened = NSWorkspace.shared.open(target)
-    if !opened {
-      logger.error("""
-        NSWorkspace.open returned false for \
-        \(target.absoluteString, privacy: .public)
-        """)
+    if target.isFileURL,
+       MarkdownFileTypes.extensions.contains(
+         target.pathExtension.lowercased())
+    {
+      // Markdown — open in *our* app via NSDocumentController so the
+      // user stays in the Viewer instead of being bounced to whatever
+      // app LaunchServices considers the default markdown handler
+      // (typically a text editor).
+      NSDocumentController.shared.openDocument(
+        withContentsOf: target,
+        display: true
+      ) { [logger] _, _, error in
+        if let error {
+          logger.error("""
+            openDocument failed for \(target.path, privacy: .public): \
+            \(error.localizedDescription, privacy: .public)
+            """)
+        }
+      }
+    } else {
+      // External URL or non-markdown local file — let LaunchServices
+      // pick the right app.
+      let opened = NSWorkspace.shared.open(target)
+      if !opened {
+        logger.error("""
+          NSWorkspace.open returned false for \
+          \(target.absoluteString, privacy: .public)
+          """)
+      }
     }
   }
 
