@@ -1,8 +1,8 @@
 import Foundation
 import UniformTypeIdentifiers
 
-enum MIMETypes {
-  static func mimeType(for url: URL) -> String {
+public enum MIMETypes {
+  public static func mimeType(for url: URL) -> String {
     let ext = url.pathExtension.lowercased()
     // Source maps aren't registered as a UTType.
     if ext == "map" { return "application/javascript; charset=utf-8" }

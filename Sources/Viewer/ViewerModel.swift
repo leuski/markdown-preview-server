@@ -22,6 +22,7 @@ final class ViewerModel {
   @ObservationIgnored private let bridge = EditorBridge()
   @ObservationIgnored private let linkBridge = LinkBridge()
   @ObservationIgnored private weak var settings: ViewerSettings?
+  @ObservationIgnored private let templateBox: TemplateBox
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
@@ -45,7 +46,7 @@ final class ViewerModel {
     category: "ViewerModel")
 
   init() {
-    let configuration = WebPage.Configuration()
+    var configuration = WebPage.Configuration()
     let controller = configuration.userContentController
     controller.add(bridge, name: EditorBridge.messageName)
     controller.add(linkBridge, name: LinkBridge.messageName)
@@ -57,6 +58,17 @@ final class ViewerModel {
       source: LinkBridge.userScript,
       injectionTime: .atDocumentEnd,
       forMainFrameOnly: true))
+
+    // Custom URL scheme so template-bundled assets (CSS, fonts,
+    // images) resolve from disk through the SwiftUI WebView. Reads
+    // the active template at request time via `templateBox`, which
+    // is populated by `bindSettings(_:)`.
+    let box = TemplateBox()
+    self.templateBox = box
+    let handler = PreviewSchemeHandler(
+      templateProvider: { box.template ?? BuiltInTemplate.shared })
+    configuration.urlSchemeHandlers[PreviewSchemeHandler.scheme] = handler
+
     self.page = WebPage(configuration: configuration)
 
     // Browser-style navigation: clicking a markdown link in the
@@ -74,6 +86,7 @@ final class ViewerModel {
   /// before the first bind; safe to call again.
   func bindSettings(_ settings: ViewerSettings) {
     self.settings = settings
+    templateBox.template = settings.activeTemplate
   }
 
   /// Initial bind (called from ContentView's `.task(id: fileURL)`).
@@ -144,23 +157,23 @@ final class ViewerModel {
     let renderer = settings?.activeRenderer
       ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
     let template = settings?.activeTemplate ?? BuiltInTemplate.shared
+    // Keep the scheme handler's template pointer current — the user
+    // may have switched templates since the last bind.
+    templateBox.template = template
     do {
       let source = try String(contentsOf: url, encoding: .utf8)
       let body = try await renderer.render(source, baseURL: url)
       let templateHTML = try template.loadHTML()
-      let directory = url.deletingLastPathComponent()
+      let origin = PreviewSchemeHandler.originURL
       let context = PlaceholderContext(
         documentContent: body,
         documentURL: url,
-        origin: directory)
-      let html = context.substitute(into: templateHTML)
-      // about:blank sidesteps the sandbox file:// baseURL trouble; the
-      // rendered body itself doesn't depend on the base. Asset URL
-      // resolution for images will be revisited with a URLSchemeHandler.
-      let blank = URL(string: "about:blank")!
+        origin: origin)
+      let substituted = context.substitute(into: templateHTML)
+      let html = template.rewriteAssets(in: substituted, origin: origin)
       logger.debug("Loading rendered HTML (\(html.count) bytes)")
       do {
-        for try await _ in page.load(html: html, baseURL: blank) {}
+        for try await _ in page.load(html: html, baseURL: origin) {}
         lastError = nil
       } catch {
         logger.error("""
@@ -176,3 +189,13 @@ final class ViewerModel {
     }
   }
 }
+
+/// Reference holder so the URL scheme handler — which captures the
+/// box at WebPage creation time, before settings are injected —
+/// always sees the latest template. ViewerModel updates `template`
+/// in `bindSettings(_:)` and at the start of every render.
+@MainActor
+final class TemplateBox {
+  var template: (any Template)?
+}
+

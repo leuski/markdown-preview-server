@@ -40,6 +40,7 @@
 			membershipExceptions = (
 				Viewer/EditorBridge.swift,
 				Viewer/LinkBridge.swift,
+				Viewer/PreviewSchemeHandler.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/Resources/Info.plist,
 				Viewer/ViewerApp.swift,
@@ -58,6 +59,7 @@
 			membershipExceptions = (
 				Viewer/EditorBridge.swift,
 				Viewer/LinkBridge.swift,
+				Viewer/PreviewSchemeHandler.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/ViewerApp.swift,
 				Viewer/ViewerAppDelegate.swift,
