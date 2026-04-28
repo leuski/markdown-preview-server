@@ -38,31 +38,35 @@
 		62D5CA322FA048F900CADD72 /* Exceptions for "Sources" folder in "Server" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Viewer/ContentView.swift,
 				Viewer/EditorBridge.swift,
 				Viewer/LinkBridge.swift,
-				Viewer/NavigationCommands.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/Resources/Info.plist,
 				Viewer/ViewerApp.swift,
-				Viewer/ViewerDocument.swift,
+				Viewer/ViewerAppDelegate.swift,
 				Viewer/ViewerModel.swift,
-				Viewer/WindowAccessor.swift,
+				Viewer/ViewerSettings.swift,
+				Viewer/Views/AssortedViews.swift,
+				Viewer/Views/ContentView.swift,
+				Viewer/Views/NavigationCommands.swift,
+				Viewer/Views/RenderingCommands.swift,
 			);
 			target = 626E8D4E2F9DD1C700BD51F9 /* Server */;
 		};
 		62D5CA332FA048F900CADD72 /* Exceptions for "Sources" folder in "Viewer" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Viewer/ContentView.swift,
 				Viewer/EditorBridge.swift,
 				Viewer/LinkBridge.swift,
-				Viewer/NavigationCommands.swift,
 				Viewer/Resources/Assets.xcassets,
 				Viewer/ViewerApp.swift,
-				Viewer/ViewerDocument.swift,
+				Viewer/ViewerAppDelegate.swift,
 				Viewer/ViewerModel.swift,
-				Viewer/WindowAccessor.swift,
+				Viewer/ViewerSettings.swift,
+				Viewer/Views/AssortedViews.swift,
+				Viewer/Views/ContentView.swift,
+				Viewer/Views/NavigationCommands.swift,
+				Viewer/Views/RenderingCommands.swift,
 			);
 			target = 62D5CA182FA048F000CADD72 /* Viewer */;
 		};

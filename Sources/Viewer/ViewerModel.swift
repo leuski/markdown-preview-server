@@ -6,7 +6,9 @@ import SwiftUI
 import WebKit
 
 /// Per-document state for the native viewer. Owns the WebPage, the
-/// rendering pipeline, the file watcher, and the editor bridge.
+/// file watcher, and the editor bridge. Renderer and template come
+/// from the shared `ViewerSettings` so global selection changes
+/// re-render every open window.
 ///
 /// In-window navigation is browser-style: clicking a markdown link
 /// rebinds this same model. A back/forward stack tracks the visited
@@ -16,11 +18,10 @@ import WebKit
 final class ViewerModel {
   let page: WebPage
 
-  @ObservationIgnored let renderer: any MarkdownRenderer
-  @ObservationIgnored let template: any Template
   @ObservationIgnored private let watcher = DocumentWatcher()
   @ObservationIgnored private let bridge = EditorBridge()
   @ObservationIgnored private let linkBridge = LinkBridge()
+  @ObservationIgnored private weak var settings: ViewerSettings?
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
@@ -57,8 +58,6 @@ final class ViewerModel {
       injectionTime: .atDocumentEnd,
       forMainFrameOnly: true))
     self.page = WebPage(configuration: configuration)
-    self.renderer = SwiftMarkdownRenderer(annotatesSourceLines: true)
-    self.template = BuiltInTemplate.shared
 
     // Browser-style navigation: clicking a markdown link in the
     // rendered preview pushes onto our history and rebinds this same
@@ -70,6 +69,12 @@ final class ViewerModel {
   }
 
   // MARK: - Public entry points
+
+  /// Inject the shared rendering settings. Called by ContentView
+  /// before the first bind; safe to call again.
+  func bindSettings(_ settings: ViewerSettings) {
+    self.settings = settings
+  }
 
   /// Initial bind (called from ContentView's `.task(id: fileURL)`).
   /// Resets history; this URL becomes the only entry on the stack.
@@ -117,7 +122,7 @@ final class ViewerModel {
 
     bindGeneration &+= 1
     let myGeneration = bindGeneration
-    logger.notice("Binding to document: \(url.path, privacy: .public)")
+    logger.debug("Binding to document: \(url.path, privacy: .public)")
     documentURL = url
     bridge.documentURL = url
     linkBridge.documentURL = url
@@ -136,6 +141,9 @@ final class ViewerModel {
       logger.warning("renderCurrent() called with no documentURL")
       return
     }
+    let renderer = settings?.activeRenderer
+      ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
+    let template = settings?.activeTemplate ?? BuiltInTemplate.shared
     do {
       let source = try String(contentsOf: url, encoding: .utf8)
       let body = try await renderer.render(source, baseURL: url)
