@@ -53,17 +53,29 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
   }
 
   private func openInBBEdit(url: URL, line: Int) {
-    var components = URLComponents()
-    components.scheme = "bbedit"
-    components.host = "open"
-    components.queryItems = [
-      URLQueryItem(name: "url", value: url.absoluteString),
-      URLQueryItem(name: "line", value: String(line))
-    ]
-    guard let bbeditURL = components.url else {
-      logger.error("Could not build bbedit:// URL for \(url.path)")
-      return
+    // BBEdit registers x-bbedit:// (its own scheme) and txmt:// (the
+    // TextMate-compatible cross-editor scheme). bbedit:// (no x-) is
+    // NOT registered. Try x-bbedit first; fall back to txmt.
+    let schemes = ["x-bbedit", "txmt"]
+    for scheme in schemes {
+      var components = URLComponents()
+      components.scheme = scheme
+      components.host = "open"
+      components.queryItems = [
+        URLQueryItem(name: "url", value: url.absoluteString),
+        URLQueryItem(name: "line", value: String(line))
+      ]
+      guard let editorURL = components.url else { continue }
+      if NSWorkspace.shared.open(editorURL) {
+        return
+      }
+      logger.debug(
+        "\(scheme, privacy: .public):// open failed, trying next scheme")
     }
-    NSWorkspace.shared.open(bbeditURL)
+    logger.error("""
+      No editor handled the open URL for \(url.path, privacy: .public) \
+      at line \(line). Tried: \
+      \(schemes.joined(separator: ", "), privacy: .public)
+      """)
   }
 }
