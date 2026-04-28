@@ -1,7 +1,6 @@
 import Foundation
 import Testing
-
-@testable import Markdown_Preview_Server
+import GalleyCoreKit
 internal import ALFoundation
 
 @Suite("BuiltInTemplate")

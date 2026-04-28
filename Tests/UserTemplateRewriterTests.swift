@@ -1,7 +1,7 @@
 import Foundation
 import Testing
 
-@testable import Markdown_Preview_Server
+@testable import GalleyCoreKit
 internal import ALFoundation
 
 @Suite("UserTemplate.Rewriter")
