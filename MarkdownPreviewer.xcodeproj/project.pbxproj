@@ -42,11 +42,6 @@
 			path = Tests;
 			sourceTree = "<group>";
 		};
-		62D5C8872F9FBCAA00CADD72 /* Bundled */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Bundled;
-			sourceTree = "<group>";
-		};
 		62D5C9302FA01C3900CADD72 /* Scripts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Scripts;
@@ -109,7 +104,6 @@
 			isa = PBXGroup;
 			children = (
 				62D5C88E2F9FBD0000CADD72 /* Scripts */,
-				62D5C8872F9FBCAA00CADD72 /* Bundled */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -136,7 +130,6 @@
 			);
 			fileSystemSynchronizedGroups = (
 				626EAA182F9FB59000BD51F9 /* Sources */,
-				62D5C8872F9FBCAA00CADD72 /* Bundled */,
 			);
 			name = App;
 			packageProductDependencies = (
