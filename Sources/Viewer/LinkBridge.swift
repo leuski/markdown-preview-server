@@ -35,6 +35,12 @@ final class LinkBridge: NSObject, WKScriptMessageHandler {
   /// The document being previewed. Resolves relative hrefs.
   var documentURL: URL?
 
+  /// Optional callback for in-app markdown navigation. When set, a
+  /// click on a `.md` link calls this with the resolved URL instead
+  /// of opening a new Viewer document. Lets the host re-point the
+  /// current WebView (browser-style) rather than spawning a window.
+  var onMarkdownLink: ((URL) -> Void)?
+
   private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
     category: "LinkBridge")
@@ -64,19 +70,22 @@ final class LinkBridge: NSObject, WKScriptMessageHandler {
        MarkdownFileTypes.extensions.contains(
          target.pathExtension.lowercased())
     {
-      // Markdown — open in *our* app via NSDocumentController so the
-      // user stays in the Viewer instead of being bounced to whatever
-      // app LaunchServices considers the default markdown handler
-      // (typically a text editor).
-      NSDocumentController.shared.openDocument(
-        withContentsOf: target,
-        display: true
-      ) { [logger] _, _, error in
-        if let error {
-          logger.error("""
-            openDocument failed for \(target.path, privacy: .public): \
-            \(error.localizedDescription, privacy: .public)
-            """)
+      // Markdown — prefer in-window navigation (browser style) when
+      // the host has wired the callback. Fall back to opening a new
+      // Viewer document via NSDocumentController.
+      if let onMarkdownLink {
+        onMarkdownLink(target)
+      } else {
+        NSDocumentController.shared.openDocument(
+          withContentsOf: target,
+          display: true
+        ) { [logger] _, _, error in
+          if let error {
+            logger.error("""
+              openDocument failed for \(target.path, privacy: .public): \
+              \(error.localizedDescription, privacy: .public)
+              """)
+          }
         }
       }
     } else {

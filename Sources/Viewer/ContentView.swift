@@ -15,6 +15,33 @@ struct ContentView: View {
             .padding()
         }
       }
+      .toolbar {
+        ToolbarItemGroup(placement: .navigation) {
+          Button {
+            Task { await model.goBack() }
+          } label: {
+            Label("Back", systemImage: "chevron.backward")
+          }
+          .disabled(!model.canGoBack)
+          .keyboardShortcut("[", modifiers: .command)
+
+          Button {
+            Task { await model.goForward() }
+          } label: {
+            Label("Forward", systemImage: "chevron.forward")
+          }
+          .disabled(!model.canGoForward)
+          .keyboardShortcut("]", modifiers: .command)
+        }
+        ToolbarItem(placement: .primaryAction) {
+          Button {
+            Task { await model.reload() }
+          } label: {
+            Label("Reload", systemImage: "arrow.clockwise")
+          }
+          .keyboardShortcut("r", modifiers: .command)
+        }
+      }
       .task(id: fileURL) {
         guard let fileURL else { return }
         await model.bind(to: fileURL)
@@ -23,7 +50,8 @@ struct ContentView: View {
   }
 
   private var navigationTitle: String {
-    fileURL?.deletingPathExtension().lastPathComponent ?? "Markdown Eye"
+    let url = model.documentURL ?? fileURL
+    return url?.deletingPathExtension().lastPathComponent ?? "Markdown Eye"
   }
 }
 
