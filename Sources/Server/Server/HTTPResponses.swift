@@ -1,5 +1,6 @@
 import Foundation
 import FlyingFox
+import GalleyCoreKit
 
 enum HTTPResponses {
   static func badRequest(_ message: String) -> HTTPResponse {

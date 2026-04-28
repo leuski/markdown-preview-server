@@ -1,6 +1,6 @@
 import Foundation
 
-protocol MarkdownRenderer: Sendable {
+public protocol MarkdownRenderer: Sendable {
   /// Stable identifier persisted across launches (e.g. "multimarkdown").
   var id: String { get }
   /// Human-readable name for menus and pickers (e.g. "MultiMarkdown 6").
@@ -9,11 +9,11 @@ protocol MarkdownRenderer: Sendable {
   func render(_ source: String, baseURL: URL) async throws -> String
 }
 
-enum RendererError: LocalizedError {
+public enum RendererError: LocalizedError {
   case executableNotFound(name: String)
   case nonZeroExit(code: Int32, stderr: String)
 
-  var errorDescription: String? {
+  public var errorDescription: String? {
     switch self {
     case .executableNotFound(let name):
       return "\(name) not found on PATH"

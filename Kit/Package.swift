@@ -7,7 +7,8 @@ let package = Package(
     .macOS(.v15)
   ],
   products: [
-    .library(name: "GalleyKit", targets: ["GalleyKit"])
+    .library(name: "GalleyCoreKit", targets: ["GalleyCoreKit"]),
+    .library(name: "GalleyServerKit", targets: ["GalleyServerKit"])
   ],
   dependencies: [
     .package(
@@ -22,17 +23,27 @@ let package = Package(
   ],
   targets: [
     .target(
-      name: "GalleyKit",
+      name: "GalleyCoreKit",
       dependencies: [
-        .product(name: "FlyingFox", package: "FlyingFox"),
-        .product(name: "FlyingSocks", package: "FlyingFox"),
         .product(name: "Markdown", package: "swift-markdown"),
         .product(name: "ALFoundation", package: "swift-core-kit")
       ]
     ),
+    .target(
+      name: "GalleyServerKit",
+      dependencies: [
+        "GalleyCoreKit",
+        .product(name: "FlyingFox", package: "FlyingFox"),
+        .product(name: "FlyingSocks", package: "FlyingFox")
+      ]
+    ),
     .testTarget(
-      name: "GalleyKitTests",
-      dependencies: ["GalleyKit"]
+      name: "GalleyCoreKitTests",
+      dependencies: ["GalleyCoreKit"]
+    ),
+    .testTarget(
+      name: "GalleyServerKitTests",
+      dependencies: ["GalleyServerKit"]
     )
   ]
 )

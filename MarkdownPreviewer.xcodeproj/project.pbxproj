@@ -12,8 +12,9 @@
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
 		626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 626E96E22F9E8DFE00BD51F9 /* Markdown */; };
 		62D5C88F2F9FBD0000CADD72 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = 62D5C88E2F9FBD0000CADD72 /* Scripts */; };
-		62F00001000000000000F004 /* GalleyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F002 /* GalleyKit */; };
-		62F00001000000000000F005 /* GalleyKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F003 /* GalleyKit */; };
+		62F00001000000000000F004 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F002 /* GalleyCoreKit */; };
+		62F00001000000000000F005 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F003 /* GalleyCoreKit */; };
+		62F00001000000000000F009 /* GalleyServerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F008 /* GalleyServerKit */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -86,7 +87,8 @@
 			files = (
 				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
 				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
-				62F00001000000000000F004 /* GalleyKit in Frameworks */,
+				62F00001000000000000F004 /* GalleyCoreKit in Frameworks */,
+				62F00001000000000000F009 /* GalleyServerKit in Frameworks */,
 				626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */,
 				626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */,
 			);
@@ -103,7 +105,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				62F00001000000000000F005 /* GalleyKit in Frameworks */,
+				62F00001000000000000F005 /* GalleyCoreKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -167,6 +169,7 @@
 				626E8DD32F9DDC9100BD51F9 /* PBXTargetDependency */,
 				626E8D8E2F9DD98A00BD51F9 /* PBXTargetDependency */,
 				62F00001000000000000F006 /* PBXTargetDependency */,
+				62F00001000000000000F00A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				626EAA182F9FB59000BD51F9 /* Sources */,
@@ -177,7 +180,8 @@
 				626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */,
 				626E8DD72F9DDC9B00BD51F9 /* ALFoundation */,
 				626E96E22F9E8DFE00BD51F9 /* Markdown */,
-				62F00001000000000000F002 /* GalleyKit */,
+				62F00001000000000000F002 /* GalleyCoreKit */,
+				62F00001000000000000F008 /* GalleyServerKit */,
 			);
 			productName = MarkdownPreviewer;
 			productReference = 626E8D4F2F9DD1C700BD51F9 /* Markdown Preview Server.app */;
@@ -221,7 +225,7 @@
 			);
 			name = Viewer;
 			packageProductDependencies = (
-				62F00001000000000000F003 /* GalleyKit */,
+				62F00001000000000000F003 /* GalleyCoreKit */,
 			);
 			productName = "Markdown Eye";
 			productReference = 62D5CA192FA048F000CADD72 /* Markdown Eye.app */;
@@ -386,11 +390,15 @@
 		};
 		62F00001000000000000F006 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 62F00001000000000000F002 /* GalleyKit */;
+			productRef = 62F00001000000000000F002 /* GalleyCoreKit */;
 		};
 		62F00001000000000000F007 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			productRef = 62F00001000000000000F003 /* GalleyKit */;
+			productRef = 62F00001000000000000F003 /* GalleyCoreKit */;
+		};
+		62F00001000000000000F00A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			productRef = 62F00001000000000000F008 /* GalleyServerKit */;
 		};
 /* End PBXTargetDependency section */
 
@@ -800,15 +808,20 @@
 			package = 626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */;
 			productName = Markdown;
 		};
-		62F00001000000000000F002 /* GalleyKit */ = {
+		62F00001000000000000F002 /* GalleyCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */;
-			productName = GalleyKit;
+			productName = GalleyCoreKit;
 		};
-		62F00001000000000000F003 /* GalleyKit */ = {
+		62F00001000000000000F003 /* GalleyCoreKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */;
-			productName = GalleyKit;
+			productName = GalleyCoreKit;
+		};
+		62F00001000000000000F008 /* GalleyServerKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */;
+			productName = GalleyServerKit;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

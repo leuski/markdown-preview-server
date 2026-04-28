@@ -3,17 +3,17 @@ import Foundation
 /// One row in the BBEdit-style processor picker. The `renderer` is `nil`
 /// when the underlying tool is not installed; the row is still shown so
 /// the user can see what is available and how to install it.
-struct RendererEntry: Sendable, Identifiable {
-  let id: String
-  let displayName: String
-  let installHint: String?
-  let renderer: (any MarkdownRenderer)?
+public struct RendererEntry: Sendable, Identifiable {
+  public let id: String
+  public let displayName: String
+  public let installHint: String?
+  public let renderer: (any MarkdownRenderer)?
 
-  var isBuiltIn: Bool { installHint == nil }
-  var isAvailable: Bool { renderer != nil }
+  public var isBuiltIn: Bool { installHint == nil }
+  public var isAvailable: Bool { renderer != nil }
 }
 
-enum MarkdownRendererCatalog {
+public enum MarkdownRendererCatalog {
   private struct Spec: Sendable {
     let id: String
     let displayName: String
@@ -89,7 +89,7 @@ enum MarkdownRendererCatalog {
       })
   ]
 
-  static func discoverAll() async -> [RendererEntry] {
+  public static func discoverAll() async -> [RendererEntry] {
     var entries: [RendererEntry] = []
     entries.reserveCapacity(specs.count)
     for spec in specs {

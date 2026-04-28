@@ -1,4 +1,5 @@
 import SwiftUI
+import GalleyCoreKit
 
 struct SettingsView: View {
   @Bindable var model: AppModel

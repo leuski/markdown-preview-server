@@ -1,5 +1,6 @@
 import Foundation
 import ALFoundation
+import GalleyCoreKit
 
 struct PlaceholderContext: Sendable {
   let documentContent: String

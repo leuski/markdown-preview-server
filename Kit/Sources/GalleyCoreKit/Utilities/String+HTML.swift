@@ -1,7 +1,7 @@
 import Foundation
 
 extension String {
-  var htmlEscaped: String {
+  public var htmlEscaped: String {
     var out = ""
     out.reserveCapacity(count)
     for char in self {
@@ -15,7 +15,7 @@ extension String {
     return out
   }
 
-  var htmlAttributeEscaped: String {
+  public var htmlAttributeEscaped: String {
     var out = ""
     out.reserveCapacity(count)
     for char in self {
