@@ -13,18 +13,40 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
   /// `window.webkit.messageHandlers.editor.postMessage({ line: N })`.
   static let messageName = "editor"
 
-  /// Snippet injected at document end. Cmd-click on any element with a
-  /// `data-source-line` ancestor posts the line number back to Swift.
+  /// Single combined click handler for cmd-click → editor and plain
+  /// click → in-window navigation. Routing both cases through one
+  /// `addEventListener` removes ambiguity around capture-phase
+  /// ordering between two scripts, and `stopImmediatePropagation`
+  /// guarantees we don't fall through to a duplicate listener that
+  /// could survive across navigations.
   static let userScript: String = """
     document.addEventListener('click', (event) => {
-      if (!event.metaKey) return;
-      const target = event.target.closest('[data-source-line]');
-      if (!target) return;
-      const line = parseInt(target.dataset.sourceLine, 10);
-      if (Number.isNaN(line)) return;
-      window.webkit.messageHandlers.\(messageName).postMessage({ line });
+      if (event.metaKey) {
+        const target = event.target.closest('[data-source-line]');
+        if (target) {
+          const line = parseInt(target.dataset.sourceLine, 10);
+          if (!Number.isNaN(line)) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            window.webkit.messageHandlers.\(messageName).postMessage(
+              { line });
+            return;
+          }
+        }
+        // Cmd-click missed a source-line target — still suppress any
+        // default WebView action (e.g. open-in-new-window for links).
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        return;
+      }
+      const link = event.target.closest('a[href]');
+      if (!link) return;
+      const href = link.getAttribute('href');
+      if (!href || href.startsWith('#')) return;
       event.preventDefault();
-      event.stopPropagation();
+      event.stopImmediatePropagation();
+      window.webkit.messageHandlers.\(LinkBridge.messageName).postMessage(
+        { href });
     }, true);
     """
 

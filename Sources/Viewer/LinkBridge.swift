@@ -15,23 +15,6 @@ final class LinkBridge: NSObject, WKScriptMessageHandler {
   /// `window.webkit.messageHandlers.linkclick.postMessage({ href })`.
   static let messageName = "linkclick"
 
-  /// User script. Plain (non-cmd) click on any `<a href>` posts the
-  /// href back to Swift after preventing the default WebView nav.
-  /// In-page anchors (`#…`) and anything cmd-clicked is left to the
-  /// editor bridge.
-  static let userScript: String = """
-    document.addEventListener('click', (event) => {
-      if (event.metaKey) return;
-      const link = event.target.closest('a[href]');
-      if (!link) return;
-      const href = link.getAttribute('href');
-      if (!href || href.startsWith('#')) return;
-      event.preventDefault();
-      event.stopPropagation();
-      window.webkit.messageHandlers.\(messageName).postMessage({ href });
-    }, true);
-    """
-
   /// The document being previewed. Resolves relative hrefs.
   var documentURL: URL?
 

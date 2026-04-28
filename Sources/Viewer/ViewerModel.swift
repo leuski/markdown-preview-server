@@ -51,12 +51,12 @@ final class ViewerModel {
     let controller = configuration.userContentController
     controller.add(bridge, name: EditorBridge.messageName)
     controller.add(linkBridge, name: LinkBridge.messageName)
+    // One script handles both cmd-click → editor and plain click →
+    // in-window nav, so we don't depend on capture-phase ordering
+    // between two listeners — which appears to drop the editor
+    // listener after the first navigation in macOS 26 WebPage.
     controller.addUserScript(WKUserScript(
       source: EditorBridge.userScript,
-      injectionTime: .atDocumentEnd,
-      forMainFrameOnly: true))
-    controller.addUserScript(WKUserScript(
-      source: LinkBridge.userScript,
       injectionTime: .atDocumentEnd,
       forMainFrameOnly: true))
 
