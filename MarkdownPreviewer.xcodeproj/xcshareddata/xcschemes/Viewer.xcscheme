@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-               BuildableName = "Viewer.app"
+               BuildableName = "Markdown Eye.app"
                BlueprintName = "Viewer"
                ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
             </BuildableReference>
@@ -46,7 +46,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-            BuildableName = "Viewer.app"
+            BuildableName = "Markdown Eye.app"
             BlueprintName = "Viewer"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>
@@ -63,7 +63,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-            BuildableName = "Viewer.app"
+            BuildableName = "Markdown Eye.app"
             BlueprintName = "Viewer"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>

@@ -1,3 +1,7 @@
+excluded:
+- Kit/.build
+- .build
+
 disabled_rules: # rule identifiers to exclude from running
 - opening_brace
 - todo
