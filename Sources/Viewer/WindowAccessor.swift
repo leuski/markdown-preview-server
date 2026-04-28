@@ -46,11 +46,18 @@ private struct DocumentURLModifier: ViewModifier {
 
   private func apply() {
     guard let hostWindow else { return }
+
+    // Hide the proxy icon and the AppKit document menu. DocumentGroup
+    // binds the menu to the originally-opened NSDocument, which means
+    // clicking the title in a navigated state pops a "rename" popover
+    // referencing the wrong file. A markdown viewer that follows
+    // links is browser-shaped, not document-shaped — so we drop the
+    // document menu entirely. Title text stays.
+    hostWindow.representedURL = nil
+    hostWindow.standardWindowButton(.documentIconButton)?.isHidden = true
+
     if let url {
       hostWindow.title = url.deletingPathExtension().lastPathComponent
-      hostWindow.representedURL = url.isFileURL ? url : nil
-    } else {
-      hostWindow.representedURL = nil
     }
   }
 }
