@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		6243E9692F9FB811007814D6 /* ALCombine in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD52F9DDC9B00BD51F9 /* ALCombine */; };
 		626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */; };
 		626E8DCF2F9DDC4A00BD51F9 /* FlyingSocks in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */; };
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
@@ -83,7 +82,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				6243E9692F9FB811007814D6 /* ALCombine in Frameworks */,
 				626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */,
 				626E8DCD2F9DDC4A00BD51F9 /* FlyingFox in Frameworks */,
 				626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */,
@@ -172,7 +170,6 @@
 			packageProductDependencies = (
 				626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */,
 				626E8DCE2F9DDC4A00BD51F9 /* FlyingSocks */,
-				626E8DD52F9DDC9B00BD51F9 /* ALCombine */,
 				626E8DD72F9DDC9B00BD51F9 /* ALFoundation */,
 				626E96E22F9E8DFE00BD51F9 /* Markdown */,
 			);
@@ -768,11 +765,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */;
 			productName = FlyingSocks;
-		};
-		626E8DD52F9DDC9B00BD51F9 /* ALCombine */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
-			productName = ALCombine;
 		};
 		626E8DD72F9DDC9B00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
