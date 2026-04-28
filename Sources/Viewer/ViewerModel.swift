@@ -171,6 +171,40 @@ final class ViewerModel {
     await renderCurrent()
   }
 
+  /// Rename the current document on disk and re-bind the watcher /
+  /// bridges to the new path. History entries that point at the old
+  /// URL are rewritten in place so Back/Forward stays correct.
+  /// Returns the new URL on success; throws if the move fails (the
+  /// caller is expected to revert the title binding in that case).
+  @discardableResult
+  func renameCurrentDocument(toName newName: String) async throws -> URL {
+    guard let oldURL = documentURL else {
+      throw CocoaError(.fileNoSuchFile)
+    }
+    let trimmed = newName.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty,
+          !trimmed.contains("/"),
+          trimmed != oldURL.lastPathComponent
+    else { return oldURL }
+
+    let newURL = oldURL.deletingLastPathComponent()
+      .appendingPathComponent(trimmed)
+    do {
+      try FileManager.default.moveItem(at: oldURL, to: newURL)
+    } catch {
+      lastError = "Rename failed: \(error.localizedDescription)"
+      throw error
+    }
+    lastError = nil
+
+    // Patch every history entry that referenced the old URL — Back
+    // would otherwise lead to a now-missing path and trip the
+    // unreachable-link guard.
+    history = history.map { $0 == oldURL ? newURL : $0 }
+    await rebindCurrent()
+    return newURL
+  }
+
   // MARK: - Internals
 
   /// Rebind the model to whichever URL is at `currentIndex`. Drives

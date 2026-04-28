@@ -12,6 +12,11 @@ struct ContentView: View {
   @State private var didRestore = false
   @State private var hostWindow: NSWindow?
 
+  /// Two-way bound title — clicking the window title opens the
+  /// macOS rename popover, and the committed value flows back here.
+  /// We treat any change as a rename request against `model.documentURL`.
+  @State private var displayTitle: String = "Markdown Preview"
+
   /// Per-window persisted back/forward stack. SwiftUI's `@SceneStorage`
   /// gives each WindowGroup window its own keyspace, so two windows
   /// each get their own history that survives app relaunch.
@@ -42,16 +47,57 @@ struct ContentView: View {
     })
     .toolbar { toolbarContent }
     .focusedSceneValue(\.viewerModel, model)
-    .navigationTitle(model.documentURL?.lastPathComponent
-      ?? fileURL?.lastPathComponent
-      ?? "Markdown Preview")
+    .navigationTitle($displayTitle)
     .task(id: fileURL) { await launchTask() }
-    .onChange(of: model.documentURL) { _, _ in saveHistory() }
+    .onChange(of: model.documentURL, initial: true) { _, _ in
+      syncTitleFromModel()
+      saveHistory()
+    }
+    .onChange(of: displayTitle) { _, new in handleTitleEdit(new) }
     .onChange(of: settings.selectedRendererID) { _, _ in
       Task { await model.reload() }
     }
     .onChange(of: settings.templateStore.selectedID) { _, _ in
       Task { await model.reload() }
+    }
+    .navigationDocument(model.documentURL ?? URL.homeDirectory)
+  }
+
+  private func syncTitleFromModel() {
+    let title = model.documentURL?.lastPathComponent
+      ?? fileURL?.lastPathComponent
+      ?? "Markdown Preview"
+    if displayTitle != title { displayTitle = title }
+  }
+
+  /// Treat a committed title edit as a rename of the underlying
+  /// file. Reverts the field when the move fails or the title
+  /// matches the current filename (no-op write from a sync-back).
+  private func handleTitleEdit(_ candidate: String) {
+    guard let url = model.documentURL else {
+      // Placeholder window — restore default; we don't rename
+      // anything because there's no document.
+      let title = fileURL?.lastPathComponent ?? "Markdown Preview"
+      if displayTitle != title { displayTitle = title }
+      return
+    }
+    let current = url.lastPathComponent
+    let trimmed = candidate.trimmingCharacters(in: .whitespacesAndNewlines)
+    guard !trimmed.isEmpty, trimmed != current else {
+      if displayTitle != current { displayTitle = current }
+      return
+    }
+    Task {
+      do {
+        let newURL = try await model.renameCurrentDocument(toName: trimmed)
+        appDelegate.record(newURL)
+        // Update the WindowGroup binding so state restoration tracks
+        // the renamed file rather than reopening a vanished path.
+        if fileURL != newURL { fileURL = newURL }
+      } catch {
+        NSSound.beep()
+        displayTitle = current
+      }
     }
   }
 
