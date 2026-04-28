@@ -15,18 +15,15 @@ struct ContentView: View {
             .padding()
         }
       }
-      .onAppear { bindIfNeeded() }
-      .onChange(of: fileURL) { bindIfNeeded() }
+      .task(id: fileURL) {
+        guard let fileURL else { return }
+        await model.bind(to: fileURL)
+      }
       .navigationTitle(navigationTitle)
   }
 
   private var navigationTitle: String {
     fileURL?.deletingPathExtension().lastPathComponent ?? "Markdown Eye"
-  }
-
-  private func bindIfNeeded() {
-    guard let fileURL, fileURL != model.documentURL else { return }
-    model.bind(to: fileURL)
   }
 }
 
