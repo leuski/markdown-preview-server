@@ -47,6 +47,7 @@
 				Viewer/ViewerApp.swift,
 				Viewer/ViewerDocument.swift,
 				Viewer/ViewerModel.swift,
+				Viewer/WindowAccessor.swift,
 			);
 			target = 626E8D4E2F9DD1C700BD51F9 /* Server */;
 		};
@@ -61,6 +62,7 @@
 				Viewer/ViewerApp.swift,
 				Viewer/ViewerDocument.swift,
 				Viewer/ViewerModel.swift,
+				Viewer/WindowAccessor.swift,
 			);
 			target = 62D5CA182FA048F000CADD72 /* Viewer */;
 		};
