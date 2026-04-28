@@ -7,6 +7,12 @@ struct ContentView: View {
   @Environment(ViewerSettings.self) private var settings
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @State private var model = ViewerModel()
+  @State private var didRestore = false
+
+  /// Per-window persisted back/forward stack. SwiftUI's `@SceneStorage`
+  /// gives each WindowGroup window its own keyspace, so two windows
+  /// each get their own history that survives app relaunch.
+  @SceneStorage("MarkdownEye.history") private var historyJSON: String = ""
 
   var body: some View {
     Group {
@@ -31,9 +37,18 @@ struct ContentView: View {
       ?? "Markdown Preview")
     .task(id: fileURL) {
       model.bindSettings(settings)
-      guard let fileURL else { return }
-      appDelegate.record(fileURL)
-      await model.bind(to: fileURL)
+      if !didRestore, let snapshot = decodeHistory(historyJSON) {
+        didRestore = true
+        await model.restore(snapshot: snapshot)
+      } else if let fileURL {
+        await model.bind(to: fileURL)
+      }
+      if let current = model.documentURL {
+        appDelegate.record(current)
+      }
+    }
+    .onChange(of: model.documentURL) { _, _ in
+      saveHistory()
     }
     .onChange(of: settings.selectedRendererID) { _, _ in
       Task { await model.reload() }
@@ -41,6 +56,28 @@ struct ContentView: View {
     .onChange(of: settings.templateStore.selectedID) { _, _ in
       Task { await model.reload() }
     }
+  }
+
+  private func saveHistory() {
+    guard let snapshot = model.historySnapshot else {
+      historyJSON = ""
+      return
+    }
+    if let data = try? JSONEncoder().encode(snapshot),
+       let text = String(data: data, encoding: .utf8)
+    {
+      historyJSON = text
+    }
+  }
+
+  private func decodeHistory(_ text: String) -> HistorySnapshot? {
+    guard !text.isEmpty,
+          let data = text.data(using: .utf8),
+          let snapshot = try? JSONDecoder().decode(
+            HistorySnapshot.self, from: data),
+          !snapshot.urls.isEmpty
+    else { return nil }
+    return snapshot
   }
 
   @ToolbarContentBuilder

@@ -51,6 +51,15 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
     true
   }
 
+  /// Opt in to secure state restoration so macOS persists the open
+  /// windows (and SwiftUI persists their `@SceneStorage` payloads)
+  /// across launches without warning about insecure coding.
+  func applicationSupportsSecureRestorableState(
+    _ app: NSApplication
+  ) -> Bool {
+    true
+  }
+
   /// Called by the first SwiftUI view that comes up. Installs the
   /// `openWindow` action and flushes any URLs queued during launch.
   func install(_ handler: @escaping (URL) -> Void) {

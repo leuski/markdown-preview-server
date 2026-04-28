@@ -97,6 +97,29 @@ final class ViewerModel {
     await rebindCurrent()
   }
 
+  /// Restore a previously-saved history stack. Used at window
+  /// re-open time to pick up where the user left off — the active
+  /// document and the back/forward stack are both re-established.
+  func restore(snapshot: HistorySnapshot) async {
+    guard !snapshot.urls.isEmpty,
+          snapshot.currentIndex >= 0,
+          snapshot.currentIndex < snapshot.urls.count
+    else { return }
+    history = snapshot.urls
+    currentIndex = snapshot.currentIndex
+    await rebindCurrent()
+  }
+
+  /// Codable view of the back/forward stack for `@SceneStorage`.
+  /// Returns nil when there is nothing meaningful to persist.
+  var historySnapshot: HistorySnapshot? {
+    guard !history.isEmpty,
+          currentIndex >= 0,
+          currentIndex < history.count
+    else { return nil }
+    return HistorySnapshot(urls: history, currentIndex: currentIndex)
+  }
+
   /// Push a new URL onto the history and navigate to it. Truncates
   /// any forward entries (browser-standard new-link behaviour).
   func navigate(to url: URL) async {
@@ -197,5 +220,13 @@ final class ViewerModel {
 @MainActor
 final class TemplateBox {
   var template: (any Template)?
+}
+
+/// Serializable form of a window's back/forward stack. Persisted via
+/// `@SceneStorage` so each window restores to whichever document the
+/// user was viewing when the app last quit.
+struct HistorySnapshot: Codable, Sendable, Equatable {
+  let urls: [URL]
+  let currentIndex: Int
 }
 
