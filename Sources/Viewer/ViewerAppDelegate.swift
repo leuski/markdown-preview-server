@@ -62,23 +62,45 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
 
   /// Called by the first SwiftUI view that comes up. Installs the
   /// `openWindow` action and flushes any URLs queued during launch.
-  func install(_ handler: @escaping (URL) -> Void) {
+  /// Returns `true` when pending URLs were flushed — the caller can
+  /// use that signal to drop a placeholder welcome window since real
+  /// document windows are about to appear.
+  @discardableResult
+  func install(_ handler: @escaping (URL) -> Void) -> Bool {
+    let hadPending = !pending.isEmpty
     openHandler = handler
     let queue = pending
     pending.removeAll()
     for url in queue { handler(url) }
+    return hadPending
   }
 
   /// Open one or more files via NSOpenPanel and dispatch them through
   /// the same routing path as Finder opens.
   func presentOpenPanel() {
+    application(NSApp, open: runOpenPanel())
+  }
+
+  /// Run NSOpenPanel synchronously and return the picked URLs without
+  /// dispatching anywhere. Used by the launch flow so the caller can
+  /// load the file into the placeholder window rather than spawning
+  /// a new one.
+  func runOpenPanel() -> [URL] {
     let panel = NSOpenPanel()
     panel.allowsMultipleSelection = true
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
     panel.allowedContentTypes = Self.openPanelContentTypes
-    guard panel.runModal() == .OK else { return }
-    application(NSApp, open: panel.urls)
+    guard panel.runModal() == .OK else { return [] }
+    return panel.urls
+  }
+
+  /// Stay alive after the last window closes — the user can launch
+  /// the open panel again from File > Open.
+  func applicationShouldTerminateAfterLastWindowClosed(
+    _ sender: NSApplication
+  ) -> Bool {
+    false
   }
 
   /// Open a single previously-opened URL through the same dispatch
