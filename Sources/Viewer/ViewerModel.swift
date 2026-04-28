@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import GalleyCoreKit
 import Observation
@@ -122,7 +123,13 @@ final class ViewerModel {
 
   /// Push a new URL onto the history and navigate to it. Truncates
   /// any forward entries (browser-standard new-link behaviour).
+  ///
+  /// If the target file isn't readable, surfaces an error and leaves
+  /// history, bridges, and the visible document untouched — that way
+  /// a broken link click doesn't strand the window with a corrupted
+  /// base URL the link bridge would resolve subsequent clicks against.
   func navigate(to url: URL) async {
+    guard reportIfUnreachable(url) else { return }
     if currentIndex >= 0, currentIndex < history.count {
       history.removeSubrange((currentIndex + 1)..<history.count)
     }
@@ -133,14 +140,31 @@ final class ViewerModel {
 
   func goBack() async {
     guard canGoBack else { return }
+    let target = history[currentIndex - 1]
+    guard reportIfUnreachable(target) else { return }
     currentIndex -= 1
     await rebindCurrent()
   }
 
   func goForward() async {
     guard canGoForward else { return }
+    let target = history[currentIndex + 1]
+    guard reportIfUnreachable(target) else { return }
     currentIndex += 1
     await rebindCurrent()
+  }
+
+  /// Verify a link target is readable before we commit to navigating
+  /// to it. Returns `true` when the file exists; otherwise sets
+  /// `lastError` and returns `false`.
+  private func reportIfUnreachable(_ url: URL) -> Bool {
+    if FileManager.default.isReadableFile(atPath: url.path) {
+      lastError = nil
+      return true
+    }
+    lastError = "Cannot open \(url.lastPathComponent): file not found."
+    NSSound.beep()
+    return false
   }
 
   func reload() async {
