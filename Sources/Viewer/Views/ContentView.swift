@@ -8,6 +8,7 @@ struct ContentView: View {
   @Environment(ViewerSettings.self) private var settings
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @Environment(\.openWindow) private var openWindow
+  @Environment(\.dismiss) private var dismiss
   @State private var model = ViewerModel()
   @State private var didRestore = false
   @State private var hostWindow: NSWindow?
@@ -91,7 +92,7 @@ struct ContentView: View {
     if flushed {
       // application(_:open:) URLs are spawning real windows of their
       // own. Drop the placeholder.
-      hostWindow?.close()
+      dismiss()
       return
     }
 
@@ -106,7 +107,7 @@ struct ContentView: View {
     hostWindow?.alphaValue = 0
     let picks = appDelegate.runOpenPanel()
     guard let first = picks.first else {
-      hostWindow?.close()
+      dismiss()
       return
     }
     for extra in picks.dropFirst() {
@@ -186,22 +187,35 @@ struct ContentView: View {
 }
 
 /// Resolves the host `NSWindow` so the SwiftUI view can drive
-/// AppKit-only properties on it (alpha, close).
+/// AppKit-only properties on it (alpha, close). Reports through
+/// `viewDidMoveToWindow` so the resolution is synchronous with
+/// AppKit attachment — async dispatch raced the `.task` that drives
+/// the launch picker, leaving `hostWindow` nil when it was needed.
 private struct WindowAccessor: NSViewRepresentable {
   let onResolve: (NSWindow?) -> Void
 
   func makeNSView(context: Context) -> NSView {
-    let view = NSView(frame: .zero)
-    DispatchQueue.main.async { [weak view] in
-      onResolve(view?.window)
-    }
-    return view
+    ResolvingView(onResolve: onResolve)
   }
 
-  func updateNSView(_ nsView: NSView, context: Context) {
-    DispatchQueue.main.async { [weak nsView] in
-      onResolve(nsView?.window)
-    }
+  func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+private final class ResolvingView: NSView {
+  let onResolve: (NSWindow?) -> Void
+
+  init(onResolve: @escaping (NSWindow?) -> Void) {
+    self.onResolve = onResolve
+    super.init(frame: .zero)
+  }
+
+  required init?(coder: NSCoder) {
+    fatalError("init(coder:) has not been implemented")
+  }
+
+  override func viewDidMoveToWindow() {
+    super.viewDidMoveToWindow()
+    onResolve(window)
   }
 }
 
