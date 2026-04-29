@@ -12,10 +12,9 @@ import SwiftUI
 @MainActor
 final class ViewerSettings {
   @ObservationIgnored let templateStore: TemplateStore
-  @ObservationIgnored let templateChoice: TemplateChoice
+  @ObservationIgnored let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore
-  @ObservationIgnored let processorChoice: ProcessorChoice
-  var templates: [any Template] { templateStore.templates }
+  @ObservationIgnored let processors: ProcessorChoice
 
   /// User's chosen editor target. Drives both cmd-click → editor and
   /// File > Open in Editor. Persisted as JSON so the full enum
@@ -57,10 +56,10 @@ final class ViewerSettings {
   init(skipDiscovery: Bool = false) {
     let store = TemplateStore()
     self.templateStore = store
-    self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
+    self.templates = TemplateChoice(store: store, key: Keys.templateID)
     let processorStore = ProcessorStore()
     self.processorStore = processorStore
-    self.processorChoice = ProcessorChoice(
+    self.processors = ProcessorChoice(
       store: processorStore, key: Keys.rendererID)
     self.editorChoice = Self.loadEditorChoice()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
@@ -81,7 +80,7 @@ final class ViewerSettings {
   /// User's preferred processor if available, otherwise the first
   /// available entry; `nil` only when nothing is available.
   var activeProcessor: Processor? {
-    let value = processorChoice.active
+    let value = processors.active
     return value.isAvailable ? value.processor : nil
   }
 
@@ -92,17 +91,17 @@ final class ViewerSettings {
   }
 
   var activeTemplate: any Template {
-    templateChoice.selected.template
+    templates.selected.template
   }
 
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed.
   var preferredButUnavailableProcessor: Processor? {
-    processorChoice.preferredButUnavailable?.processor
+    processors.preferredButUnavailable?.processor
   }
 
   func selectTemplate(_ template: any Template) {
-    templateChoice.selected = TemplateChoice.Value(template: template)
+    templates.selected = TemplateChoice.Value(template: template)
   }
 
   func rediscoverRenderers() async {

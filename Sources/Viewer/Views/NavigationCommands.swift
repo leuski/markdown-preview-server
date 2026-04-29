@@ -42,27 +42,27 @@ extension FocusedValues {
 /// menu in `RenderingCommands` can drive it without going through
 /// `ViewerModel`. The struct holds a `Binding` to the active
 /// window's `@SceneStorage` slot.
-private struct ViewerTemplateChoiceKey: FocusedValueKey {
+private struct ViewerTemplatesKey: FocusedValueKey {
   typealias Value = SceneTemplateChoice
 }
 
 extension FocusedValues {
-  var viewerTemplateChoice: SceneTemplateChoice? {
-    get { self[ViewerTemplateChoiceKey.self] }
-    set { self[ViewerTemplateChoiceKey.self] = newValue }
+  var viewerTemplates: SceneTemplateChoice? {
+    get { self[ViewerTemplatesKey.self] }
+    set { self[ViewerTemplatesKey.self] = newValue }
   }
 }
 
 /// Per-window processor choice. Same plumbing as
-/// `viewerTemplateChoice`.
-private struct ViewerProcessorChoiceKey: FocusedValueKey {
+/// `viewerTemplates`.
+private struct ViewerProcessorsKey: FocusedValueKey {
   typealias Value = SceneProcessorChoice
 }
 
 extension FocusedValues {
-  var viewerProcessorChoice: SceneProcessorChoice? {
-    get { self[ViewerProcessorChoiceKey.self] }
-    set { self[ViewerProcessorChoiceKey.self] = newValue }
+  var viewerProcessors: SceneProcessorChoice? {
+    get { self[ViewerProcessorsKey.self] }
+    set { self[ViewerProcessorsKey.self] = newValue }
   }
 }
 

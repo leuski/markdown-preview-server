@@ -76,7 +76,7 @@ struct SettingsView: View {
   }
 
   private var activeDisplayName: String {
-    model.processorChoice.active.name
+    model.processors.active.name
   }
 
   private func staleMessage(
@@ -116,7 +116,7 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 
 extension RendererMenu where Model == ProcessorChoice {
   init(appModel: AppModel) {
-    self.init(model: appModel.processorChoice)
+    self.init(model: appModel.processors)
   }
 }
 

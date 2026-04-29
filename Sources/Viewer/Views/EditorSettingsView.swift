@@ -131,7 +131,7 @@ struct EditorSettingsView: View {
   @ViewBuilder
   private var templatePicker: some View {
     Menu {
-      TemplateMenuCore(model: settings.templateChoice)
+      TemplateMenuCore(model: settings.templates)
     } label: {
       Text(settings.activeTemplate.name)
     }
@@ -140,7 +140,7 @@ struct EditorSettingsView: View {
   @ViewBuilder
   private var processorPicker: some View {
     Menu {
-      ProcessorMenuCore(model: settings.processorChoice)
+      ProcessorMenuCore(model: settings.processors)
     } label: {
       Text(settings.activeProcessor?.name ?? "no processor found")
     }

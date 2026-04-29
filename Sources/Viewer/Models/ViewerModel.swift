@@ -29,9 +29,9 @@ final class ViewerModel {
   /// `Binding<String?>` to a `@SceneStorage` slot owned by the view,
   /// so reading/writing `selected` is the same as reading/writing
   /// the persisted scene state. `nil` until
-  /// `bindSettings(_:templateChoice:processorChoice:)` runs.
-  @ObservationIgnored private var templateChoice: SceneTemplateChoice?
-  @ObservationIgnored private var processorChoice: SceneProcessorChoice?
+  /// `bindSettings(_:templates:processors:)` runs.
+  @ObservationIgnored private var templates: SceneTemplateChoice?
+  @ObservationIgnored private var processors: SceneProcessorChoice?
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
@@ -118,12 +118,12 @@ final class ViewerModel {
   /// override menus agree by construction.
   func bindSettings(
     _ settings: ViewerSettings,
-    templateChoice: SceneTemplateChoice,
-    processorChoice: SceneProcessorChoice
+    templates: SceneTemplateChoice,
+    processors: SceneProcessorChoice
   ) {
     self.settings = settings
-    self.templateChoice = templateChoice
-    self.processorChoice = processorChoice
+    self.templates = templates
+    self.processors = processors
     templateBox.template = resolvedTemplate()
   }
 
@@ -324,30 +324,30 @@ final class ViewerModel {
   /// to the global selection if its pick is unavailable). Otherwise
   /// always use the global selection.
   private func resolvedRenderer() -> any MarkdownRenderer {
-    guard let processorChoice else {
+    guard let processors else {
       return settings?.activeRenderer ?? SwiftMarkdownRenderer()
     }
     if settings?.enablePerDocumentOverrides == true {
-      let pick = processorChoice.selected.processor
+      let pick = processors.selected.processor
       if let renderer = pick.renderer { return renderer }
       // Local pick is unavailable — fall back to the resolved global
       // (which itself falls back to the catalog's first-available
       // entry).
     }
-    return processorChoice.globalProcessor.processor.renderer
+    return processors.globalProcessor.processor.renderer
       ?? SwiftMarkdownRenderer()
   }
 
   private func resolvedTemplate() -> any Template {
-    guard let templateChoice else {
+    guard let templates else {
       return settings?.activeTemplate ?? BuiltInTemplate.shared
     }
     if settings?.enablePerDocumentOverrides == true {
-      return templateChoice.selected.template
+      return templates.selected.template
     }
     // Per-document override is off: always use the global selection,
     // even if a window happens to have a stale local pick.
-    return templateChoice.globalTemplate
+    return templates.globalTemplate
   }
 
   private func currentScrollY() async -> Double? {

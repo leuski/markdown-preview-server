@@ -19,7 +19,7 @@ struct MarkdownPreviewerApp: App {
         model: model,
         server: model.server,
         templateStore: model.templateStore,
-        templateChoice: model.templateChoice)
+        templates: model.templates)
     } label: {
       MenuBarLabel(state: model.server.state)
     }

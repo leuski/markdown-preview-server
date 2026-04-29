@@ -34,17 +34,17 @@ final class AppModel {
   }
 
   @ObservationIgnored let templateStore: TemplateStore
-  @ObservationIgnored let templateChoice: TemplateChoice
+  @ObservationIgnored let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore
-  @ObservationIgnored let processorChoice: ProcessorChoice
+  @ObservationIgnored let processors: ProcessorChoice
   @ObservationIgnored lazy var server: PreviewServerController = {
     PreviewServerController(
       templateStore: self.templateStore,
       selectedTemplateProvider: { [weak self] in
-        await self?.templateChoice.selected.template ?? .default
+        await self?.templates.selected.template ?? .default
       },
       rendererProvider: { [weak self] in
-        await self?.processorChoice.active.processor.renderer
+        await self?.processors.active.processor.renderer
       })
   }()
 
@@ -60,10 +60,10 @@ final class AppModel {
   init() {
     let store = TemplateStore()
     self.templateStore = store
-    self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
+    self.templates = TemplateChoice(store: store, key: Keys.templateID)
     let processorStore = ProcessorStore()
     self.processorStore = processorStore
-    self.processorChoice = ProcessorChoice(
+    self.processors = ProcessorChoice(
       store: processorStore, key: Keys.rendererID)
 
     startServer()
@@ -92,7 +92,7 @@ final class AppModel {
   /// but its underlying tool is not installed — UI surfaces this so the
   /// fallback isn't silent.
   var preferredButUnavailableProcessor: Processor? {
-    processorChoice.preferredButUnavailable?.processor
+    processors.preferredButUnavailable?.processor
   }
 
   /// Re-runs discovery (e.g. after the user installs a new tool).

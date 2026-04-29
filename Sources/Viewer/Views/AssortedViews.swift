@@ -64,7 +64,7 @@ where Model: ChoiceModel, Model.Value: TemplateModel
 
 extension TemplateMenu where Model == TemplateChoice {
   init(settings: ViewerSettings) {
-    self.init(model: settings.templateChoice, settings: settings)
+    self.init(model: settings.templates, settings: settings)
   }
 }
 
@@ -108,6 +108,6 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 
 extension ProcessorMenu where Model == ProcessorChoice {
   init(settings: ViewerSettings) {
-    self.init(model: settings.processorChoice, settings: settings)
+    self.init(model: settings.processors, settings: settings)
   }
 }

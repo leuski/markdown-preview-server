@@ -31,14 +31,14 @@ struct ContentView: View {
   /// automatically. The `.global` value renders as "Use Global
   /// Setting" in the menu and is the resolved choice when no
   /// window-local pick is active.
-  private var templateChoice: SceneTemplateChoice {
+  private var templates: SceneTemplateChoice {
     SceneTemplateChoice(
-      source: settings.templateChoice,
+      source: settings.templates,
       storage: $overrideTemplateID)
   }
-  private var processorChoice: SceneProcessorChoice {
+  private var processors: SceneProcessorChoice {
     SceneProcessorChoice(
-      source: settings.processorChoice,
+      source: settings.processors,
       storage: $overrideRendererID)
   }
 
@@ -96,8 +96,8 @@ struct ContentView: View {
     .toolbar { toolbarContent }
     .modifier(SceneValuesModifier(
       model: model,
-      templateChoice: templateChoice,
-      processorChoice: processorChoice,
+      templates: templates,
+      processors: processors,
       renameContext: RenameContext(
         url: model.documentURL,
         apply: { newURL in
@@ -114,8 +114,8 @@ struct ContentView: View {
       // restore, or in-window navigation), reveal the window.
       if new != nil { hostWindow?.alphaValue = 1 }
     }
-    .onChange(of: settings.processorChoice.selected) { reloadModel() }
-    .onChange(of: settings.templateChoice.selected) { reloadModel() }
+    .onChange(of: settings.processors.selected) { reloadModel() }
+    .onChange(of: settings.templates.selected) { reloadModel() }
     .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
     .onChange(of: overrideTemplateID) { reloadModel() }
     .onChange(of: overrideRendererID) { reloadModel() }
@@ -141,8 +141,8 @@ struct ContentView: View {
   private func launchTask() async {
     model.bindSettings(
       settings,
-      templateChoice: templateChoice,
-      processorChoice: processorChoice)
+      templates: templates,
+      processors: processors)
     // Keep the delegate's settings reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
     appDelegate.settings = settings
@@ -290,15 +290,15 @@ struct ContentView: View {
 /// for the type-checker.
 private struct SceneValuesModifier: ViewModifier {
   let model: ViewerModel
-  let templateChoice: SceneTemplateChoice
-  let processorChoice: SceneProcessorChoice
+  let templates: SceneTemplateChoice
+  let processors: SceneProcessorChoice
   let renameContext: RenameContext
 
   func body(content: Content) -> some View {
     content
       .focusedSceneValue(\.viewerModel, model)
-      .focusedSceneValue(\.viewerTemplateChoice, templateChoice)
-      .focusedSceneValue(\.viewerProcessorChoice, processorChoice)
+      .focusedSceneValue(\.viewerTemplates, templates)
+      .focusedSceneValue(\.viewerProcessors, processors)
       .focusedSceneValue(\.viewerRenameContext, renameContext)
   }
 }
@@ -387,6 +387,6 @@ private struct TemplateToolbarPicker: View {
   }
 
   private var label: String {
-    settings.templateChoice.selected.name
+    settings.templates.selected.name
   }
 }

@@ -12,12 +12,12 @@ import SwiftUI
 /// selection directly.
 struct RenderingCommands: Commands {
   @Bindable var settings: ViewerSettings
-  @FocusedValue(\.viewerTemplateChoice) private var templateChoice
-  @FocusedValue(\.viewerProcessorChoice) private var processorChoice
+  @FocusedValue(\.viewerTemplates) private var templates
+  @FocusedValue(\.viewerProcessors) private var processors
 
   var body: some Commands {
     CommandMenu("Format") {
-      if settings.enablePerDocumentOverrides, let choice = processorChoice {
+      if settings.enablePerDocumentOverrides, let choice = processors {
         Menu("Markdown Processor") {
           ProcessorMenu(model: choice, settings: settings)
         }
@@ -27,7 +27,7 @@ struct RenderingCommands: Commands {
         }
       }
 
-      if settings.enablePerDocumentOverrides, let choice = templateChoice {
+      if settings.enablePerDocumentOverrides, let choice = templates {
         Menu("Template") {
           TemplateMenu(model: choice, settings: settings)
         }

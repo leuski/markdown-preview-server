@@ -9,7 +9,7 @@ struct MenuBarContent: View {
   let model: AppModel
   let server: PreviewServerController
   let templateStore: TemplateStore
-  @Bindable var templateChoice: TemplateChoice
+  @Bindable var templates: TemplateChoice
 
   @Environment(\.openSettings) private var openSettings
 
@@ -55,12 +55,12 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var templatesMenu: some View {
     Menu("Template") {
-      let values = templateChoice.values
+      let values = templates.values
       DividedSections(sections: [
         values.filter { $0.kind == .builtIn },
         values.filter { $0.kind == .userDefined }
       ], id: \.self) { item in
-        Toggle(item.name, isOn: templateChoice.selectedBinding(item))
+        Toggle(item.name, isOn: templates.selectedBinding(item))
       }
       Divider()
       Button("Reveal Templates Folder") {
