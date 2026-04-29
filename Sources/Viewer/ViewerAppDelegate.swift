@@ -22,6 +22,26 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   @ObservationIgnored private(set) var openHandler: ((URL) -> Void)?
   @ObservationIgnored private var pending: [URL] = []
 
+  /// Reference to the shared `ViewerSettings`, set by `ViewerApp` so
+  /// `application(_:open:)` and friends can consult `openBehavior`
+  /// without a SwiftUI environment lookup.
+  @ObservationIgnored weak var settings: ViewerSettings?
+
+  /// Window registry — each `ContentView` registers its `NSWindow`
+  /// along with a closure that rebinds the window to a new URL. Used
+  /// for the `replaceCurrent` open behavior, and to identify the
+  /// frontmost window for the `newTab` handoff.
+  @ObservationIgnored
+  private var registrations: [ObjectIdentifier: WindowRegistration] = [:]
+
+  /// FIFO queue of hosts for the next `newTab` opens. Populated
+  /// immediately before calling `openHandler`; each new window's
+  /// `WindowAccessor` consumes one entry when it resolves an
+  /// `NSWindow`. A queue (rather than a single slot) handles the
+  /// multi-URL case from `application(_:open:)` where window
+  /// creation is async w.r.t. the dispatch loop.
+  @ObservationIgnored private var pendingTabHosts: [NSWindow] = []
+
   /// Mirrors `NSDocumentController.shared.recentDocumentURLs`. Updated
   /// whenever we record or clear a recent URL. Bind from the File
   /// menu's Open Recent submenu.
@@ -45,12 +65,91 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   func application(_ application: NSApplication, open urls: [URL]) {
     for url in urls {
       record(url)
-      if let openHandler {
-        openHandler(url)
+      dispatch(url)
+    }
+  }
+
+  /// Single entry point all "open this URL" requests funnel through.
+  /// Honors `ViewerSettings.openBehavior` when at least one window is
+  /// already on screen; with no windows, every mode collapses to
+  /// "spawn a new window" since there's no frontmost to tab onto.
+  func dispatch(_ url: URL) {
+    let behavior = settings?.openBehavior ?? .newWindow
+
+    // Pre-launch (or no windows yet): only newWindow makes sense.
+    // Queue if the SwiftUI handler isn't installed; otherwise just
+    // hand off and let WindowGroup spawn a fresh window.
+    guard let openHandler else {
+      pending.append(url)
+      return
+    }
+
+    switch behavior {
+    case .newWindow:
+      openHandler(url)
+
+    case .newTab:
+      // Mark the current frontmost as the tab host. The freshly
+      // spawned window will read this in its WindowAccessor and
+      // merge itself into that window's tab group.
+      if let host = frontmostRegisteredWindow() {
+        pendingTabHosts.append(host)
+      }
+      openHandler(url)
+
+    case .replaceCurrent:
+      // Rebind the frontmost window in place; fall back to a new
+      // window if there's nothing to reuse.
+      if let registration = frontmostRegistration() {
+        registration.rebind(url)
       } else {
-        pending.append(url)
+        openHandler(url)
       }
     }
+  }
+
+  // MARK: - Window registry
+
+  /// Called by every `ContentView` once its `NSWindow` resolves. The
+  /// `rebind` closure swaps the window's WindowGroup binding and the
+  /// underlying `ViewerModel` to a new URL.
+  func registerWindow(
+    _ window: NSWindow,
+    rebind: @escaping @MainActor (URL) -> Void
+  ) {
+    registrations[ObjectIdentifier(window)] = WindowRegistration(
+      window: window, rebind: rebind)
+  }
+
+  func unregisterWindow(_ window: NSWindow) {
+    registrations.removeValue(forKey: ObjectIdentifier(window))
+  }
+
+  /// Consume the oldest pending `newTab` host. The new window calls
+  /// this after attaching, then merges itself onto the returned host.
+  func consumePendingTabHost() -> NSWindow? {
+    pendingTabHosts.isEmpty ? nil : pendingTabHosts.removeFirst()
+  }
+
+  /// Pick the registered window that should receive the next "replace"
+  /// or "new tab" request. Prefers the system's main window, falls
+  /// back to the key window, then to any still-live registration.
+  private func frontmostRegistration() -> WindowRegistration? {
+    let keys = [NSApp.mainWindow, NSApp.keyWindow]
+      .compactMap { $0 }
+      .map { ObjectIdentifier($0) }
+    for key in keys {
+      if let registration = registrations[key],
+         registration.window != nil
+      {
+        return registration
+      }
+    }
+    return registrations.values.first { $0.window != nil }
+  }
+
+  private func frontmostRegisteredWindow() -> NSWindow? {
+    frontmostRegistration()?.window
   }
 
   /// Allow an untitled placeholder window so SwiftUI has a host view
@@ -131,6 +230,16 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   func clearRecents() {
     NSDocumentController.shared.clearRecentDocuments(nil)
     recentURLs = NSDocumentController.shared.recentDocumentURLs
+  }
+
+  /// Weak link to a `ContentView`'s `NSWindow` plus the closure that
+  /// rebinds that window's WindowGroup binding + `ViewerModel` to a
+  /// new URL. Closures live for the lifetime of the registration —
+  /// they capture `self` from the enclosing view, so the registry
+  /// must drop entries when the window goes away to avoid leaks.
+  private struct WindowRegistration {
+    weak var window: NSWindow?
+    let rebind: @MainActor (URL) -> Void
   }
 
   private static let openPanelContentTypes: [UTType] = {

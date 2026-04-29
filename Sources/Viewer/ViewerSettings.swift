@@ -47,10 +47,21 @@ final class ViewerSettings {
     }
   }
 
+  /// How the app should handle a new document open request from
+  /// Finder, the open panel, or Open Recent. Defaults to opening a
+  /// fresh window (the historical behavior).
+  var openBehavior: OpenBehavior {
+    didSet {
+      UserDefaults.standard.set(
+        openBehavior.rawValue, forKey: Keys.openBehavior)
+    }
+  }
+
   private enum Keys {
     static let rendererID = "MarkdownEye.rendererID"
     static let editorChoice = "MarkdownEye.editorChoice"
     static let perDocOverrides = "MarkdownEye.perDocumentOverrides"
+    static let openBehavior = "MarkdownEye.openBehavior"
   }
 
   init() {
@@ -60,6 +71,10 @@ final class ViewerSettings {
     self.editorChoice = Self.loadEditorChoice()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
       forKey: Keys.perDocOverrides)
+    self.openBehavior = OpenBehavior(
+      rawValue: UserDefaults.standard.string(forKey: Keys.openBehavior)
+        ?? "")
+      ?? .newWindow
     Task { @MainActor in await self.discover() }
   }
 
@@ -166,6 +181,31 @@ final class ViewerSettings {
        let first = entries.first(where: { $0.isAvailable })?.id
     {
       selectedRendererID = first
+    }
+  }
+}
+
+/// Strategy for handling an "open this file" request from Finder, the
+/// open panel, or Open Recent when at least one Viewer window is
+/// already up. With no existing windows, every behavior collapses to
+/// "open a new window."
+enum OpenBehavior: String, CaseIterable, Identifiable, Sendable {
+  /// Always spawn a fresh window.
+  case newWindow
+  /// Spawn a fresh window and merge it as a tab into the frontmost
+  /// existing window (so the user ends up with a tab strip).
+  case newTab
+  /// Reuse the frontmost window — rebind it to the new document
+  /// instead of creating another window.
+  case replaceCurrent
+
+  var id: String { rawValue }
+
+  var displayName: String {
+    switch self {
+    case .newWindow: return "New Window"
+    case .newTab: return "New Tab in Frontmost Window"
+    case .replaceCurrent: return "Replace Frontmost Document"
     }
   }
 }

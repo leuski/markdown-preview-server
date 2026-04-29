@@ -46,19 +46,37 @@ struct ContentView: View {
         Color.clear
       }
     }
-    .background(WindowAccessor { window in
-      if hostWindow == nil {
-        hostWindow = window
-        // Every window opens hidden until content is bound. State
-        // restoration applies the URL ~half a second after a view
-        // mounts, and a fresh placeholder sits empty until the
-        // open panel returns. We can't predict the order of this
-        // resolve vs. .task firing — if a previous fire already
-        // bound content (e.g. openWindow(value:) → immediate
-        // bind), unhide right away.
-        window?.alphaValue = (model.documentURL == nil) ? 0 : 1
-      }
-    })
+    .background(WindowAccessor(
+      onAttach: { window in
+        if hostWindow == nil {
+          hostWindow = window
+          // Every window opens hidden until content is bound. State
+          // restoration applies the URL ~half a second after a view
+          // mounts, and a fresh placeholder sits empty until the
+          // open panel returns. We can't predict the order of this
+          // resolve vs. .task firing — if a previous fire already
+          // bound content (e.g. openWindow(value:) → immediate
+          // bind), unhide right away.
+          window?.alphaValue = (model.documentURL == nil) ? 0 : 1
+        }
+        if let window {
+          // Merge into the frontmost window's tab group if this open
+          // came in under the `newTab` behavior. Has to happen as
+          // soon as the new window exists so the user never sees
+          // it as a separate floating window first.
+          if let host = appDelegate.consumePendingTabHost(),
+             host !== window
+          {
+            host.addTabbedWindow(window, ordered: .above)
+          }
+          appDelegate.registerWindow(window) { newURL in
+            replaceDocument(with: newURL)
+          }
+        }
+      },
+      onDetach: { window in
+        if let window { appDelegate.unregisterWindow(window) }
+      }))
     .toolbar { toolbarContent }
     .focusedSceneValue(\.viewerModel, model)
     .focusedSceneValue(\.viewerRenameContext, RenameContext(
@@ -93,10 +111,23 @@ struct ContentView: View {
     Task { await model.reload() }
   }
 
+  /// Swap this window's bound document for `newURL` in place. Used by
+  /// the `replaceCurrent` open behavior. Updates the WindowGroup
+  /// binding so state restoration follows, and rebinds the model so
+  /// history/watcher restart on the new URL.
+  private func replaceDocument(with newURL: URL) {
+    appDelegate.record(newURL)
+    if fileURL != newURL { fileURL = newURL }
+    Task { await model.bind(to: newURL) }
+  }
+
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
     model.bindSettings(settings)
+    // Keep the delegate's settings reference fresh — `application(_:open:)`
+    // and Open Recent dispatch consult `openBehavior` from there.
+    appDelegate.settings = settings
     // Hydrate the model from scene storage on first run; subsequent
     // fires are no-ops since we only write when the value actually
     // differs.
@@ -255,20 +286,34 @@ struct ContentView: View {
 /// AppKit attachment — async dispatch raced the `.task` that drives
 /// the launch picker, leaving `hostWindow` nil when it was needed.
 private struct WindowAccessor: NSViewRepresentable {
-  let onResolve: (NSWindow?) -> Void
+  let onAttach: (NSWindow?) -> Void
+  let onDetach: (NSWindow?) -> Void
+
+  init(
+    onAttach: @escaping (NSWindow?) -> Void,
+    onDetach: @escaping (NSWindow?) -> Void = { _ in }
+  ) {
+    self.onAttach = onAttach
+    self.onDetach = onDetach
+  }
 
   func makeNSView(context: Context) -> NSView {
-    ResolvingView(onResolve: onResolve)
+    ResolvingView(onAttach: onAttach, onDetach: onDetach)
   }
 
   func updateNSView(_ nsView: NSView, context: Context) {}
 }
 
 private final class ResolvingView: NSView {
-  let onResolve: (NSWindow?) -> Void
+  let onAttach: (NSWindow?) -> Void
+  let onDetach: (NSWindow?) -> Void
 
-  init(onResolve: @escaping (NSWindow?) -> Void) {
-    self.onResolve = onResolve
+  init(
+    onAttach: @escaping (NSWindow?) -> Void,
+    onDetach: @escaping (NSWindow?) -> Void
+  ) {
+    self.onAttach = onAttach
+    self.onDetach = onDetach
     super.init(frame: .zero)
   }
 
@@ -276,9 +321,16 @@ private final class ResolvingView: NSView {
     fatalError("init(coder:) has not been implemented")
   }
 
+  override func viewWillMove(toWindow newWindow: NSWindow?) {
+    super.viewWillMove(toWindow: newWindow)
+    if newWindow == nil, let current = window {
+      onDetach(current)
+    }
+  }
+
   override func viewDidMoveToWindow() {
     super.viewDidMoveToWindow()
-    onResolve(window)
+    onAttach(window)
   }
 }
 

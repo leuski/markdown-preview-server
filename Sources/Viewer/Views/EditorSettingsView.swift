@@ -25,6 +25,22 @@ struct EditorSettingsView: View {
       detailFields
 
       Section {
+        Picker("Open documents:", selection: $settings.openBehavior) {
+          ForEach(OpenBehavior.allCases) { behavior in
+            Text(behavior.displayName).tag(behavior)
+          }
+        }
+        .pickerStyle(.menu)
+        Text(
+          "Applies when opening files via Finder, the Open dialog, or "
+          + "Open Recent. With no existing window, a new window is "
+          + "always used."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      }
+
+      Section {
         Toggle(
           "Allow per-window processor and template overrides",
           isOn: $settings.enablePerDocumentOverrides)
