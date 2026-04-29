@@ -35,8 +35,6 @@ public enum MarkdownRendererCatalog {
       installHint: "brew install multimarkdown",
       discover: {
         await ExternalProcessRenderer.discover(
-          id: "multimarkdown",
-          displayName: "MultiMarkdown",
           toolName: "multimarkdown")
       }),
     Spec(
@@ -45,8 +43,6 @@ public enum MarkdownRendererCatalog {
       installHint: "brew install discount",
       discover: {
         await ExternalProcessRenderer.discover(
-          id: "discount",
-          displayName: "Discount",
           toolName: "markdown")
       }),
     Spec(
@@ -55,8 +51,6 @@ public enum MarkdownRendererCatalog {
       installHint: "brew install pandoc",
       discover: {
         await ExternalProcessRenderer.discover(
-          id: "pandoc",
-          displayName: "Pandoc",
           toolName: "pandoc",
           arguments: ["--from=markdown", "--to=html"])
       }),
@@ -66,8 +60,6 @@ public enum MarkdownRendererCatalog {
       installHint: "brew install cmark-gfm",
       discover: {
         await ExternalProcessRenderer.discover(
-          id: "cmark-gfm",
-          displayName: "cmark-gfm",
           toolName: "cmark-gfm",
           arguments: [
             "--unsafe",
@@ -83,8 +75,6 @@ public enum MarkdownRendererCatalog {
       installHint: "Place Markdown.pl on your PATH",
       discover: {
         await ExternalProcessRenderer.discover(
-          id: "classic",
-          displayName: "Classic (Markdown.pl)",
           toolName: "Markdown.pl")
       })
   ]

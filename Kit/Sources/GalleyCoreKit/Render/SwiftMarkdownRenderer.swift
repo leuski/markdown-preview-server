@@ -10,17 +10,12 @@ import Markdown
 /// editor-coupling code map clicks in the rendered preview back to the
 /// source.
 public struct SwiftMarkdownRenderer: MarkdownRenderer {
-  public let id = "swift-markdown"
-  public let displayName = "Default (swift-markdown)"
-  public let annotatesSourceLines: Bool
-
-  public init(annotatesSourceLines: Bool = false) {
-    self.annotatesSourceLines = annotatesSourceLines
+  public init() {
   }
 
   public func render(_ source: String, baseURL: URL) async throws -> String {
     let document = Document(parsing: source)
-    var visitor = HTMLVisitor(annotatesSourceLines: annotatesSourceLines)
+    var visitor = HTMLVisitor(annotatesSourceLines: true)
     visitor.visit(document)
     return visitor.html
   }

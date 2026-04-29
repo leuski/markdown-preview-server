@@ -216,31 +216,6 @@ final class ViewerModel {
     await renderCurrent(preserveScroll: true)
   }
 
-  /// Effective renderer entry id once the per-window override is
-  /// resolved against the global selection. Used by menus to show a
-  /// checkmark next to the row that's actually rendering.
-  func effectiveRendererID(_ settings: ViewerSettings) -> String? {
-    if settings.enablePerDocumentOverrides,
-       let id = overrideRendererID,
-       settings.processors.contains(where: {
-         $0.id == id && $0.isAvailable
-       })
-    {
-      return id
-    }
-    return settings.activeProcessor?.id
-  }
-
-  func effectiveTemplateID(_ settings: ViewerSettings) -> String? {
-    if settings.enablePerDocumentOverrides,
-       let id = overrideTemplateID,
-       settings.template(forID: id) != nil
-    {
-      return id
-    }
-    return settings.templateStore.selectedID
-  }
-
   /// Rename the current document on disk and re-bind the watcher /
   /// bridges to the new path. History entries that point at the old
   /// URL are rewritten in place so Back/Forward stays correct.
@@ -364,8 +339,7 @@ final class ViewerModel {
     {
       return renderer
     }
-    return settings?.activeRenderer
-      ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
+    return settings?.activeRenderer ?? SwiftMarkdownRenderer()
   }
 
   private func resolvedTemplate() -> any Template {

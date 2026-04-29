@@ -85,13 +85,7 @@ final class ViewerSettings {
   /// `swift-markdown` is rebuilt with source-line annotations so
   /// cmd-click → editor keeps working.
   func renderer(forID id: String) -> (any MarkdownRenderer)? {
-    guard let entry = processors.first(where: { $0.id == id }),
-          let base = entry.renderer
-    else { return nil }
-    if base.id == "swift-markdown" {
-      return SwiftMarkdownRenderer(annotatesSourceLines: true)
-    }
-    return base
+    processors.first(where: { $0.id == id })?.renderer
   }
 
   func template(forID id: String) -> (any Template)? {
@@ -113,12 +107,7 @@ final class ViewerSettings {
   /// Renderer to use for the current preview. Wraps swift-markdown
   /// with `annotatesSourceLines: true` so cmd-click → BBEdit works.
   var activeRenderer: any MarkdownRenderer {
-    let base = activeProcessor?.renderer
-      ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
-    if base.id == "swift-markdown" {
-      return SwiftMarkdownRenderer(annotatesSourceLines: true)
-    }
-    return base
+    activeProcessor?.renderer ?? SwiftMarkdownRenderer()
   }
 
   var activeTemplate: any Template {
