@@ -25,30 +25,46 @@ struct DividedSections<Item, ID, Content: View>: View where ID: Hashable {
   }
 }
 
-struct TemplateMenuCore: View {
-  @Bindable var settings: ViewerSettings
+struct TemplateMenuCore<Model>: View
+where Model: ChoiceModel, Model.Value: TemplateModel
+{
+  let model: Model
 
   var body: some View {
-    let choice = settings.templateChoice
-    let values = choice.values
+    let values = model.values
     DividedSections(sections: [
+      values.filter { $0.kind == .global },
       values.filter { $0.kind == .builtIn },
       values.filter { $0.kind == .userDefined }
     ], id: \.self) { value in
-      Toggle(value.name, isOn: choice.selectedBinding(value))
+      Toggle(value.name, isOn: model.selectedBinding(value))
     }
   }
 }
 
-struct TemplateMenu: View {
+struct TemplateMenu<Model>: View
+where Model: ChoiceModel, Model.Value: TemplateModel
+{
+  init(model: Model, settings: ViewerSettings) {
+    self.model = model
+    self.settings = settings
+  }
+
+  let model: Model
   @Bindable var settings: ViewerSettings
 
   var body: some View {
-    TemplateMenuCore(settings: settings)
+    TemplateMenuCore(model: model)
     Divider()
     Button("Reveal Templates Folder") {
       settings.revealTemplatesFolder()
     }
+  }
+}
+
+extension TemplateMenu where Model == TemplateChoice {
+  init(settings: ViewerSettings) {
+    self.init(model: settings.templateChoice, settings: settings)
   }
 }
 
@@ -109,34 +125,6 @@ struct WindowOverrideProcessorMenu: View {
           }
         }))
       .disabled(!entry.isAvailable)
-    }
-  }
-}
-
-/// Per-window template override picker. Mirrors
-/// `WindowOverrideProcessorMenu`. Driven by `SceneTemplateChoice` so
-/// "Use Global Setting" is just the `.global` value at the top of the
-/// list — no parallel binding logic.
-struct WindowOverrideTemplateMenu: View {
-  let settings: ViewerSettings
-  @Bindable var model: ViewerModel
-
-  var body: some View {
-    let choice = SceneTemplateChoice(
-      source: settings.templateChoice,
-      storage: Binding(
-        get: { model.overrideTemplateID },
-        set: { newValue in
-          Task { await model.setOverrideTemplate(newValue) }
-        }))
-    let values = choice.values
-
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: choice.selectedBinding(value))
     }
   }
 }

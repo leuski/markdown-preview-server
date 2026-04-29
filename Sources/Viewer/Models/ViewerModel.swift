@@ -25,6 +25,12 @@ final class ViewerModel {
   @ObservationIgnored private weak var settings: ViewerSettings?
   @ObservationIgnored private let templateBox: TemplateBox
 
+  /// Per-window template choice. The struct holds a `Binding<String?>`
+  /// to a `@SceneStorage` slot owned by the view, so reading/writing
+  /// `selected` is the same as reading/writing the persisted scene
+  /// state. `nil` until `bindSettings(_:templateChoice:)` runs.
+  @ObservationIgnored private var templateChoice: SceneTemplateChoice?
+
   private(set) var documentURL: URL?
   private(set) var lastError: String?
 
@@ -33,10 +39,6 @@ final class ViewerModel {
   /// `ViewerSettings.enablePerDocumentOverrides` is on. Persisted
   /// across app launches by ContentView via `@SceneStorage`.
   var overrideRendererID: String?
-
-  /// Per-window override of the global template choice. Same rules as
-  /// `overrideRendererID`.
-  var overrideTemplateID: String?
 
   /// Visited documents in chronological order; `currentIndex` points
   /// at the one currently rendered. Navigation actions move
@@ -113,11 +115,18 @@ final class ViewerModel {
 
   // MARK: - Public entry points
 
-  /// Inject the shared rendering settings. Called by ContentView
-  /// before the first bind; safe to call again.
-  func bindSettings(_ settings: ViewerSettings) {
+  /// Inject the shared rendering settings and the per-window template
+  /// choice. Called by ContentView before the first bind; safe to call
+  /// again. The `templateChoice` reads/writes the view's
+  /// `@SceneStorage`-backed override slot, so the model and the
+  /// override menu agree by construction.
+  func bindSettings(
+    _ settings: ViewerSettings,
+    templateChoice: SceneTemplateChoice
+  ) {
     self.settings = settings
-    templateBox.template = settings.activeTemplate
+    self.templateChoice = templateChoice
+    templateBox.template = resolvedTemplate()
   }
 
   /// Initial bind (called from ContentView's `.task(id: fileURL)`).
@@ -210,11 +219,6 @@ final class ViewerModel {
     await renderCurrent(preserveScroll: true)
   }
 
-  func setOverrideTemplate(_ id: String?) async {
-    guard overrideTemplateID != id else { return }
-    overrideTemplateID = id
-    await renderCurrent(preserveScroll: true)
-  }
 
   /// Rename the current document on disk and re-bind the watcher /
   /// bridges to the new path. History entries that point at the old
@@ -343,14 +347,15 @@ final class ViewerModel {
   }
 
   private func resolvedTemplate() -> any Template {
-    if let settings,
-       settings.enablePerDocumentOverrides,
-       let id = overrideTemplateID,
-       let template = settings.template(forID: id)
-    {
-      return template
+    guard let templateChoice else {
+      return settings?.activeTemplate ?? BuiltInTemplate.shared
     }
-    return settings?.activeTemplate ?? BuiltInTemplate.shared
+    if settings?.enablePerDocumentOverrides == true {
+      return templateChoice.selected.template
+    }
+    // Per-document override is off: always use the global selection,
+    // even if a window happens to have a stale local pick.
+    return templateChoice.globalTemplate
   }
 
   private func currentScrollY() async -> Double? {

@@ -11,6 +11,7 @@ import SwiftUI
 struct RenderingCommands: Commands {
   @Bindable var settings: ViewerSettings
   @FocusedValue(\.viewerModel) private var model
+  @FocusedValue(\.viewerTemplateChoice) private var templateChoice
 
   var body: some Commands {
     CommandMenu("Format") {
@@ -18,8 +19,14 @@ struct RenderingCommands: Commands {
         ProcessorMenu(settings: settings)
       }
 
-      Menu("Template") {
-        TemplateMenu(settings: settings)
+      if settings.enablePerDocumentOverrides, let choice = templateChoice {
+        Menu("Template") {
+          TemplateMenu(model: choice, settings: settings)
+        }
+      } else {
+        Menu("Global Template") {
+          TemplateMenu(settings: settings)
+        }
       }
 
       if settings.enablePerDocumentOverrides {
@@ -28,16 +35,6 @@ struct RenderingCommands: Commands {
         Menu("Override Processor for This Window") {
           if let model {
             WindowOverrideProcessorMenu(
-              settings: settings, model: model)
-          } else {
-            Text("No active window")
-          }
-        }
-        .disabled(model == nil)
-
-        Menu("Override Template for This Window") {
-          if let model {
-            WindowOverrideTemplateMenu(
               settings: settings, model: model)
           } else {
             Text("No active window")

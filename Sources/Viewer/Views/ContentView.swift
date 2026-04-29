@@ -18,13 +18,23 @@ struct ContentView: View {
   /// each get their own history that survives app relaunch.
   @SceneStorage("MarkdownEye.history") private var historyJSON: String = ""
 
-  /// Per-window renderer / template overrides. Empty string means "no
+  /// Per-window renderer / template overrides. `nil` means "no
   /// override — use the global selection." Only honored when
   /// `ViewerSettings.enablePerDocumentOverrides` is on.
   @SceneStorage("MarkdownEye.overrideRendererID")
   private var overrideRendererID: String = ""
   @SceneStorage("MarkdownEye.overrideTemplateID")
-  private var overrideTemplateID: String = ""
+  private var overrideTemplateID: String?
+
+  /// Per-window template choice. Reads/writes the `@SceneStorage`
+  /// slot above so the override is persisted automatically. The
+  /// `.global` value renders as "Use Global Setting" in the menu and
+  /// is the resolved template when no window-local pick is active.
+  private var templateChoice: SceneTemplateChoice {
+    SceneTemplateChoice(
+      source: settings.templateChoice,
+      storage: $overrideTemplateID)
+  }
 
   var body: some View {
     Group {
@@ -78,13 +88,15 @@ struct ContentView: View {
         if let window { appDelegate.unregisterWindow(window) }
       }))
     .toolbar { toolbarContent }
-    .focusedSceneValue(\.viewerModel, model)
-    .focusedSceneValue(\.viewerRenameContext, RenameContext(
-      url: model.documentURL,
-      apply: { newURL in
-        appDelegate.record(newURL)
-        if fileURL != newURL { fileURL = newURL }
-      }))
+    .modifier(SceneValuesModifier(
+      model: model,
+      templateChoice: templateChoice,
+      renameContext: RenameContext(
+        url: model.documentURL,
+        apply: { newURL in
+          appDelegate.record(newURL)
+          if fileURL != newURL { fileURL = newURL }
+        })))
     .navigationTitle(model.documentURL?.lastPathComponent
       ?? fileURL?.lastPathComponent
       ?? "Markdown Preview")
@@ -98,11 +110,9 @@ struct ContentView: View {
     .onChange(of: settings.selectedProcessorID) { reloadModel() }
     .onChange(of: settings.templateChoice.selected) { reloadModel() }
     .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
+    .onChange(of: overrideTemplateID) { reloadModel() }
     .onChange(of: model.overrideRendererID) { _, new in
       overrideRendererID = new ?? ""
-    }
-    .onChange(of: model.overrideTemplateID) { _, new in
-      overrideTemplateID = new ?? ""
     }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
   }
@@ -124,22 +134,17 @@ struct ContentView: View {
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
-    model.bindSettings(settings)
+    model.bindSettings(settings, templateChoice: templateChoice)
     // Keep the delegate's settings reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
     appDelegate.settings = settings
-    // Hydrate the model from scene storage on first run; subsequent
-    // fires are no-ops since we only write when the value actually
-    // differs.
+    // Hydrate the renderer override from scene storage on first run;
+    // subsequent fires are no-ops since we only write when the value
+    // actually differs.
     let storedRenderer = overrideRendererID.isEmpty
       ? nil : overrideRendererID
-    let storedTemplate = overrideTemplateID.isEmpty
-      ? nil : overrideTemplateID
     if model.overrideRendererID != storedRenderer {
       model.overrideRendererID = storedRenderer
-    }
-    if model.overrideTemplateID != storedTemplate {
-      model.overrideTemplateID = storedTemplate
     }
 
     // First view to come up captures `openWindow` for the delegate
@@ -277,6 +282,22 @@ struct ContentView: View {
       }
       .help("Reload (⌘R)")
     }
+  }
+}
+
+/// Publishes the per-window scene values commands rely on. Lifted
+/// out of `ContentView.body` to keep the modifier chain short enough
+/// for the type-checker.
+private struct SceneValuesModifier: ViewModifier {
+  let model: ViewerModel
+  let templateChoice: SceneTemplateChoice
+  let renameContext: RenameContext
+
+  func body(content: Content) -> some View {
+    content
+      .focusedSceneValue(\.viewerModel, model)
+      .focusedSceneValue(\.viewerTemplateChoice, templateChoice)
+      .focusedSceneValue(\.viewerRenameContext, renameContext)
   }
 }
 

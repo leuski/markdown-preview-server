@@ -76,6 +76,14 @@ public struct SceneTemplateChoice: ChoiceModel {
     [.global(source)] + source.values.map { value in .local(value) }
   }
 
+  /// The current global selection, ignoring any window-local override.
+  /// Used when per-document overrides are turned off so the window
+  /// renders with the global template even if a stale local pick is
+  /// still stored.
+  public var globalTemplate: any Template {
+    source.selected.template
+  }
+
   public var selected: Value {
     get {
       let id = storage.wrappedValue

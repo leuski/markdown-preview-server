@@ -131,7 +131,7 @@ struct EditorSettingsView: View {
   @ViewBuilder
   private var templatePicker: some View {
     Menu {
-      TemplateMenuCore(settings: settings)
+      TemplateMenuCore(model: settings.templateChoice)
     } label: {
       Text(settings.activeTemplate.name)
     }

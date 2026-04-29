@@ -38,6 +38,21 @@ extension FocusedValues {
   }
 }
 
+/// Per-window template choice exposed to commands so the override
+/// menu in `RenderingCommands` can drive it without going through
+/// `ViewerModel`. The struct holds a `Binding` to the active
+/// window's `@SceneStorage` slot.
+private struct ViewerTemplateChoiceKey: FocusedValueKey {
+  typealias Value = SceneTemplateChoice
+}
+
+extension FocusedValues {
+  var viewerTemplateChoice: SceneTemplateChoice? {
+    get { self[ViewerTemplateChoiceKey.self] }
+    set { self[ViewerTemplateChoiceKey.self] = newValue }
+  }
+}
+
 /// Menu items that mirror the toolbar's navigation buttons. Lives in
 /// the View menu (replacing the system-provided sidebar group, which
 /// the Viewer doesn't use).
