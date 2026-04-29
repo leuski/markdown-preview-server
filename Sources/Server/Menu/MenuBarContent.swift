@@ -72,7 +72,7 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var rendererMenu: some View {
     Menu("Processor") {
-      RendererMenu(model: model)
+      RendererMenu(appModel: model)
     }
   }
 

@@ -68,27 +68,37 @@ extension TemplateMenu where Model == TemplateChoice {
   }
 }
 
-struct ProcessorMenuCore: View {
-  @Bindable var settings: ViewerSettings
+struct ProcessorMenuCore<Model>: View
+where Model: ChoiceModel, Model.Value: ProcessorModel
+{
+  let model: Model
 
   var body: some View {
+    let values = model.values
     DividedSections(sections: [
-      settings.processors.filter(\.isBuiltIn),
-      settings.processors.filter { !$0.isBuiltIn }
-    ], id: \.id) { processor in
-      Toggle(
-        processor.name,
-        isOn: settings.rendererBinding(processor))
-      .disabled(!processor.isAvailable)
+      values.filter { $0.kind == .global },
+      values.filter { $0.kind == .builtIn },
+      values.filter { $0.kind == .userDefined }
+    ], id: \.self) { value in
+      Toggle(value.name, isOn: model.selectedBinding(value))
+        .disabled(!value.isAvailable)
     }
   }
 }
 
-struct ProcessorMenu: View {
+struct ProcessorMenu<Model>: View
+where Model: ChoiceModel, Model.Value: ProcessorModel
+{
+  init(model: Model, settings: ViewerSettings) {
+    self.model = model
+    self.settings = settings
+  }
+
+  let model: Model
   @Bindable var settings: ViewerSettings
 
   var body: some View {
-    ProcessorMenuCore(settings: settings)
+    ProcessorMenuCore(model: model)
     Divider()
     Button("Rescan Installed Processors") {
       Task { await settings.rediscoverRenderers() }
@@ -96,35 +106,8 @@ struct ProcessorMenu: View {
   }
 }
 
-/// Per-window renderer override picker. Only used when the
-/// per-document-overrides flag is on. Selecting "Use Global Setting"
-/// clears the override; selecting any concrete entry pins it for this
-/// window.
-struct WindowOverrideProcessorMenu: View {
-  let settings: ViewerSettings
-  @Bindable var model: ViewerModel
-
-  var body: some View {
-    Toggle("Use Global Setting", isOn: Binding(
-      get: { model.overrideRendererID == nil },
-      set: { isOn in
-        if isOn {
-          Task { await model.setOverrideRenderer(nil) }
-        }
-      }))
-    Divider()
-    DividedSections(sections: [
-      settings.processors.filter(\.isBuiltIn),
-      settings.processors.filter { !$0.isBuiltIn }
-    ], id: \.id) { entry in
-      Toggle(entry.name, isOn: Binding(
-        get: { model.overrideRendererID == entry.id },
-        set: { isOn in
-          if isOn {
-            Task { await model.setOverrideRenderer(entry.id) }
-          }
-        }))
-      .disabled(!entry.isAvailable)
-    }
+extension ProcessorMenu where Model == ProcessorChoice {
+  init(settings: ViewerSettings) {
+    self.init(model: settings.processorChoice, settings: settings)
   }
 }

@@ -5,18 +5,26 @@ import SwiftUI
 /// template pickers as menu items so users can switch globally
 /// without opening a settings window.
 ///
-/// When `ViewerSettings.enablePerDocumentOverrides` is on, an extra
-/// section appears that lets the frontmost window pin its own
-/// renderer / template (overriding the global selection).
+/// When `ViewerSettings.enablePerDocumentOverrides` is on, the same
+/// menus drive the frontmost window's per-document choice; the
+/// `.global` value at the top of each list represents "Use Global
+/// Setting." When the flag is off, the menus drive the global
+/// selection directly.
 struct RenderingCommands: Commands {
   @Bindable var settings: ViewerSettings
-  @FocusedValue(\.viewerModel) private var model
   @FocusedValue(\.viewerTemplateChoice) private var templateChoice
+  @FocusedValue(\.viewerProcessorChoice) private var processorChoice
 
   var body: some Commands {
     CommandMenu("Format") {
-      Menu("Markdown Processor") {
-        ProcessorMenu(settings: settings)
+      if settings.enablePerDocumentOverrides, let choice = processorChoice {
+        Menu("Markdown Processor") {
+          ProcessorMenu(model: choice, settings: settings)
+        }
+      } else {
+        Menu("Global Markdown Processor") {
+          ProcessorMenu(settings: settings)
+        }
       }
 
       if settings.enablePerDocumentOverrides, let choice = templateChoice {
@@ -27,20 +35,6 @@ struct RenderingCommands: Commands {
         Menu("Global Template") {
           TemplateMenu(settings: settings)
         }
-      }
-
-      if settings.enablePerDocumentOverrides {
-        Divider()
-
-        Menu("Override Processor for This Window") {
-          if let model {
-            WindowOverrideProcessorMenu(
-              settings: settings, model: model)
-          } else {
-            Text("No active window")
-          }
-        }
-        .disabled(model == nil)
       }
     }
   }

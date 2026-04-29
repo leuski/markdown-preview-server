@@ -9,8 +9,30 @@ public struct Processor: Sendable, Identifiable {
   public let installHint: String?
   public let renderer: (any MarkdownRenderer)?
 
+  public init(
+    id: String,
+    name: String,
+    installHint: String?,
+    renderer: (any MarkdownRenderer)?
+  ) {
+    self.id = id
+    self.name = name
+    self.installHint = installHint
+    self.renderer = renderer
+  }
+
   public var isBuiltIn: Bool { installHint == nil }
   public var isAvailable: Bool { renderer != nil }
+
+  /// Synchronous baseline matching the swift-markdown spec in
+  /// `MarkdownRendererCatalog`. Used to seed `ProcessorStore` so the
+  /// list is non-empty before async discovery completes — keeps
+  /// `ProcessorChoice.selected` non-optional.
+  public static let builtIn = Processor(
+    id: "swift-markdown",
+    name: "Built-in",
+    installHint: nil,
+    renderer: SwiftMarkdownRenderer())
 }
 
 public enum MarkdownRendererCatalog {

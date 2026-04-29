@@ -22,18 +22,24 @@ struct ContentView: View {
   /// override — use the global selection." Only honored when
   /// `ViewerSettings.enablePerDocumentOverrides` is on.
   @SceneStorage("MarkdownEye.overrideRendererID")
-  private var overrideRendererID: String = ""
+  private var overrideRendererID: String?
   @SceneStorage("MarkdownEye.overrideTemplateID")
   private var overrideTemplateID: String?
 
-  /// Per-window template choice. Reads/writes the `@SceneStorage`
-  /// slot above so the override is persisted automatically. The
-  /// `.global` value renders as "Use Global Setting" in the menu and
-  /// is the resolved template when no window-local pick is active.
+  /// Per-window template / processor choices. Each reads/writes its
+  /// `@SceneStorage` slot above so the override is persisted
+  /// automatically. The `.global` value renders as "Use Global
+  /// Setting" in the menu and is the resolved choice when no
+  /// window-local pick is active.
   private var templateChoice: SceneTemplateChoice {
     SceneTemplateChoice(
       source: settings.templateChoice,
       storage: $overrideTemplateID)
+  }
+  private var processorChoice: SceneProcessorChoice {
+    SceneProcessorChoice(
+      source: settings.processorChoice,
+      storage: $overrideRendererID)
   }
 
   var body: some View {
@@ -91,6 +97,7 @@ struct ContentView: View {
     .modifier(SceneValuesModifier(
       model: model,
       templateChoice: templateChoice,
+      processorChoice: processorChoice,
       renameContext: RenameContext(
         url: model.documentURL,
         apply: { newURL in
@@ -107,13 +114,11 @@ struct ContentView: View {
       // restore, or in-window navigation), reveal the window.
       if new != nil { hostWindow?.alphaValue = 1 }
     }
-    .onChange(of: settings.selectedProcessorID) { reloadModel() }
+    .onChange(of: settings.processorChoice.selected) { reloadModel() }
     .onChange(of: settings.templateChoice.selected) { reloadModel() }
     .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
     .onChange(of: overrideTemplateID) { reloadModel() }
-    .onChange(of: model.overrideRendererID) { _, new in
-      overrideRendererID = new ?? ""
-    }
+    .onChange(of: overrideRendererID) { reloadModel() }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
   }
 
@@ -134,18 +139,13 @@ struct ContentView: View {
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
-    model.bindSettings(settings, templateChoice: templateChoice)
+    model.bindSettings(
+      settings,
+      templateChoice: templateChoice,
+      processorChoice: processorChoice)
     // Keep the delegate's settings reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
     appDelegate.settings = settings
-    // Hydrate the renderer override from scene storage on first run;
-    // subsequent fires are no-ops since we only write when the value
-    // actually differs.
-    let storedRenderer = overrideRendererID.isEmpty
-      ? nil : overrideRendererID
-    if model.overrideRendererID != storedRenderer {
-      model.overrideRendererID = storedRenderer
-    }
 
     // First view to come up captures `openWindow` for the delegate
     // so Finder file opens and File > Open Recent route into new
@@ -291,12 +291,14 @@ struct ContentView: View {
 private struct SceneValuesModifier: ViewModifier {
   let model: ViewerModel
   let templateChoice: SceneTemplateChoice
+  let processorChoice: SceneProcessorChoice
   let renameContext: RenameContext
 
   func body(content: Content) -> some View {
     content
       .focusedSceneValue(\.viewerModel, model)
       .focusedSceneValue(\.viewerTemplateChoice, templateChoice)
+      .focusedSceneValue(\.viewerProcessorChoice, processorChoice)
       .focusedSceneValue(\.viewerRenameContext, renameContext)
   }
 }

@@ -25,20 +25,16 @@ final class ViewerModel {
   @ObservationIgnored private weak var settings: ViewerSettings?
   @ObservationIgnored private let templateBox: TemplateBox
 
-  /// Per-window template choice. The struct holds a `Binding<String?>`
-  /// to a `@SceneStorage` slot owned by the view, so reading/writing
-  /// `selected` is the same as reading/writing the persisted scene
-  /// state. `nil` until `bindSettings(_:templateChoice:)` runs.
+  /// Per-window template / processor choices. Each struct holds a
+  /// `Binding<String?>` to a `@SceneStorage` slot owned by the view,
+  /// so reading/writing `selected` is the same as reading/writing
+  /// the persisted scene state. `nil` until
+  /// `bindSettings(_:templateChoice:processorChoice:)` runs.
   @ObservationIgnored private var templateChoice: SceneTemplateChoice?
+  @ObservationIgnored private var processorChoice: SceneProcessorChoice?
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
-
-  /// Per-window override of the global renderer choice. `nil` means
-  /// "follow the global selection". Only honored when
-  /// `ViewerSettings.enablePerDocumentOverrides` is on. Persisted
-  /// across app launches by ContentView via `@SceneStorage`.
-  var overrideRendererID: String?
 
   /// Visited documents in chronological order; `currentIndex` points
   /// at the one currently rendered. Navigation actions move
@@ -116,16 +112,18 @@ final class ViewerModel {
   // MARK: - Public entry points
 
   /// Inject the shared rendering settings and the per-window template
-  /// choice. Called by ContentView before the first bind; safe to call
-  /// again. The `templateChoice` reads/writes the view's
-  /// `@SceneStorage`-backed override slot, so the model and the
-  /// override menu agree by construction.
+  /// / processor choices. Called by ContentView before the first bind;
+  /// safe to call again. Both choice structs read/write the view's
+  /// `@SceneStorage`-backed override slots, so the model and the
+  /// override menus agree by construction.
   func bindSettings(
     _ settings: ViewerSettings,
-    templateChoice: SceneTemplateChoice
+    templateChoice: SceneTemplateChoice,
+    processorChoice: SceneProcessorChoice
   ) {
     self.settings = settings
     self.templateChoice = templateChoice
+    self.processorChoice = processorChoice
     templateBox.template = resolvedTemplate()
   }
 
@@ -209,16 +207,6 @@ final class ViewerModel {
   func reload() async {
     await renderCurrent(preserveScroll: true)
   }
-
-  /// Set or clear the per-window renderer override and re-render. The
-  /// override only takes effect when
-  /// `ViewerSettings.enablePerDocumentOverrides` is on.
-  func setOverrideRenderer(_ id: String?) async {
-    guard overrideRendererID != id else { return }
-    overrideRendererID = id
-    await renderCurrent(preserveScroll: true)
-  }
-
 
   /// Rename the current document on disk and re-bind the watcher /
   /// bridges to the new path. History entries that point at the old
@@ -332,18 +320,22 @@ final class ViewerModel {
   }
 
   /// Resolve the renderer for the next render. When the per-document
-  /// override flag is on and a window-local override is set to an
-  /// available entry, that wins; otherwise fall back to the global
-  /// selection.
+  /// override flag is on, the window-local choice wins (falling back
+  /// to the global selection if its pick is unavailable). Otherwise
+  /// always use the global selection.
   private func resolvedRenderer() -> any MarkdownRenderer {
-    if let settings,
-       settings.enablePerDocumentOverrides,
-       let id = overrideRendererID,
-       let renderer = settings.renderer(forID: id)
-    {
-      return renderer
+    guard let processorChoice else {
+      return settings?.activeRenderer ?? SwiftMarkdownRenderer()
     }
-    return settings?.activeRenderer ?? SwiftMarkdownRenderer()
+    if settings?.enablePerDocumentOverrides == true {
+      let pick = processorChoice.selected.processor
+      if let renderer = pick.renderer { return renderer }
+      // Local pick is unavailable — fall back to the resolved global
+      // (which itself falls back to the catalog's first-available
+      // entry).
+    }
+    return processorChoice.globalProcessor.processor.renderer
+      ?? SwiftMarkdownRenderer()
   }
 
   private func resolvedTemplate() -> any Template {

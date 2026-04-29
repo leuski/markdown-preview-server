@@ -140,7 +140,7 @@ struct EditorSettingsView: View {
   @ViewBuilder
   private var processorPicker: some View {
     Menu {
-      ProcessorMenuCore(settings: settings)
+      ProcessorMenuCore(model: settings.processorChoice)
     } label: {
       Text(settings.activeProcessor?.name ?? "no processor found")
     }

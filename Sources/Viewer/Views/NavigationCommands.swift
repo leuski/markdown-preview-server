@@ -53,6 +53,19 @@ extension FocusedValues {
   }
 }
 
+/// Per-window processor choice. Same plumbing as
+/// `viewerTemplateChoice`.
+private struct ViewerProcessorChoiceKey: FocusedValueKey {
+  typealias Value = SceneProcessorChoice
+}
+
+extension FocusedValues {
+  var viewerProcessorChoice: SceneProcessorChoice? {
+    get { self[ViewerProcessorChoiceKey.self] }
+    set { self[ViewerProcessorChoiceKey.self] = newValue }
+  }
+}
+
 /// Menu items that mirror the toolbar's navigation buttons. Lives in
 /// the View menu (replacing the system-provided sidebar group, which
 /// the Viewer doesn't use).

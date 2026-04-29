@@ -11,23 +11,10 @@ import SwiftUI
 @Observable
 @MainActor
 final class ViewerSettings {
-  /// All known renderers, in display order, each marked available or
-  /// not. Populated asynchronously after init.
-  private(set) var processors: [Processor] = []
-
-  /// Persisted identifier of the user's preferred renderer. May not
-  /// match an available entry until discovery completes; we keep it
-  /// even when unavailable so reinstalling the tool restores the
-  /// selection.
-  var selectedProcessorID: String? {
-    didSet {
-      UserDefaults.standard.set(
-        selectedProcessorID, forKey: Keys.rendererID)
-    }
-  }
-
   @ObservationIgnored let templateStore: TemplateStore
   @ObservationIgnored let templateChoice: TemplateChoice
+  @ObservationIgnored let processorStore: ProcessorStore
+  @ObservationIgnored let processorChoice: ProcessorChoice
   var templates: [any Template] { templateStore.templates }
 
   /// User's chosen editor target. Drives both cmd-click → editor and
@@ -71,8 +58,10 @@ final class ViewerSettings {
     let store = TemplateStore()
     self.templateStore = store
     self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
-    self.selectedProcessorID = UserDefaults.standard.string(
-      forKey: Keys.rendererID)
+    let processorStore = ProcessorStore()
+    self.processorStore = processorStore
+    self.processorChoice = ProcessorChoice(
+      store: processorStore, key: Keys.rendererID)
     self.editorChoice = Self.loadEditorChoice()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
       forKey: Keys.perDocOverrides)
@@ -85,27 +74,15 @@ final class ViewerSettings {
     }
   }
 
-  /// Resolve a renderer ID to an available entry's renderer.
-  /// `swift-markdown` is rebuilt with source-line annotations so
-  /// cmd-click → editor keeps working.
-  func renderer(forID id: String) -> (any MarkdownRenderer)? {
-    processors.first(where: { $0.id == id })?.renderer
-  }
-
   func template(forID id: String) -> (any Template)? {
     templateStore.template(forID: id)
   }
 
-  /// User's preferred entry if available, otherwise the first
-  /// available entry. `nil` only when nothing is available.
+  /// User's preferred processor if available, otherwise the first
+  /// available entry; `nil` only when nothing is available.
   var activeProcessor: Processor? {
-    if let id = selectedProcessorID,
-       let entry = processors.first(
-         where: { $0.id == id && $0.isAvailable })
-    {
-      return entry
-    }
-    return processors.first { $0.isAvailable }
+    let value = processorChoice.active
+    return value.isAvailable ? value.processor : nil
   }
 
   /// Renderer to use for the current preview. Wraps swift-markdown
@@ -120,16 +97,8 @@ final class ViewerSettings {
 
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed.
-  var preferredButUnavailableEntry: Processor? {
-    guard let id = selectedProcessorID,
-          let entry = processors.first(where: { $0.id == id }),
-          !entry.isAvailable
-    else { return nil }
-    return entry
-  }
-
-  func selectRenderer(id: String) {
-    selectedProcessorID = id
+  var preferredButUnavailableProcessor: Processor? {
+    processorChoice.preferredButUnavailable?.processor
   }
 
   func selectTemplate(_ template: any Template) {
@@ -137,15 +106,7 @@ final class ViewerSettings {
   }
 
   func rediscoverRenderers() async {
-    await discover()
-  }
-
-  /// Two-way binding the menu's `Toggle` rows can drive.
-  func rendererBinding(_ entry: Processor) -> Binding<Bool> {
-    Binding(
-      get: { entry.id == self.activeProcessor?.id },
-      set: { isOn in if isOn { self.selectRenderer(id: entry.id) } }
-    )
+    await processorStore.discover()
   }
 
   private static func loadEditorChoice() -> EditorChoice {
@@ -164,13 +125,7 @@ final class ViewerSettings {
   }
 
   private func discover() async {
-    let entries = await MarkdownRendererCatalog.discoverAll()
-    self.processors = entries
-    if selectedProcessorID == nil,
-       let first = entries.first(where: { $0.isAvailable })?.id
-    {
-      selectedProcessorID = first
-    }
+    await processorStore.discover()
   }
 
   func revealTemplatesFolder() {

@@ -21,23 +21,6 @@ final class AppModel {
     }
   }
 
-  /// All known renderers, in display order, each marked available or not.
-  private(set) var processors: [Processor] = []
-
-  /// Persisted identifier of the user's chosen renderer. May not match
-  /// any currently-available renderer until discovery completes.
-  var selectedProcessorID: String? {
-    get {
-      access(keyPath: \.selectedProcessorID)
-      return UserDefaults.standard.string(forKey: Keys.rendererID)
-    }
-    set {
-      withMutation(keyPath: \.selectedProcessorID) {
-        UserDefaults.standard.set(newValue, forKey: Keys.rendererID)
-      }
-    }
-  }
-
   var launchAtLogin: Bool {
     get {
       access(keyPath: \.launchAtLogin)
@@ -52,6 +35,8 @@ final class AppModel {
 
   @ObservationIgnored let templateStore: TemplateStore
   @ObservationIgnored let templateChoice: TemplateChoice
+  @ObservationIgnored let processorStore: ProcessorStore
+  @ObservationIgnored let processorChoice: ProcessorChoice
   @ObservationIgnored lazy var server: PreviewServerController = {
     PreviewServerController(
       templateStore: self.templateStore,
@@ -59,7 +44,7 @@ final class AppModel {
         await self?.templateChoice.selected.template ?? .default
       },
       rendererProvider: { [weak self] in
-        await self?.activeEntry?.renderer
+        await self?.processorChoice.active.processor.renderer
       })
   }()
 
@@ -76,11 +61,15 @@ final class AppModel {
     let store = TemplateStore()
     self.templateStore = store
     self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
+    let processorStore = ProcessorStore()
+    self.processorStore = processorStore
+    self.processorChoice = ProcessorChoice(
+      store: processorStore, key: Keys.rendererID)
 
     startServer()
 
     Task { @MainActor in
-      await self.discoverRenderers()
+      await self.rediscoverRenderers()
     }
   }
 
@@ -99,51 +88,16 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
-  func selectedEntryBinding(_ entry: Processor) -> Binding<Bool> {
-    Binding(
-      get: { entry.id == self.activeEntry?.id },
-      set: { _ in self.selectedProcessorID = entry.id }
-    )
-  }
-
-  var selectedProcessor: Processor? {
-    selectedProcessorID.flatMap { id in
-      processors.first { $0.id == id && $0.isAvailable }
-    }
-  }
-
-  /// The entry actually used for rendering: the user's preferred entry if
-  /// it is currently available, otherwise the first available entry.
-  /// `nil` only when no renderer at all is available.
-  var activeEntry: Processor? {
-    selectedProcessor ?? processors.first { $0.isAvailable }
-  }
-
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed — UI surfaces this so the
   /// fallback isn't silent.
-  var preferredButUnavailableEntry: Processor? {
-    guard let id = selectedProcessorID,
-          let entry = processors.first(where: { $0.id == id }),
-          !entry.isAvailable
-    else { return nil }
-    return entry
+  var preferredButUnavailableProcessor: Processor? {
+    processorChoice.preferredButUnavailable?.processor
   }
 
   /// Re-runs discovery (e.g. after the user installs a new tool).
   func rediscoverRenderers() async {
-    await discoverRenderers()
-  }
-
-  private func discoverRenderers() async {
-    let entries = await MarkdownRendererCatalog.discoverAll()
-    self.processors = entries
-    // First launch only: pick a default. Otherwise keep the user's
-    // preference even if it is currently unavailable, so reinstalling
-    // the tool brings the selection back without further input.
-    if selectedProcessorID == nil {
-      selectedProcessorID = entries.first { $0.isAvailable }?.id
-    }
+    await processorStore.discover()
   }
 
   private func startServer() {

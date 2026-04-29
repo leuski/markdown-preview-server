@@ -37,7 +37,7 @@ struct SettingsView: View {
         }
       } label: {
         Text("Markdown processor")
-        if let stale = model.preferredButUnavailableEntry {
+        if let stale = model.preferredButUnavailableProcessor {
           Text(staleMessage(for: stale, fallback: activeDisplayName))
             .fixedSize(horizontal: true, vertical: false)
         }
@@ -70,17 +70,13 @@ struct SettingsView: View {
   @ViewBuilder
   private var rendererPicker: some View {
     Menu(activeDisplayName) {
-      RendererMenu(model: model)
+      RendererMenu(appModel: model)
     }
     .fixedSize()
   }
 
-  private var activeID: String? {
-    model.activeEntry?.id
-  }
-
   private var activeDisplayName: String {
-    model.activeEntry?.name ?? "No processor available"
+    model.processorChoice.active.name
   }
 
   private func staleMessage(
@@ -100,17 +96,27 @@ struct SettingsView: View {
   }
 }
 
-struct RendererMenu: View {
-  @Bindable var model: AppModel
+struct RendererMenu<Model>: View
+where Model: ChoiceModel, Model.Value: ProcessorModel
+{
+  let model: Model
 
   var body: some View {
+    let values = model.values
     DividedSections(sections: [
-      model.processors.filter({$0.isBuiltIn}),
-      model.processors.filter({!$0.isBuiltIn})
-    ], id: \.id) { item in
-      Toggle(item.name, isOn: model.selectedEntryBinding(item))
-        .disabled(!item.isAvailable)
+      values.filter { $0.kind == .global },
+      values.filter { $0.kind == .builtIn },
+      values.filter { $0.kind == .userDefined }
+    ], id: \.self) { value in
+      Toggle(value.name, isOn: model.selectedBinding(value))
+        .disabled(!value.isAvailable)
     }
+  }
+}
+
+extension RendererMenu where Model == ProcessorChoice {
+  init(appModel: AppModel) {
+    self.init(model: appModel.processorChoice)
   }
 }
 
