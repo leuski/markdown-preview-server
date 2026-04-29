@@ -3,41 +3,31 @@ import SwiftUI
 import UniformTypeIdentifiers
 import GalleyCoreKit
 
-/// Settings tab for the cmd-click → editor target. A single popup
-/// menu lists every preset plus "Custom URL scheme" and "Other
-/// application"; the conditional fields below the popup let the user
-/// supply a URL template or pick an `.app` bundle.
+/// Settings tab. The editor row drives a `Menu` of every preset plus
+/// "Custom URL Scheme" and "Other Application"; the conditional
+/// fields below let the user supply a URL template or pick an
+/// `.app` bundle.
 struct SettingsView: View {
   @Bindable var settings: ViewerSettings
-
-  private var applicationName: String? {
-    if case let .appBundle(bundle: url) = settings.editorChoice {
-      return url.deletingPathExtension().lastPathComponent
-    }
-    return nil
-  }
 
   @ViewBuilder
   var editorPicker: some View {
     VStack(alignment: .leading, spacing: 8) {
-      Picker("Markdown editor", selection: kindBinding) {
-        ForEach(EditorPreset.allCases) { preset in
-          Text(preset.displayName)
-            .tag(EditorChoiceKind.preset(preset))
+      LabeledContent {
+        Menu(settings.editors.selected.name) {
+          EditorMenuCore(model: settings.editors)
         }
-        Divider()
-        Text("Custom URL scheme…").tag(EditorChoiceKind.customURL)
-        Text(applicationName ?? "Other application…")
-          .tag(EditorChoiceKind.appBundle)
+        .fixedSize()
+      } label: {
+        Text("Markdown editor")
       }
-      .pickerStyle(.menu)
       detailFields
     }
   }
 
   @ViewBuilder
   private var detailFields: some View {
-    switch settings.editorChoice {
+    switch settings.editors.selected {
     case .preset:
       EmptyView()
 
@@ -200,60 +190,52 @@ struct SettingsView: View {
     .frame(minWidth: 580, maxWidth: 580, minHeight: 360)
   }
 
-  private var kindBinding: Binding<EditorChoiceKind> {
-    Binding(
-      get: { settings.editorChoice.kind },
-      set: { newKind in applyKind(newKind) }
-    )
-  }
-
+  /// Reads/writes the customURL template via `selected`. The setter
+  /// flows through `EditorChoice.selected.set` which rewrites the
+  /// matching slot in `values`, so each keystroke updates both the
+  /// active selection and the in-memory customURL slot.
   private var customURLBinding: Binding<String> {
     Binding(
       get: {
-        if case .customURL(let template) = settings.editorChoice {
+        if case .customURL(let template) = settings.editors.selected {
           return template
         }
         return ""
       },
       set: { newValue in
-        settings.editorChoice = .customURL(template: newValue)
+        settings.editors.selected = .customURL(template: newValue)
       }
     )
   }
 
-  /// Switch to a new picker kind. Presets apply immediately. Custom
-  /// URL seeds itself from BBEdit's template if there's nothing to
-  /// preserve. Choosing "Other application…" launches an open panel;
-  /// cancelling leaves the previous choice in place.
-  private func applyKind(_ kind: EditorChoiceKind) {
-    switch kind {
-    case .preset(let preset):
-      settings.editorChoice = .preset(preset)
-
-    case .customURL:
-      if case .customURL = settings.editorChoice { return }
-      settings.editorChoice = .customURL(
-        template: EditorPreset.bbedit.template)
-
-    case .appBundle:
-      if case .appBundle = settings.editorChoice { return }
-      pickAppBundle()
-    }
-  }
-
-  /// Run NSOpenPanel filtered to `.app` bundles. On selection, store
-  /// the URL; on cancel, leave `editorChoice` untouched (the popup
-  /// will snap back because the binding's getter still returns the
-  /// previous kind).
+  /// "Choose Application…" — pick a fresh bundle URL even when one is
+  /// already set. Goes through `selected.set` so the appBundle slot
+  /// in `values` updates too.
   private func pickAppBundle() {
-    let panel = NSOpenPanel()
-    panel.allowsMultipleSelection = false
-    panel.canChooseDirectories = false
-    panel.canChooseFiles = true
-    panel.allowedContentTypes = [.applicationBundle]
-    panel.directoryURL = URL(fileURLWithPath: "/Applications")
-    guard panel.runModal() == .OK, let url = panel.url else { return }
-    settings.editorChoice = .appBundle(url)
+    guard let url = EditorChoice.defaultPickAppBundle() else { return }
+    settings.editors.selected = .appBundle(url)
+  }
+}
+
+/// Menu rows for the editor picker. Sectioned by kind so presets
+/// sit above customURL/appBundle. Driven by `selectedBinding(_:)`
+/// like every other choice menu in the app.
+struct EditorMenuCore: View {
+  let model: EditorChoice
+
+  var body: some View {
+    let values = model.values
+    DividedSections(sections: [
+      values.filter { if case .preset = $0 { return true }; return false },
+      values.filter {
+        switch $0 {
+        case .customURL, .appBundle: return true
+        case .preset:                return false
+        }
+      }
+    ], id: \.kind) { value in
+      Toggle(value.name, isOn: model.selectedBinding(value))
+    }
   }
 }
 

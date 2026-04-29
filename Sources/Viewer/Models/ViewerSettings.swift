@@ -15,14 +15,7 @@ final class ViewerSettings {
   @ObservationIgnored let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore
   @ObservationIgnored let processors: ProcessorChoice
-
-  /// User's chosen editor target. Drives both cmd-click → editor and
-  /// File > Open in Editor. Persisted as JSON so the full enum
-  /// (preset / custom URL / app bundle) round-trips through
-  /// UserDefaults in a single key.
-  var editorChoice: EditorChoice {
-    didSet { persistEditorChoice() }
-  }
+  @ObservationIgnored let editors: EditorChoice
 
   /// When on, each window can pin its own renderer / template that
   /// wins over the global selection. Stored per-window via
@@ -47,7 +40,6 @@ final class ViewerSettings {
 
   private enum Keys {
     static let rendererID = "MarkdownEye.rendererID"
-    static let editorChoice = "MarkdownEye.editorChoice"
     static let perDocOverrides = "MarkdownEye.perDocumentOverrides"
     static let openBehavior = "MarkdownEye.openBehavior"
     static let templateID = "MarkdownEye.selectedTemplateID"
@@ -61,7 +53,7 @@ final class ViewerSettings {
     self.processorStore = processorStore
     self.processors = ProcessorChoice(
       store: processorStore, key: Keys.rendererID)
-    self.editorChoice = Self.loadEditorChoice()
+    self.editors = EditorChoice()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
       forKey: Keys.perDocOverrides)
     self.openBehavior = OpenBehavior(
@@ -106,21 +98,6 @@ final class ViewerSettings {
 
   func rediscoverRenderers() async {
     await processorStore.discover()
-  }
-
-  private static func loadEditorChoice() -> EditorChoice {
-    guard let data = UserDefaults.standard.data(
-      forKey: Keys.editorChoice),
-      let decoded = try? JSONDecoder().decode(
-        EditorChoice.self, from: data)
-    else { return .default }
-    return decoded
-  }
-
-  private func persistEditorChoice() {
-    guard let data = try? JSONEncoder().encode(editorChoice)
-    else { return }
-    UserDefaults.standard.set(data, forKey: Keys.editorChoice)
   }
 
   private func discover() async {

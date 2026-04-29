@@ -104,9 +104,9 @@ final class ViewerModel {
       logger.warning("openInEditor ignored: no document URL bound")
       return
     }
-    let choice = settings?.editorChoice ?? .default
+    let value = settings?.editors.selected ?? .default
     await openFileInEditor(
-      choice, fileURL: url, line: line, logger: logger)
+      value, fileURL: url, line: line, logger: logger)
   }
 
   // MARK: - Public entry points
