@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-               BuildableName = "Markdown Eye.app"
+               BuildableName = "Galley.app"
                BlueprintName = "Viewer"
                ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
             </BuildableReference>
@@ -30,7 +30,8 @@
       shouldUseLaunchSchemeArgsEnv = "YES">
       <TestPlans>
          <TestPlanReference
-            reference = "container:TestPlan.xctestplan">
+            reference = "container:TestPlan.xctestplan"
+            default = "YES">
          </TestPlanReference>
       </TestPlans>
    </TestAction>
@@ -50,7 +51,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-            BuildableName = "Markdown Eye.app"
+            BuildableName = "Galley.app"
             BlueprintName = "Viewer"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>
@@ -77,7 +78,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "62D5CA182FA048F000CADD72"
-            BuildableName = "Markdown Eye.app"
+            BuildableName = "Galley.app"
             BlueprintName = "Viewer"
             ReferencedContainer = "container:MarkdownPreviewer.xcodeproj">
          </BuildableReference>

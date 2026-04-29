@@ -21,6 +21,10 @@ public protocol TemplateModel: ChoiceValue {
 public final class TemplateChoice: ChoiceModel, Hashable {
   public struct Value: TemplateModel {
     public let template: any Template
+
+    public init(template: any Template) {
+      self.template = template
+    }
     public var kind: TemplateModelKind {
       if template is BuiltInTemplate {
         .builtIn
@@ -76,7 +80,7 @@ public final class TemplateChoice: ChoiceModel, Hashable {
     }
   }
 
-  init(store: TemplateStore, key: String) {
+  public init(store: TemplateStore, key: String) {
     self.store = store
     self.key = key
   }

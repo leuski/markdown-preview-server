@@ -51,9 +51,13 @@ final class AppModel {
   }
 
   @ObservationIgnored let templateStore: TemplateStore
+  @ObservationIgnored let templateChoice: TemplateChoice
   @ObservationIgnored lazy var server: PreviewServerController = {
     PreviewServerController(
       templateStore: self.templateStore,
+      selectedTemplateProvider: { [weak self] in
+        await self?.templateChoice.selected.template ?? .default
+      },
       rendererProvider: { [weak self] in
         await self?.activeEntry?.renderer
       })
@@ -62,13 +66,16 @@ final class AppModel {
   private enum Keys {
     static let port = "MarkdownPreviewer.port"
     static let rendererID = "MarkdownPreviewer.rendererID"
+    static let templateID = "MarkdownPreviewer.selectedTemplateID"
   }
 
   nonisolated static let defaultPort: UInt16 = 8089
   nonisolated static let defaultHost: String = "127.0.0.1"
 
   init() {
-    self.templateStore = TemplateStore()
+    let store = TemplateStore()
+    self.templateStore = store
+    self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
 
     startServer()
 

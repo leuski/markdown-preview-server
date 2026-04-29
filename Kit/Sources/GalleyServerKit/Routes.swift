@@ -17,6 +17,7 @@ enum Routes {
     on server: HTTPServer,
     hostURL: URL,
     templateStore: TemplateStore,
+    selectedTemplateProvider: @Sendable @escaping () async -> any Template,
     rendererProvider: @Sendable @escaping () async -> (any MarkdownRenderer)?,
     watcher: DocumentWatcher
   ) async {
@@ -30,7 +31,7 @@ enum Routes {
         return await previewOrAssetResponse(
           request: request,
           hostURL: hostURL,
-          templateStore: storeRef,
+          selectedTemplate: await selectedTemplateProvider(),
           renderer: await rendererProvider())
       }
 
@@ -67,7 +68,7 @@ enum Routes {
   private static func previewOrAssetResponse(
     request: HTTPRequest,
     hostURL: URL,
-    templateStore: TemplateStoreRef,
+    selectedTemplate: any Template,
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
     guard let documentURL = decodeFilePath(
@@ -91,7 +92,7 @@ enum Routes {
         documentURL: documentURL,
         request: request,
         hostURL: hostURL,
-        templateStore: templateStore,
+        template: selectedTemplate,
         renderer: renderer)
     }
     if assetExtensions.contains(ext) {
@@ -104,7 +105,7 @@ enum Routes {
     documentURL: URL,
     request: HTTPRequest,
     hostURL: URL,
-    templateStore: TemplateStoreRef,
+    template: any Template,
     renderer: any MarkdownRenderer
   ) async -> HTTPResponse {
     guard FileManager.default.isReadableFile(atPath: documentURL.path) else {
@@ -129,7 +130,6 @@ enum Routes {
         source: source)
     }
 
-    let template = await templateStore.selected
     let templateHTML: String
     do {
       templateHTML = try template.loadHTML()
@@ -387,12 +387,8 @@ private struct TemplateStoreRef: Sendable {
     self.store = store
   }
 
-  var selected: any Template {
-    get async { await MainActor.run { store.selected } }
-  }
-
   func template(id: String) async -> (any Template)? {
-    await MainActor.run { store.templates.first { $0.id == id } }
+    await MainActor.run { store.template(forID: id) }
   }
 }
 

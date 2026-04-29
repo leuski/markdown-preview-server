@@ -96,7 +96,7 @@ struct ContentView: View {
       if new != nil { hostWindow?.alphaValue = 1 }
     }
     .onChange(of: settings.selectedProcessorID) { reloadModel() }
-    .onChange(of: settings.templateStore.selectedID) { reloadModel() }
+    .onChange(of: settings.templateChoice.selected) { reloadModel() }
     .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
     .onChange(of: model.overrideRendererID) { _, new in
       overrideRendererID = new ?? ""
@@ -364,6 +364,6 @@ private struct TemplateToolbarPicker: View {
   }
 
   private var label: String {
-    settings.templateStore.selected.name
+    settings.templateChoice.selected.name
   }
 }

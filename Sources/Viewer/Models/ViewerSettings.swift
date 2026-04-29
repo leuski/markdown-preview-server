@@ -27,6 +27,7 @@ final class ViewerSettings {
   }
 
   @ObservationIgnored let templateStore: TemplateStore
+  @ObservationIgnored let templateChoice: TemplateChoice
   var templates: [any Template] { templateStore.templates }
 
   /// User's chosen editor target. Drives both cmd-click → editor and
@@ -63,10 +64,13 @@ final class ViewerSettings {
     static let editorChoice = "MarkdownEye.editorChoice"
     static let perDocOverrides = "MarkdownEye.perDocumentOverrides"
     static let openBehavior = "MarkdownEye.openBehavior"
+    static let templateID = "MarkdownEye.selectedTemplateID"
   }
 
   init(skipDiscovery: Bool = false) {
-    self.templateStore = TemplateStore()
+    let store = TemplateStore()
+    self.templateStore = store
+    self.templateChoice = TemplateChoice(store: store, key: Keys.templateID)
     self.selectedProcessorID = UserDefaults.standard.string(
       forKey: Keys.rendererID)
     self.editorChoice = Self.loadEditorChoice()
@@ -89,7 +93,7 @@ final class ViewerSettings {
   }
 
   func template(forID id: String) -> (any Template)? {
-    templateStore.templates.first(where: { $0.id == id })
+    templateStore.template(forID: id)
   }
 
   /// User's preferred entry if available, otherwise the first
@@ -111,7 +115,7 @@ final class ViewerSettings {
   }
 
   var activeTemplate: any Template {
-    templateStore.selected
+    templateChoice.selected.template
   }
 
   /// Non-nil when the user's preferred renderer exists in the catalog
@@ -129,7 +133,7 @@ final class ViewerSettings {
   }
 
   func selectTemplate(_ template: any Template) {
-    templateStore.select(template)
+    templateChoice.selected = TemplateChoice.Value(template: template)
   }
 
   func rediscoverRenderers() async {
@@ -141,13 +145,6 @@ final class ViewerSettings {
     Binding(
       get: { entry.id == self.activeProcessor?.id },
       set: { isOn in if isOn { self.selectRenderer(id: entry.id) } }
-    )
-  }
-
-  func templateBinding(_ template: any Template) -> Binding<Bool> {
-    Binding(
-      get: { template.id == self.templateStore.selectedID },
-      set: { isOn in if isOn { self.selectTemplate(template) } }
     )
   }
 
@@ -177,8 +174,7 @@ final class ViewerSettings {
   }
 
   func revealTemplatesFolder() {
-    NSWorkspace.shared
-      .activateFileViewerSelecting([templateStore.directoryURL])
+    templateStore.revealFolder()
   }
 }
 

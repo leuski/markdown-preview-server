@@ -21,6 +21,8 @@ public final class PreviewServerController {
   @ObservationIgnored public let watcher = DocumentWatcher()
 
   @ObservationIgnored private let templateStore: TemplateStore
+  @ObservationIgnored private let selectedTemplateProvider: @Sendable ()
+  async -> any Template
   @ObservationIgnored private let rendererProvider: @Sendable ()
   async -> (any MarkdownRenderer)?
 
@@ -29,9 +31,11 @@ public final class PreviewServerController {
 
   public init(
     templateStore: TemplateStore,
+    selectedTemplateProvider: @escaping @Sendable () async -> any Template,
     rendererProvider: @escaping @Sendable () async -> (any MarkdownRenderer)?
   ) {
     self.templateStore = templateStore
+    self.selectedTemplateProvider = selectedTemplateProvider
     self.rendererProvider = rendererProvider
   }
 
@@ -39,6 +43,7 @@ public final class PreviewServerController {
     stop()
 
     let store = templateStore
+    let templateProvider = selectedTemplateProvider
     let provider = rendererProvider
     let watcher = self.watcher
 
@@ -80,6 +85,7 @@ public final class PreviewServerController {
         on: server,
         hostURL: fullURL,
         templateStore: store,
+        selectedTemplateProvider: templateProvider,
         rendererProvider: provider,
         watcher: watcher)
 

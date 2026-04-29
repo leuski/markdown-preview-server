@@ -1,22 +1,18 @@
 import Foundation
 import Observation
 import ALFoundation
+import AppKit
 
 @Observable
 @MainActor
 public final class TemplateStore {
   public private(set) var templates: [any Template] = []
-  public var selectedID: String
 
   @ObservationIgnored public let directoryURL: URL
   @ObservationIgnored private var watcherTask: Task<Void, Never>?
 
-  private static let selectionKey = "MarkdownPreviewer.selectedTemplateID"
-
   public init() {
     self.directoryURL = URL.ourApplicationSupportDirectory / "Templates"
-    self.selectedID = UserDefaults.standard.string(forKey: Self.selectionKey)
-    ?? BuiltInTemplate.id
 
     // Non-fatal: built-in template still works if this fails.
     try? directoryURL.createDirectory()
@@ -25,13 +21,12 @@ public final class TemplateStore {
     startWatching()
   }
 
-  public var selected: any Template {
-    templates.first { $0.id == selectedID } ?? BuiltInTemplate.shared
+  public func template(forID id: String) -> (any Template)? {
+    templates.first { $0.id == id }
   }
 
-  public func select(_ template: any Template) {
-    selectedID = template.id
-    UserDefaults.standard.set(template.id, forKey: Self.selectionKey)
+  public func revealFolder() {
+    NSWorkspace.shared.activateFileViewerSelecting([directoryURL])
   }
 
   public func reload() {
@@ -49,9 +44,6 @@ public final class TemplateStore {
     let combined: [any Template] = [BuiltInTemplate.shared] + discovered
     if combined.map(\.id) != templates.map(\.id) {
       templates = combined
-    }
-    if !combined.contains(where: { $0.id == selectedID }) {
-      selectedID = BuiltInTemplate.id
     }
   }
 

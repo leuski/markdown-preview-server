@@ -24,10 +24,10 @@ public struct SceneTemplateChoice: ChoiceModel {
 
     nonisolated public static func == (lhs: Value, rhs: Value) -> Bool {
       switch (lhs, rhs) {
-      case (.local(let l), .local(let r)):
-        return l == r
-      case (.global(let l), .global(let r)):
-        return l == r
+      case (.local(let lhs), .local(let rhs)):
+        return lhs == rhs
+      case (.global(let lhs), .global(let rhs)):
+        return lhs == rhs
       default:
         return false
       }
@@ -84,7 +84,7 @@ public struct SceneTemplateChoice: ChoiceModel {
         .map { .local($0) }
       ?? .global(source)
     }
-    set {
+    nonmutating set {
       switch newValue {
       case .local(let value):
         storage.wrappedValue = value.template.id
