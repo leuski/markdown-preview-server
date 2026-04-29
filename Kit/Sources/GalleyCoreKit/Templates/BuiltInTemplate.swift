@@ -7,6 +7,7 @@ public struct BuiltInTemplate: Template {
 
   public var id: String { Self.id }
   public var name: String { Self.name }
+  public var isBuiltIn: Bool { true }
 
   public func loadHTML() throws -> String { Self.html }
 

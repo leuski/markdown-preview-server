@@ -5,6 +5,7 @@ public struct UserTemplate: Template {
   public let name: String
   public let directoryURL: URL
   public let htmlURL: URL
+  public var isBuiltIn: Bool { false }
 
   public init(
     id: String, name: String, directoryURL: URL, htmlURL: URL

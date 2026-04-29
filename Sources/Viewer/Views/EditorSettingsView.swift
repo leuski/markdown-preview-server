@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import UniformTypeIdentifiers
+import GalleyCoreKit
 
 /// Settings tab for the cmd-click → editor target. A single popup
 /// menu lists every preset plus "Custom URL scheme" and "Other
@@ -9,35 +10,176 @@ import UniformTypeIdentifiers
 struct EditorSettingsView: View {
   @Bindable var settings: ViewerSettings
 
-  var body: some View {
-    Form {
-      Picker("Editor:", selection: kindBinding) {
+  private var applicationName: String? {
+    if case let .appBundle(bundle: url) = settings.editorChoice {
+      return url.deletingPathExtension().lastPathComponent
+    }
+    return nil
+  }
+
+  @ViewBuilder
+  var editorPicker: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      Picker("Markdown editor", selection: kindBinding) {
         ForEach(EditorPreset.allCases) { preset in
           Text(preset.displayName)
             .tag(EditorChoiceKind.preset(preset))
         }
         Divider()
         Text("Custom URL scheme…").tag(EditorChoiceKind.customURL)
-        Text("Other application…").tag(EditorChoiceKind.appBundle)
+        Text(applicationName ?? "Other application…")
+          .tag(EditorChoiceKind.appBundle)
       }
       .pickerStyle(.menu)
-
       detailFields
+    }
+  }
 
-      Section {
-        Picker("Open documents:", selection: $settings.openBehavior) {
+  @ViewBuilder
+  private var detailFields: some View {
+    switch settings.editorChoice {
+    case .preset:
+      EmptyView()
+
+    case .customURL:
+      VStack(alignment: .leading, spacing: 4) {
+        HStack {
+          Text("URL template")
+          Spacer()
+          TextField("URL template", text: customURLBinding)
+            .textFieldStyle(.roundedBorder)
+            .font(.system(.body, design: .monospaced))
+            .labelsHidden()
+        }
+        Text("Use {url}, {path}, and {line} as placeholders.")
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+      }
+
+    case .appBundle:
+      VStack(alignment: .leading, spacing: 4) {
+        HStack {
+          Text(
+            "Line numbers are not passed to applications selected this way."
+          )
+          .font(.caption)
+          .foregroundStyle(.secondary)
+          .fixedSize(horizontal: false, vertical: true)
+          Spacer()
+          Button("Choose Application…") { pickAppBundle() }
+        }
+      }
+    }
+  }
+
+  @ViewBuilder
+  var openDocumentPicker: some View {
+    VStack(alignment: .leading, spacing: 4) {
+      HStack {
+        Text("Open document")
+        Spacer()
+        Picker(selection: $settings.openBehavior) {
           ForEach(OpenBehavior.allCases) { behavior in
             Text(behavior.displayName).tag(behavior)
           }
+        } label: {
+          EmptyView()
         }
         .pickerStyle(.menu)
-        Text(
-          "Applies when opening files via Finder, the Open dialog, or "
-          + "Open Recent. With no existing window, a new window is "
-          + "always used."
-        )
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        .labelsHidden()
+        .fixedSize()
+      }
+      Text("""
+            Applies when opening files via Finder, the Open dialog, or \
+            Open Recent. With no existing window, a new window is \
+            always used.
+            """
+      )
+      .font(.caption)
+      .foregroundStyle(.secondary)
+      .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  @ViewBuilder
+  private var rediscoverRenderersButton: some View {
+    Button {
+      Task { await settings.rediscoverRenderers() }
+    } label: {
+      Image(systemName: "arrow.clockwise")
+        .frame(width: 16, height: 16)
+    }
+    .help("""
+      Re-run shell-based discovery — useful after installing a new processor.
+      """)
+  }
+
+  @ViewBuilder
+  private var revealTemplatesButton: some View {
+    Button {
+      settings.revealTemplatesFolder()
+    } label: {
+      Image(systemName: "folder")
+        .frame(width: 16, height: 16)
+    }
+    .help("""
+      Reveal Templates folder in Finder
+      """)
+  }
+
+  @ViewBuilder
+  private var templatePicker: some View {
+    Menu {
+      TemplateMenuCore(settings: settings)
+    } label: {
+      Text(settings.activeTemplate.name)
+    }
+  }
+
+  @ViewBuilder
+  private var processorPicker: some View {
+    Menu {
+      ProcessorMenuCore(settings: settings)
+    } label: {
+      Text(settings.activeProcessor?.name ?? "no processor found")
+    }
+  }
+
+  var body: some View {
+    Form {
+      Section {
+        openDocumentPicker
+      }
+
+      Section {
+        editorPicker
+        LabeledContent {
+          Button("Install scripts…") {
+            //            ScriptInstaller.installScripts(model: model)
+          }
+        } label: {
+          Text("Integration")
+        }
+
+        LabeledContent {
+          HStack {
+            processorPicker
+            rediscoverRenderersButton
+          }
+        } label: {
+          Text("Processor")
+        }
+
+        LabeledContent {
+          HStack {
+            templatePicker
+            revealTemplatesButton
+          }
+        } label: {
+          Text("Template")
+        }
+
       }
 
       Section {
@@ -54,39 +196,8 @@ struct EditorSettingsView: View {
       }
     }
     .padding()
-    .frame(width: 460)
-  }
-
-  @ViewBuilder
-  private var detailFields: some View {
-    switch settings.editorChoice {
-    case .preset:
-      EmptyView()
-
-    case .customURL:
-      TextField("URL template:", text: customURLBinding)
-        .textFieldStyle(.roundedBorder)
-        .font(.system(.body, design: .monospaced))
-      Text(
-        "Use {url}, {path}, and {line} as placeholders."
-      )
-      .font(.caption)
-      .foregroundStyle(.secondary)
-
-    case .appBundle(let appURL):
-      LabeledContent("Application:") {
-        HStack {
-          Text(appURL.deletingPathExtension().lastPathComponent)
-          Spacer()
-          Button("Choose…") { pickAppBundle() }
-        }
-      }
-      Text(
-        "Line numbers are not passed to applications selected this way."
-      )
-      .font(.caption)
-      .foregroundStyle(.secondary)
-    }
+    .formStyle(.grouped)
+    .frame(minWidth: 580, maxWidth: 580, minHeight: 360)
   }
 
   private var kindBinding: Binding<EditorChoiceKind> {
@@ -144,4 +255,8 @@ struct EditorSettingsView: View {
     guard panel.runModal() == .OK, let url = panel.url else { return }
     settings.editorChoice = .appBundle(url)
   }
+}
+
+#Preview {
+  EditorSettingsView(settings: ViewerSettings(skipDiscovery: true))
 }

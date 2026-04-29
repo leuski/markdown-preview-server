@@ -80,13 +80,13 @@ struct SettingsView: View {
   }
 
   private var activeDisplayName: String {
-    model.activeEntry?.displayName ?? "No processor available"
+    model.activeEntry?.name ?? "No processor available"
   }
 
   private func staleMessage(
-    for entry: RendererEntry, fallback: String) -> String
+    for entry: Processor, fallback: String) -> String
   {
-    "\(entry.displayName) is not installed — using \(fallback)."
+    "\(entry.name) is not installed — using \(fallback)."
     + (entry.installHint.map { hint in
       " Install with `\(hint)`, then click Rescan."} ?? "")
   }
@@ -105,10 +105,10 @@ struct RendererMenu: View {
 
   var body: some View {
     DividedSections(sections: [
-      model.rendererEntries.filter({$0.isBuiltIn}),
-      model.rendererEntries.filter({!$0.isBuiltIn})
+      model.processors.filter({$0.isBuiltIn}),
+      model.processors.filter({!$0.isBuiltIn})
     ], id: \.id) { item in
-      Toggle(item.displayName, isOn: model.selectedEntryBinding(item))
+      Toggle(item.name, isOn: model.selectedEntryBinding(item))
         .disabled(!item.isAvailable)
     }
   }

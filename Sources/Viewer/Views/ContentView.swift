@@ -95,7 +95,7 @@ struct ContentView: View {
       // restore, or in-window navigation), reveal the window.
       if new != nil { hostWindow?.alphaValue = 1 }
     }
-    .onChange(of: settings.selectedRendererID) { reloadModel() }
+    .onChange(of: settings.selectedProcessorID) { reloadModel() }
     .onChange(of: settings.templateStore.selectedID) { reloadModel() }
     .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
     .onChange(of: model.overrideRendererID) { _, new in
@@ -347,7 +347,7 @@ private struct RendererToolbarPicker: View {
   }
 
   private var label: String {
-    settings.activeEntry?.displayName ?? "No processor"
+    settings.activeProcessor?.name ?? "No processor"
   }
 }
 

@@ -222,13 +222,13 @@ final class ViewerModel {
   func effectiveRendererID(_ settings: ViewerSettings) -> String? {
     if settings.enablePerDocumentOverrides,
        let id = overrideRendererID,
-       settings.rendererEntries.contains(where: {
+       settings.processors.contains(where: {
          $0.id == id && $0.isAvailable
        })
     {
       return id
     }
-    return settings.activeEntry?.id
+    return settings.activeProcessor?.id
   }
 
   func effectiveTemplateID(_ settings: ViewerSettings) -> String? {

@@ -25,16 +25,24 @@ struct DividedSections<Item, ID, Content: View>: View where ID: Hashable {
   }
 }
 
-struct TemplateMenu: View {
+struct TemplateMenuCore: View {
   @Bindable var settings: ViewerSettings
 
   var body: some View {
     DividedSections(sections: [
-      settings.templateStore.templates.filter({$0 is BuiltInTemplate}),
-      settings.templateStore.templates.filter({$0 is UserTemplate})
+      settings.templateStore.templates.filter({ $0.isBuiltIn }),
+      settings.templateStore.templates.filter({ !$0.isBuiltIn })
     ], id: \.id) { template in
       Toggle(template.name, isOn: settings.templateBinding(template))
     }
+  }
+}
+
+struct TemplateMenu: View {
+  @Bindable var settings: ViewerSettings
+
+  var body: some View {
+    TemplateMenuCore(settings: settings)
     Divider()
     Button("Reveal Templates Folder") {
       NSWorkspace.shared
@@ -43,19 +51,27 @@ struct TemplateMenu: View {
   }
 }
 
-struct ProcessorMenu: View {
+struct ProcessorMenuCore: View {
   @Bindable var settings: ViewerSettings
 
   var body: some View {
     DividedSections(sections: [
-      settings.rendererEntries.filter(\.isBuiltIn),
-      settings.rendererEntries.filter { !$0.isBuiltIn }
-    ], id: \.id) { entry in
+      settings.processors.filter(\.isBuiltIn),
+      settings.processors.filter { !$0.isBuiltIn }
+    ], id: \.id) { processor in
       Toggle(
-        entry.displayName,
-        isOn: settings.rendererBinding(entry))
-      .disabled(!entry.isAvailable)
+        processor.name,
+        isOn: settings.rendererBinding(processor))
+      .disabled(!processor.isAvailable)
     }
+  }
+}
+
+struct ProcessorMenu: View {
+  @Bindable var settings: ViewerSettings
+
+  var body: some View {
+    ProcessorMenuCore(settings: settings)
     Divider()
     Button("Rescan Installed Processors") {
       Task { await settings.rediscoverRenderers() }
@@ -81,10 +97,10 @@ struct WindowOverrideProcessorMenu: View {
       }))
     Divider()
     DividedSections(sections: [
-      settings.rendererEntries.filter(\.isBuiltIn),
-      settings.rendererEntries.filter { !$0.isBuiltIn }
+      settings.processors.filter(\.isBuiltIn),
+      settings.processors.filter { !$0.isBuiltIn }
     ], id: \.id) { entry in
-      Toggle(entry.displayName, isOn: Binding(
+      Toggle(entry.name, isOn: Binding(
         get: { model.overrideRendererID == entry.id },
         set: { isOn in
           if isOn {
@@ -112,8 +128,8 @@ struct WindowOverrideTemplateMenu: View {
       }))
     Divider()
     DividedSections(sections: [
-      settings.templateStore.templates.filter({ $0 is BuiltInTemplate }),
-      settings.templateStore.templates.filter({ $0 is UserTemplate })
+      settings.templateStore.templates.filter({ $0.isBuiltIn }),
+      settings.templateStore.templates.filter({ !$0.isBuiltIn })
     ], id: \.id) { template in
       Toggle(template.name, isOn: Binding(
         get: { model.overrideTemplateID == template.id },

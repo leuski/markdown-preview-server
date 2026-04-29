@@ -3,9 +3,9 @@ import Foundation
 /// One row in the BBEdit-style processor picker. The `renderer` is `nil`
 /// when the underlying tool is not installed; the row is still shown so
 /// the user can see what is available and how to install it.
-public struct RendererEntry: Sendable, Identifiable {
+public struct Processor: Sendable, Identifiable {
   public let id: String
-  public let displayName: String
+  public let name: String
   public let installHint: String?
   public let renderer: (any MarkdownRenderer)?
 
@@ -16,7 +16,7 @@ public struct RendererEntry: Sendable, Identifiable {
 public enum MarkdownRendererCatalog {
   private struct Spec: Sendable {
     let id: String
-    let displayName: String
+    let name: String
     let installHint: String?
     let discover: @Sendable () async -> (any MarkdownRenderer)?
   }
@@ -26,12 +26,12 @@ public enum MarkdownRendererCatalog {
   private static let specs: [Spec] = [
     Spec(
       id: "swift-markdown",
-      displayName: "Default (swift-markdown)",
+      name: "Built-in",
       installHint: nil,
       discover: { SwiftMarkdownRenderer() }),
     Spec(
       id: "multimarkdown",
-      displayName: "MultiMarkdown",
+      name: "MultiMarkdown",
       installHint: "brew install multimarkdown",
       discover: {
         await ExternalProcessRenderer.discover(
@@ -41,7 +41,7 @@ public enum MarkdownRendererCatalog {
       }),
     Spec(
       id: "discount",
-      displayName: "Discount",
+      name: "Discount",
       installHint: "brew install discount",
       discover: {
         await ExternalProcessRenderer.discover(
@@ -51,7 +51,7 @@ public enum MarkdownRendererCatalog {
       }),
     Spec(
       id: "pandoc",
-      displayName: "Pandoc",
+      name: "Pandoc",
       installHint: "brew install pandoc",
       discover: {
         await ExternalProcessRenderer.discover(
@@ -62,7 +62,7 @@ public enum MarkdownRendererCatalog {
       }),
     Spec(
       id: "cmark-gfm",
-      displayName: "cmark-gfm",
+      name: "cmark-gfm",
       installHint: "brew install cmark-gfm",
       discover: {
         await ExternalProcessRenderer.discover(
@@ -79,7 +79,7 @@ public enum MarkdownRendererCatalog {
       }),
     Spec(
       id: "classic",
-      displayName: "Classic (Markdown.pl)",
+      name: "Classic",
       installHint: "Place Markdown.pl on your PATH",
       discover: {
         await ExternalProcessRenderer.discover(
@@ -89,14 +89,14 @@ public enum MarkdownRendererCatalog {
       })
   ]
 
-  public static func discoverAll() async -> [RendererEntry] {
-    var entries: [RendererEntry] = []
+  public static func discoverAll() async -> [Processor] {
+    var entries: [Processor] = []
     entries.reserveCapacity(specs.count)
     for spec in specs {
       let renderer = await spec.discover()
-      entries.append(RendererEntry(
+      entries.append(Processor(
         id: spec.id,
-        displayName: spec.displayName,
+        name: spec.name,
         installHint: spec.installHint,
         renderer: renderer))
     }

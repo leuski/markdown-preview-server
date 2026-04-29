@@ -22,17 +22,17 @@ final class AppModel {
   }
 
   /// All known renderers, in display order, each marked available or not.
-  private(set) var rendererEntries: [RendererEntry] = []
+  private(set) var processors: [Processor] = []
 
   /// Persisted identifier of the user's chosen renderer. May not match
   /// any currently-available renderer until discovery completes.
-  var selectedRendererID: String? {
+  var selectedProcessorID: String? {
     get {
-      access(keyPath: \.selectedRendererID)
+      access(keyPath: \.selectedProcessorID)
       return UserDefaults.standard.string(forKey: Keys.rendererID)
     }
     set {
-      withMutation(keyPath: \.selectedRendererID) {
+      withMutation(keyPath: \.selectedProcessorID) {
         UserDefaults.standard.set(newValue, forKey: Keys.rendererID)
       }
       updateCurrentRenderer()
@@ -95,32 +95,32 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
-  func selectedEntryBinding(_ entry: RendererEntry) -> Binding<Bool> {
+  func selectedEntryBinding(_ entry: Processor) -> Binding<Bool> {
     Binding(
       get: { entry.id == self.activeEntry?.id },
-      set: { _ in self.selectedRendererID = entry.id }
+      set: { _ in self.selectedProcessorID = entry.id }
     )
   }
 
-  var selectedEntry: RendererEntry? {
-    selectedRendererID.flatMap { id in
-      rendererEntries.first { $0.id == id && $0.isAvailable }
+  var selectedProcessor: Processor? {
+    selectedProcessorID.flatMap { id in
+      processors.first { $0.id == id && $0.isAvailable }
     }
   }
 
   /// The entry actually used for rendering: the user's preferred entry if
   /// it is currently available, otherwise the first available entry.
   /// `nil` only when no renderer at all is available.
-  var activeEntry: RendererEntry? {
-    selectedEntry ?? rendererEntries.first { $0.isAvailable }
+  var activeEntry: Processor? {
+    selectedProcessor ?? processors.first { $0.isAvailable }
   }
 
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed — UI surfaces this so the
   /// fallback isn't silent.
-  var preferredButUnavailableEntry: RendererEntry? {
-    guard let id = selectedRendererID,
-          let entry = rendererEntries.first(where: { $0.id == id }),
+  var preferredButUnavailableEntry: Processor? {
+    guard let id = selectedProcessorID,
+          let entry = processors.first(where: { $0.id == id }),
           !entry.isAvailable
     else { return nil }
     return entry
@@ -133,12 +133,12 @@ final class AppModel {
 
   private func discoverRenderers() async {
     let entries = await MarkdownRendererCatalog.discoverAll()
-    self.rendererEntries = entries
+    self.processors = entries
     // First launch only: pick a default. Otherwise keep the user's
     // preference even if it is currently unavailable, so reinstalling
     // the tool brings the selection back without further input.
-    if selectedRendererID == nil {
-      selectedRendererID = entries.first { $0.isAvailable }?.id
+    if selectedProcessorID == nil {
+      selectedProcessorID = entries.first { $0.isAvailable }?.id
     } else {
       updateCurrentRenderer()
     }

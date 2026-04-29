@@ -13,20 +13,21 @@ import SwiftUI
 final class ViewerSettings {
   /// All known renderers, in display order, each marked available or
   /// not. Populated asynchronously after init.
-  private(set) var rendererEntries: [RendererEntry] = []
+  private(set) var processors: [Processor] = []
 
   /// Persisted identifier of the user's preferred renderer. May not
   /// match an available entry until discovery completes; we keep it
   /// even when unavailable so reinstalling the tool restores the
   /// selection.
-  var selectedRendererID: String? {
+  var selectedProcessorID: String? {
     didSet {
       UserDefaults.standard.set(
-        selectedRendererID, forKey: Keys.rendererID)
+        selectedProcessorID, forKey: Keys.rendererID)
     }
   }
 
   @ObservationIgnored let templateStore: TemplateStore
+  var templates: [any Template] { templateStore.templates }
 
   /// User's chosen editor target. Drives both cmd-click → editor and
   /// File > Open in Editor. Persisted as JSON so the full enum
@@ -64,9 +65,9 @@ final class ViewerSettings {
     static let openBehavior = "MarkdownEye.openBehavior"
   }
 
-  init() {
+  init(skipDiscovery: Bool = false) {
     self.templateStore = TemplateStore()
-    self.selectedRendererID = UserDefaults.standard.string(
+    self.selectedProcessorID = UserDefaults.standard.string(
       forKey: Keys.rendererID)
     self.editorChoice = Self.loadEditorChoice()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
@@ -75,14 +76,16 @@ final class ViewerSettings {
       rawValue: UserDefaults.standard.string(forKey: Keys.openBehavior)
         ?? "")
       ?? .newWindow
-    Task { @MainActor in await self.discover() }
+    if !skipDiscovery {
+      Task { @MainActor in await self.discover() }
+    }
   }
 
   /// Resolve a renderer ID to an available entry's renderer.
   /// `swift-markdown` is rebuilt with source-line annotations so
   /// cmd-click → editor keeps working.
   func renderer(forID id: String) -> (any MarkdownRenderer)? {
-    guard let entry = rendererEntries.first(where: { $0.id == id }),
+    guard let entry = processors.first(where: { $0.id == id }),
           let base = entry.renderer
     else { return nil }
     if base.id == "swift-markdown" {
@@ -97,20 +100,20 @@ final class ViewerSettings {
 
   /// User's preferred entry if available, otherwise the first
   /// available entry. `nil` only when nothing is available.
-  var activeEntry: RendererEntry? {
-    if let id = selectedRendererID,
-       let entry = rendererEntries.first(
+  var activeProcessor: Processor? {
+    if let id = selectedProcessorID,
+       let entry = processors.first(
          where: { $0.id == id && $0.isAvailable })
     {
       return entry
     }
-    return rendererEntries.first { $0.isAvailable }
+    return processors.first { $0.isAvailable }
   }
 
   /// Renderer to use for the current preview. Wraps swift-markdown
   /// with `annotatesSourceLines: true` so cmd-click → BBEdit works.
   var activeRenderer: any MarkdownRenderer {
-    let base = activeEntry?.renderer
+    let base = activeProcessor?.renderer
       ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
     if base.id == "swift-markdown" {
       return SwiftMarkdownRenderer(annotatesSourceLines: true)
@@ -124,16 +127,16 @@ final class ViewerSettings {
 
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed.
-  var preferredButUnavailableEntry: RendererEntry? {
-    guard let id = selectedRendererID,
-          let entry = rendererEntries.first(where: { $0.id == id }),
+  var preferredButUnavailableEntry: Processor? {
+    guard let id = selectedProcessorID,
+          let entry = processors.first(where: { $0.id == id }),
           !entry.isAvailable
     else { return nil }
     return entry
   }
 
   func selectRenderer(id: String) {
-    selectedRendererID = id
+    selectedProcessorID = id
   }
 
   func selectTemplate(_ template: any Template) {
@@ -145,9 +148,9 @@ final class ViewerSettings {
   }
 
   /// Two-way binding the menu's `Toggle` rows can drive.
-  func rendererBinding(_ entry: RendererEntry) -> Binding<Bool> {
+  func rendererBinding(_ entry: Processor) -> Binding<Bool> {
     Binding(
-      get: { entry.id == self.activeEntry?.id },
+      get: { entry.id == self.activeProcessor?.id },
       set: { isOn in if isOn { self.selectRenderer(id: entry.id) } }
     )
   }
@@ -176,12 +179,17 @@ final class ViewerSettings {
 
   private func discover() async {
     let entries = await MarkdownRendererCatalog.discoverAll()
-    self.rendererEntries = entries
-    if selectedRendererID == nil,
+    self.processors = entries
+    if selectedProcessorID == nil,
        let first = entries.first(where: { $0.isAvailable })?.id
     {
-      selectedRendererID = first
+      selectedProcessorID = first
     }
+  }
+
+  func revealTemplatesFolder() {
+    NSWorkspace.shared
+      .activateFileViewerSelecting([templateStore.directoryURL])
   }
 }
 
