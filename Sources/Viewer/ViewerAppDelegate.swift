@@ -27,9 +27,19 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// menu's Open Recent submenu.
   private(set) var recentURLs: [URL] = []
 
+  /// Set true when AppKit signals launch is complete. State
+  /// restoration finishes before this fires, so the placeholder
+  /// window can wait on this flag instead of a fixed timeout
+  /// before deciding to show the FTUE open panel.
+  private(set) var didFinishLaunching = false
+
   override init() {
     super.init()
     self.recentURLs = NSDocumentController.shared.recentDocumentURLs
+  }
+
+  func applicationDidFinishLaunching(_ notification: Notification) {
+    didFinishLaunching = true
   }
 
   func application(_ application: NSApplication, open urls: [URL]) {

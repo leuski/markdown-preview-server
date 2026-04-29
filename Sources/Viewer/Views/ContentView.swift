@@ -39,7 +39,17 @@ struct ContentView: View {
       }
     }
     .background(WindowAccessor { window in
-      if hostWindow == nil { hostWindow = window }
+      if hostWindow == nil {
+        hostWindow = window
+        // Every window opens hidden until content is bound. State
+        // restoration applies the URL ~half a second after a view
+        // mounts, and a fresh placeholder sits empty until the
+        // open panel returns. We can't predict the order of this
+        // resolve vs. .task firing — if a previous fire already
+        // bound content (e.g. openWindow(value:) → immediate
+        // bind), unhide right away.
+        window?.alphaValue = (model.documentURL == nil) ? 0 : 1
+      }
     })
     .toolbar { toolbarContent }
     .focusedSceneValue(\.viewerModel, model)
@@ -53,7 +63,12 @@ struct ContentView: View {
       ?? fileURL?.lastPathComponent
       ?? "Markdown Preview")
     .task(id: fileURL) { await launchTask() }
-    .onChange(of: model.documentURL) { _, _ in saveHistory() }
+    .onChange(of: model.documentURL) { _, new in
+      saveHistory()
+      // First time content is bound (whether via initial bind,
+      // restore, or in-window navigation), reveal the window.
+      if new != nil { hostWindow?.alphaValue = 1 }
+    }
     .onChange(of: settings.selectedRendererID) { _, _ in
       Task { await model.reload() }
     }
@@ -73,8 +88,12 @@ struct ContentView: View {
     // windows. install() returns true when launch-time URLs flushed.
     let flushed = installOpenWindowHandlerIfNeeded()
 
-    // History takes precedence over the WindowGroup URL — the user
-    // may have been deeper in the back/forward stack at last quit.
+    // SwiftUI fires `.task(id:)` more than once even when the id
+    // is stable (the modifier is recreated on body re-eval). If a
+    // previous fire already bound or restored content, we're done.
+    if model.documentURL != nil { return }
+
+    // Restore a saved session (back/forward stack) for this scene.
     if !didRestore, let snapshot = decodeHistory(historyJSON) {
       didRestore = true
       await model.restore(snapshot: snapshot)
@@ -82,29 +101,44 @@ struct ContentView: View {
       return
     }
 
+    // Initial bind for a freshly-opened URL.
     if let fileURL {
       appDelegate.record(fileURL)
       await model.bind(to: fileURL)
       return
     }
 
-    // No URL, no history — this is a fresh placeholder window.
+    // application(_:open:) URLs are spawning real windows of their
+    // own. Drop the placeholder.
     if flushed {
-      // application(_:open:) URLs are spawning real windows of their
-      // own. Drop the placeholder.
       dismiss()
       return
     }
 
+    // Truly empty placeholder — wait for launch (and any in-flight
+    // state restoration) to settle, then run the FTUE picker.
     await runLaunchPicker()
   }
 
-  /// FTUE: hide the placeholder window and run the open panel. If
-  /// the user picks files, route the first into this same window
-  /// (by writing the binding) and any extras into new windows; cancel
-  /// closes the placeholder.
+  /// FTUE: wait for app launch to settle, then run the open panel.
+  /// If the user picks files, route the first into this same window
+  /// (by writing the binding) and any extras into new windows;
+  /// cancel closes the placeholder.
+  ///
+  /// The window is already alpha=0 from `WindowAccessor` and will
+  /// stay hidden until `model.documentURL` becomes non-nil — set
+  /// when the picked file binds.
   private func runLaunchPicker() async {
-    hostWindow?.alphaValue = 0
+    // Wait for AppKit to finish launching. State restoration is
+    // complete by then, so any restored window's URL has already
+    // landed in its scene's binding — this window is genuinely
+    // the empty placeholder, not a restored window in transit.
+    while !appDelegate.didFinishLaunching {
+      try? await Task.sleep(for: .milliseconds(50))
+      if Task.isCancelled { return }
+    }
+    if Task.isCancelled || fileURL != nil { return }
+
     let picks = appDelegate.runOpenPanel()
     guard let first = picks.first else {
       dismiss()
@@ -115,10 +149,11 @@ struct ContentView: View {
       openWindow(value: extra)
     }
     appDelegate.record(first)
-    hostWindow?.alphaValue = 1
     fileURL = first
-    // Setting `fileURL` re-fires `task(id: fileURL)` which binds the
-    // model and renders. No need to bind here.
+    // Setting `fileURL` re-fires `task(id: fileURL)` which binds
+    // the model. The bind sets model.documentURL, which our
+    // .onChange flips alphaValue=1 — revealing the window with
+    // content already rendered.
   }
 
   @discardableResult
