@@ -17,7 +17,7 @@ enum Routes {
     on server: HTTPServer,
     hostURL: URL,
     templateStore: TemplateStore,
-    rendererProvider: @Sendable @escaping () -> (any MarkdownRenderer)?,
+    rendererProvider: @Sendable @escaping () async -> (any MarkdownRenderer)?,
     watcher: DocumentWatcher
   ) async {
     let storeRef = TemplateStoreRef(templateStore)
@@ -31,7 +31,7 @@ enum Routes {
           request: request,
           hostURL: hostURL,
           templateStore: storeRef,
-          renderer: rendererProvider())
+          renderer: await rendererProvider())
       }
 
     await server.appendRoute(

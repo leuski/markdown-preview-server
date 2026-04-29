@@ -12,6 +12,7 @@
 		626E8DD82F9DDC9B00BD51F9 /* ALFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = 626E8DD72F9DDC9B00BD51F9 /* ALFoundation */; };
 		626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 626E96E22F9E8DFE00BD51F9 /* Markdown */; };
 		62D5C88F2F9FBD0000CADD72 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = 62D5C88E2F9FBD0000CADD72 /* Scripts */; };
+		62D5D5572FA29AE800CADD72 /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 62D5D5562FA29AE800CADD72 /* TestPlan.xctestplan */; };
 		62F00001000000000000F004 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F002 /* GalleyCoreKit */; };
 		62F00001000000000000F005 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F003 /* GalleyCoreKit */; };
 		62F00001000000000000F009 /* GalleyServerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F008 /* GalleyServerKit */; };
@@ -32,6 +33,7 @@
 		626E8D5C2F9DD1C800BD51F9 /* Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		62D5C88E2F9FBD0000CADD72 /* Scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Scripts; sourceTree = "<group>"; };
 		62D5CA192FA048F000CADD72 /* Galley.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Galley.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		62D5D5562FA29AE800CADD72 /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -105,6 +107,7 @@
 		626E8D462F9DD1C700BD51F9 = {
 			isa = PBXGroup;
 			children = (
+				62D5D5562FA29AE800CADD72 /* TestPlan.xctestplan */,
 				62D5C9302FA01C3900CADD72 /* Scripts */,
 				62D5D51C2FA1672700CADD72 /* Sources */,
 				62D5C8842F9FBCA700CADD72 /* Resources */,
@@ -287,6 +290,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				62D5D5572FA29AE800CADD72 /* TestPlan.xctestplan in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

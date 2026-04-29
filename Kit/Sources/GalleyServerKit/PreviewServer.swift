@@ -22,14 +22,14 @@ public final class PreviewServerController {
 
   @ObservationIgnored private let templateStore: TemplateStore
   @ObservationIgnored private let rendererProvider: @Sendable ()
-  -> (any MarkdownRenderer)?
+  async -> (any MarkdownRenderer)?
 
   public static let defaultHost: String = "127.0.0.1"
   public static let defaultPort: UInt16 = 8089
 
   public init(
     templateStore: TemplateStore,
-    rendererProvider: @escaping @Sendable () -> (any MarkdownRenderer)?
+    rendererProvider: @escaping @Sendable () async -> (any MarkdownRenderer)?
   ) {
     self.templateStore = templateStore
     self.rendererProvider = rendererProvider

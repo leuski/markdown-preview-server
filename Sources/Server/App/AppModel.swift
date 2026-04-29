@@ -35,7 +35,6 @@ final class AppModel {
       withMutation(keyPath: \.selectedProcessorID) {
         UserDefaults.standard.set(newValue, forKey: Keys.rendererID)
       }
-      updateCurrentRenderer()
     }
   }
 
@@ -52,8 +51,13 @@ final class AppModel {
   }
 
   @ObservationIgnored let templateStore: TemplateStore
-  @ObservationIgnored let server: PreviewServerController
-  @ObservationIgnored private let currentRenderer = CurrentRenderer()
+  @ObservationIgnored lazy var server: PreviewServerController = {
+    PreviewServerController(
+      templateStore: self.templateStore,
+      rendererProvider: { [weak self] in
+        await self?.activeEntry?.renderer
+      })
+  }()
 
   private enum Keys {
     static let port = "MarkdownPreviewer.port"
@@ -64,14 +68,7 @@ final class AppModel {
   nonisolated static let defaultHost: String = "127.0.0.1"
 
   init() {
-    let store = TemplateStore()
-    self.templateStore = store
-
-    let box = currentRenderer
-    let provider: @Sendable () -> (any MarkdownRenderer)? = { box.get() }
-    self.server = PreviewServerController(
-      templateStore: store,
-      rendererProvider: provider)
+    self.templateStore = TemplateStore()
 
     startServer()
 
@@ -139,13 +136,7 @@ final class AppModel {
     // the tool brings the selection back without further input.
     if selectedProcessorID == nil {
       selectedProcessorID = entries.first { $0.isAvailable }?.id
-    } else {
-      updateCurrentRenderer()
     }
-  }
-
-  private func updateCurrentRenderer() {
-    currentRenderer.set(activeEntry?.renderer)
   }
 
   private func startServer() {
