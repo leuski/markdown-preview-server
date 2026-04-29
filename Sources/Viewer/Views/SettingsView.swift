@@ -7,7 +7,7 @@ import GalleyCoreKit
 /// menu lists every preset plus "Custom URL scheme" and "Other
 /// application"; the conditional fields below the popup let the user
 /// supply a URL template or pick an `.app` bundle.
-struct EditorSettingsView: View {
+struct SettingsView: View {
   @Bindable var settings: ViewerSettings
 
   private var applicationName: String? {
@@ -258,5 +258,5 @@ struct EditorSettingsView: View {
 }
 
 #Preview {
-  EditorSettingsView(settings: ViewerSettings(skipDiscovery: true))
+  SettingsView(settings: ViewerSettings(skipDiscovery: true))
 }

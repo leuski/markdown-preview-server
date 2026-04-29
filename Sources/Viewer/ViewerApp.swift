@@ -21,7 +21,7 @@ struct ViewerApp: App {
     }
 
     Settings {
-      EditorSettingsView(settings: settings)
+      SettingsView(settings: settings)
     }
   }
 }
