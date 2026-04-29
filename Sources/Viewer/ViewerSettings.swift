@@ -36,9 +36,21 @@ final class ViewerSettings {
     didSet { persistEditorChoice() }
   }
 
+  /// When on, each window can pin its own renderer / template that
+  /// wins over the global selection. Stored per-window via
+  /// `@SceneStorage`; toggling this off doesn't erase the per-window
+  /// values, but stops them from taking effect.
+  var enablePerDocumentOverrides: Bool {
+    didSet {
+      UserDefaults.standard.set(
+        enablePerDocumentOverrides, forKey: Keys.perDocOverrides)
+    }
+  }
+
   private enum Keys {
     static let rendererID = "MarkdownEye.rendererID"
     static let editorChoice = "MarkdownEye.editorChoice"
+    static let perDocOverrides = "MarkdownEye.perDocumentOverrides"
   }
 
   init() {
@@ -46,7 +58,26 @@ final class ViewerSettings {
     self.selectedRendererID = UserDefaults.standard.string(
       forKey: Keys.rendererID)
     self.editorChoice = Self.loadEditorChoice()
+    self.enablePerDocumentOverrides = UserDefaults.standard.bool(
+      forKey: Keys.perDocOverrides)
     Task { @MainActor in await self.discover() }
+  }
+
+  /// Resolve a renderer ID to an available entry's renderer.
+  /// `swift-markdown` is rebuilt with source-line annotations so
+  /// cmd-click → editor keeps working.
+  func renderer(forID id: String) -> (any MarkdownRenderer)? {
+    guard let entry = rendererEntries.first(where: { $0.id == id }),
+          let base = entry.renderer
+    else { return nil }
+    if base.id == "swift-markdown" {
+      return SwiftMarkdownRenderer(annotatesSourceLines: true)
+    }
+    return base
+  }
+
+  func template(forID id: String) -> (any Template)? {
+    templateStore.templates.first(where: { $0.id == id })
   }
 
   /// User's preferred entry if available, otherwise the first

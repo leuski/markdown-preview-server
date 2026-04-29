@@ -28,6 +28,16 @@ final class ViewerModel {
   private(set) var documentURL: URL?
   private(set) var lastError: String?
 
+  /// Per-window override of the global renderer choice. `nil` means
+  /// "follow the global selection". Only honored when
+  /// `ViewerSettings.enablePerDocumentOverrides` is on. Persisted
+  /// across app launches by ContentView via `@SceneStorage`.
+  var overrideRendererID: String?
+
+  /// Per-window override of the global template choice. Same rules as
+  /// `overrideRendererID`.
+  var overrideTemplateID: String?
+
   /// Visited documents in chronological order; `currentIndex` points
   /// at the one currently rendered. Navigation actions move
   /// `currentIndex` and rebind without truncating the stack — so
@@ -188,7 +198,47 @@ final class ViewerModel {
   }
 
   func reload() async {
-    await renderCurrent()
+    await renderCurrent(preserveScroll: true)
+  }
+
+  /// Set or clear the per-window renderer override and re-render. The
+  /// override only takes effect when
+  /// `ViewerSettings.enablePerDocumentOverrides` is on.
+  func setOverrideRenderer(_ id: String?) async {
+    guard overrideRendererID != id else { return }
+    overrideRendererID = id
+    await renderCurrent(preserveScroll: true)
+  }
+
+  func setOverrideTemplate(_ id: String?) async {
+    guard overrideTemplateID != id else { return }
+    overrideTemplateID = id
+    await renderCurrent(preserveScroll: true)
+  }
+
+  /// Effective renderer entry id once the per-window override is
+  /// resolved against the global selection. Used by menus to show a
+  /// checkmark next to the row that's actually rendering.
+  func effectiveRendererID(_ settings: ViewerSettings) -> String? {
+    if settings.enablePerDocumentOverrides,
+       let id = overrideRendererID,
+       settings.rendererEntries.contains(where: {
+         $0.id == id && $0.isAvailable
+       })
+    {
+      return id
+    }
+    return settings.activeEntry?.id
+  }
+
+  func effectiveTemplateID(_ settings: ViewerSettings) -> String? {
+    if settings.enablePerDocumentOverrides,
+       let id = overrideTemplateID,
+       settings.template(forID: id) != nil
+    {
+      return id
+    }
+    return settings.templateStore.selectedID
   }
 
   /// Rename the current document on disk and re-bind the watcher /
@@ -241,26 +291,35 @@ final class ViewerModel {
     bridge.documentURL = url
     linkBridge.documentURL = url
 
-    await renderCurrent()
+    await renderCurrent(preserveScroll: false)
 
     let stream = await watcher.subscribe(to: url)
     for await _ in stream {
       if Task.isCancelled || bindGeneration != myGeneration { break }
-      await renderCurrent()
+      // Keep the user's place when the file changes on disk —
+      // re-rendering otherwise snaps the WebView back to the top.
+      await renderCurrent(preserveScroll: true)
     }
   }
 
-  private func renderCurrent() async {
+  private func renderCurrent(preserveScroll: Bool) async {
     guard let url = documentURL else {
       logger.warning("renderCurrent() called with no documentURL")
       return
     }
-    let renderer = settings?.activeRenderer
-      ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
-    let template = settings?.activeTemplate ?? BuiltInTemplate.shared
+    let renderer = resolvedRenderer()
+    let template = resolvedTemplate()
     // Keep the scheme handler's template pointer current — the user
     // may have switched templates since the last bind.
     templateBox.template = template
+
+    // Snapshot scroll position *before* re-rendering so we can hand it
+    // back to the page after load. Best-effort: a nil/throwing read
+    // (e.g. very first render) just leaves us at the top.
+    let savedScrollY: Double = preserveScroll
+      ? await currentScrollY() ?? 0
+      : 0
+
     do {
       let source = try String(contentsOf: url, encoding: .utf8)
       let body = try await renderer.render(source, baseURL: url)
@@ -276,6 +335,9 @@ final class ViewerModel {
       do {
         for try await _ in page.load(html: html, baseURL: origin) {}
         lastError = nil
+        if savedScrollY > 0 {
+          await restoreScrollY(savedScrollY)
+        }
       } catch {
         logger.error("""
           Navigation failed: \(error.localizedDescription, privacy: .public)
@@ -288,6 +350,49 @@ final class ViewerModel {
         """)
       lastError = error.localizedDescription
     }
+  }
+
+  /// Resolve the renderer for the next render. When the per-document
+  /// override flag is on and a window-local override is set to an
+  /// available entry, that wins; otherwise fall back to the global
+  /// selection.
+  private func resolvedRenderer() -> any MarkdownRenderer {
+    if let settings,
+       settings.enablePerDocumentOverrides,
+       let id = overrideRendererID,
+       let renderer = settings.renderer(forID: id)
+    {
+      return renderer
+    }
+    return settings?.activeRenderer
+      ?? SwiftMarkdownRenderer(annotatesSourceLines: true)
+  }
+
+  private func resolvedTemplate() -> any Template {
+    if let settings,
+       settings.enablePerDocumentOverrides,
+       let id = overrideTemplateID,
+       let template = settings.template(forID: id)
+    {
+      return template
+    }
+    return settings?.activeTemplate ?? BuiltInTemplate.shared
+  }
+
+  private func currentScrollY() async -> Double? {
+    do {
+      let value = try await page.callJavaScript("return window.scrollY;")
+      if let number = value as? Double { return number }
+      if let number = value as? NSNumber { return number.doubleValue }
+      return nil
+    } catch {
+      return nil
+    }
+  }
+
+  private func restoreScrollY(_ y: Double) async {
+    let js = "window.scrollTo(0, \(y));"
+    _ = try? await page.callJavaScript(js)
   }
 }
 

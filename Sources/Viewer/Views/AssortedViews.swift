@@ -62,3 +62,66 @@ struct ProcessorMenu: View {
     }
   }
 }
+
+/// Per-window renderer override picker. Only used when the
+/// per-document-overrides flag is on. Selecting "Use Global Setting"
+/// clears the override; selecting any concrete entry pins it for this
+/// window.
+struct WindowOverrideProcessorMenu: View {
+  let settings: ViewerSettings
+  @Bindable var model: ViewerModel
+
+  var body: some View {
+    Toggle("Use Global Setting", isOn: Binding(
+      get: { model.overrideRendererID == nil },
+      set: { isOn in
+        if isOn {
+          Task { await model.setOverrideRenderer(nil) }
+        }
+      }))
+    Divider()
+    DividedSections(sections: [
+      settings.rendererEntries.filter(\.isBuiltIn),
+      settings.rendererEntries.filter { !$0.isBuiltIn }
+    ], id: \.id) { entry in
+      Toggle(entry.displayName, isOn: Binding(
+        get: { model.overrideRendererID == entry.id },
+        set: { isOn in
+          if isOn {
+            Task { await model.setOverrideRenderer(entry.id) }
+          }
+        }))
+      .disabled(!entry.isAvailable)
+    }
+  }
+}
+
+/// Per-window template override picker. Mirrors
+/// `WindowOverrideProcessorMenu`.
+struct WindowOverrideTemplateMenu: View {
+  let settings: ViewerSettings
+  @Bindable var model: ViewerModel
+
+  var body: some View {
+    Toggle("Use Global Setting", isOn: Binding(
+      get: { model.overrideTemplateID == nil },
+      set: { isOn in
+        if isOn {
+          Task { await model.setOverrideTemplate(nil) }
+        }
+      }))
+    Divider()
+    DividedSections(sections: [
+      settings.templateStore.templates.filter({ $0 is BuiltInTemplate }),
+      settings.templateStore.templates.filter({ $0 is UserTemplate })
+    ], id: \.id) { template in
+      Toggle(template.name, isOn: Binding(
+        get: { model.overrideTemplateID == template.id },
+        set: { isOn in
+          if isOn {
+            Task { await model.setOverrideTemplate(template.id) }
+          }
+        }))
+    }
+  }
+}

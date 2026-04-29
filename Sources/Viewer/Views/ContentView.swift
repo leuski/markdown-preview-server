@@ -18,6 +18,14 @@ struct ContentView: View {
   /// each get their own history that survives app relaunch.
   @SceneStorage("MarkdownEye.history") private var historyJSON: String = ""
 
+  /// Per-window renderer / template overrides. Empty string means "no
+  /// override — use the global selection." Only honored when
+  /// `ViewerSettings.enablePerDocumentOverrides` is on.
+  @SceneStorage("MarkdownEye.overrideRendererID")
+  private var overrideRendererID: String = ""
+  @SceneStorage("MarkdownEye.overrideTemplateID")
+  private var overrideTemplateID: String = ""
+
   var body: some View {
     Group {
       if fileURL != nil {
@@ -69,19 +77,39 @@ struct ContentView: View {
       // restore, or in-window navigation), reveal the window.
       if new != nil { hostWindow?.alphaValue = 1 }
     }
-    .onChange(of: settings.selectedRendererID) { _, _ in
-      Task { await model.reload() }
+    .onChange(of: settings.selectedRendererID) { reloadModel() }
+    .onChange(of: settings.templateStore.selectedID) { reloadModel() }
+    .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
+    .onChange(of: model.overrideRendererID) { _, new in
+      overrideRendererID = new ?? ""
     }
-    .onChange(of: settings.templateStore.selectedID) { _, _ in
-      Task { await model.reload() }
+    .onChange(of: model.overrideTemplateID) { _, new in
+      overrideTemplateID = new ?? ""
     }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
+  }
+
+  private func reloadModel() {
+    Task { await model.reload() }
   }
 
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
     model.bindSettings(settings)
+    // Hydrate the model from scene storage on first run; subsequent
+    // fires are no-ops since we only write when the value actually
+    // differs.
+    let storedRenderer = overrideRendererID.isEmpty
+      ? nil : overrideRendererID
+    let storedTemplate = overrideTemplateID.isEmpty
+      ? nil : overrideTemplateID
+    if model.overrideRendererID != storedRenderer {
+      model.overrideRendererID = storedRenderer
+    }
+    if model.overrideTemplateID != storedTemplate {
+      model.overrideTemplateID = storedTemplate
+    }
 
     // First view to come up captures `openWindow` for the delegate
     // so Finder file opens and File > Open Recent route into new

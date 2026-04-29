@@ -23,6 +23,19 @@ struct EditorSettingsView: View {
       .pickerStyle(.menu)
 
       detailFields
+
+      Section {
+        Toggle(
+          "Allow per-window processor and template overrides",
+          isOn: $settings.enablePerDocumentOverrides)
+        Text(
+          "Adds a Format menu section that lets each window pin its own "
+          + "Markdown processor or template, overriding the global "
+          + "selection."
+        )
+        .font(.caption)
+        .foregroundStyle(.secondary)
+      }
     }
     .padding()
     .frame(width: 460)
