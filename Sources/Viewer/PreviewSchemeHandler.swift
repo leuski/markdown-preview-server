@@ -16,6 +16,8 @@ import ALFoundation
 /// to the same origin so any unrewritten relative URLs (e.g. those
 /// in inline `<img>` markup the document author wrote) flow through
 /// the handler as well.
+
+@MainActor
 struct PreviewSchemeHandler: URLSchemeHandler {
   static let scheme = URLScheme("mdeye") !! "Should not happen"
   static let originURL: URL = "mdeye://local"
@@ -29,6 +31,7 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
     category: "PreviewSchemeHandler")
 
+  nonisolated
   func reply(
     for request: URLRequest
   ) -> AsyncThrowingStream<URLSchemeTaskResult, any Error> {
@@ -60,7 +63,6 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     }
   }
 
-  @MainActor
   private func resolve(request: URLRequest) throws -> (Data, String) {
     guard let url = request.url else { throw URLError(.badURL) }
     guard let route = PreviewRoute(path: url.path) else {
@@ -71,7 +73,6 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     return (data, MIMETypes.mimeType(for: assetURL))
   }
 
-  @MainActor
   private func resolveAssetURL(for route: PreviewRoute) throws -> URL {
     switch route {
     case .templateAsset(let id, let file):
