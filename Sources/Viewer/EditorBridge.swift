@@ -52,6 +52,11 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
 
   var documentURL: URL?
 
+  /// Set by the owning ViewerModel; receives the line clicked.
+  /// Routing the actual open call through the model lets it consult
+  /// the user's `EditorChoice` from `ViewerSettings`.
+  var onEditorClick: ((Int) -> Void)?
+
   private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
     category: "EditorBridge")
@@ -63,41 +68,12 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
     guard let body = message.body as? [String: Any],
           let line = body["line"] as? Int
     else {
-      logger.warning(
-        "Ignoring malformed editor message: \(String(describing: message.body))")
+      logger.warning("""
+        Ignoring malformed editor message: \
+        \(String(describing: message.body), privacy: .public)
+        """)
       return
     }
-    guard let documentURL else {
-      logger.warning("Editor click ignored: no document URL bound")
-      return
-    }
-    openInBBEdit(url: documentURL, line: line)
-  }
-
-  private func openInBBEdit(url: URL, line: Int) {
-    // BBEdit registers x-bbedit:// (its own scheme) and txmt:// (the
-    // TextMate-compatible cross-editor scheme). bbedit:// (no x-) is
-    // NOT registered. Try x-bbedit first; fall back to txmt.
-    let schemes = ["x-bbedit", "txmt"]
-    for scheme in schemes {
-      var components = URLComponents()
-      components.scheme = scheme
-      components.host = "open"
-      components.queryItems = [
-        URLQueryItem(name: "url", value: url.absoluteString),
-        URLQueryItem(name: "line", value: String(line))
-      ]
-      guard let editorURL = components.url else { continue }
-      if NSWorkspace.shared.open(editorURL) {
-        return
-      }
-      logger.debug(
-        "\(scheme, privacy: .public):// open failed, trying next scheme")
-    }
-    logger.error("""
-      No editor handled the open URL for \(url.path, privacy: .public) \
-      at line \(line). Tried: \
-      \(schemes.joined(separator: ", "), privacy: .public)
-      """)
+    onEditorClick?(line)
   }
 }

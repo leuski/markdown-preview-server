@@ -79,6 +79,26 @@ final class ViewerModel {
       guard let self else { return }
       Task { await self.navigate(to: url) }
     }
+
+    // Cmd-click in the preview: route through the model so we read
+    // the current `EditorChoice` from settings on every click.
+    bridge.onEditorClick = { [weak self] line in
+      guard let self else { return }
+      Task { await self.openInEditor(line: line) }
+    }
+  }
+
+  /// Open the current document in the user's chosen editor.
+  /// `line` is non-nil for cmd-click on a `data-source-line` block;
+  /// nil for File > Open in Editor (jump to top).
+  func openInEditor(line: Int? = nil) async {
+    guard let url = documentURL else {
+      logger.warning("openInEditor ignored: no document URL bound")
+      return
+    }
+    let choice = settings?.editorChoice ?? .default
+    await openFileInEditor(
+      choice, fileURL: url, line: line, logger: logger)
   }
 
   // MARK: - Public entry points
@@ -287,4 +307,3 @@ struct HistorySnapshot: Codable, Sendable, Equatable {
   let urls: [URL]
   let currentIndex: Int
 }
-

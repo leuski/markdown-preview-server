@@ -34,56 +34,7 @@
 		62D5CA192FA048F000CADD72 /* Markdown Eye.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Markdown Eye.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		62D5CA322FA048F900CADD72 /* Exceptions for "Sources" folder in "Server" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Viewer/EditorBridge.swift,
-				Viewer/LinkBridge.swift,
-				Viewer/PreviewSchemeHandler.swift,
-				Viewer/Resources/Assets.xcassets,
-				Viewer/Resources/Info.plist,
-				Viewer/ViewerApp.swift,
-				Viewer/ViewerAppDelegate.swift,
-				Viewer/ViewerModel.swift,
-				Viewer/ViewerSettings.swift,
-				Viewer/Views/AssortedViews.swift,
-				Viewer/Views/ContentView.swift,
-				Viewer/Views/NavigationCommands.swift,
-				Viewer/Views/RenderingCommands.swift,
-			);
-			target = 626E8D4E2F9DD1C700BD51F9 /* Server */;
-		};
-		62D5CA332FA048F900CADD72 /* Exceptions for "Sources" folder in "Viewer" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Viewer/EditorBridge.swift,
-				Viewer/LinkBridge.swift,
-				Viewer/PreviewSchemeHandler.swift,
-				Viewer/Resources/Assets.xcassets,
-				Viewer/ViewerApp.swift,
-				Viewer/ViewerAppDelegate.swift,
-				Viewer/ViewerModel.swift,
-				Viewer/ViewerSettings.swift,
-				Viewer/Views/AssortedViews.swift,
-				Viewer/Views/ContentView.swift,
-				Viewer/Views/NavigationCommands.swift,
-				Viewer/Views/RenderingCommands.swift,
-			);
-			target = 62D5CA182FA048F000CADD72 /* Viewer */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		626EAA182F9FB59000BD51F9 /* Sources */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				62D5CA322FA048F900CADD72 /* Exceptions for "Sources" folder in "Server" target */,
-				62D5CA332FA048F900CADD72 /* Exceptions for "Sources" folder in "Viewer" target */,
-			);
-			path = Sources;
-			sourceTree = "<group>";
-		};
 		626EAA332F9FB5A000BD51F9 /* Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Tests;
@@ -92,6 +43,16 @@
 		62D5C9302FA01C3900CADD72 /* Scripts */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Scripts;
+			sourceTree = "<group>";
+		};
+		62D5D5292FA1673B00CADD72 /* Server */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Server;
+			sourceTree = "<group>";
+		};
+		62D5D5432FA1674A00CADD72 /* Viewer */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Viewer;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -132,10 +93,9 @@
 			isa = PBXGroup;
 			children = (
 				62D5C9302FA01C3900CADD72 /* Scripts */,
-				626EAA182F9FB59000BD51F9 /* Sources */,
+				62D5D51C2FA1672700CADD72 /* Sources */,
 				62D5C8842F9FBCA700CADD72 /* Resources */,
 				626EAA332F9FB5A000BD51F9 /* Tests */,
-				626E8DD42F9DDC9B00BD51F9 /* Frameworks */,
 				626E8D502F9DD1C700BD51F9 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -150,19 +110,21 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
-		626E8DD42F9DDC9B00BD51F9 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-			);
-			name = Frameworks;
-			sourceTree = "<group>";
-		};
 		62D5C8842F9FBCA700CADD72 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
 				62D5C88E2F9FBD0000CADD72 /* Scripts */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		62D5D51C2FA1672700CADD72 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				62D5D5292FA1673B00CADD72 /* Server */,
+				62D5D5432FA1674A00CADD72 /* Viewer */,
+			);
+			path = Sources;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -188,7 +150,7 @@
 				62F00001000000000000F00A /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				626EAA182F9FB59000BD51F9 /* Sources */,
+				62D5D5292FA1673B00CADD72 /* Server */,
 			);
 			name = Server;
 			packageProductDependencies = (
@@ -238,6 +200,9 @@
 			);
 			dependencies = (
 				62F00001000000000000F007 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				62D5D5432FA1674A00CADD72 /* Viewer */,
 			);
 			name = Viewer;
 			packageProductDependencies = (

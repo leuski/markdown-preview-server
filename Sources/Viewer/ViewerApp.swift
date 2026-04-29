@@ -18,6 +18,10 @@ struct ViewerApp: App {
       NavigationCommands()
       RenderingCommands(settings: settings)
     }
+
+    Settings {
+      EditorSettingsView(settings: settings)
+    }
   }
 }
 
@@ -55,6 +59,13 @@ struct FileCommands: Commands {
         runRenamePopup(currentURL: url, model: model, context: context)
       }
       .disabled(renameContext?.url == nil)
+
+      Button("Open in Editor") {
+        guard let model else { return }
+        Task { await model.openInEditor(line: nil) }
+      }
+      .keyboardShortcut("e", modifiers: .command)
+      .disabled(model?.documentURL == nil)
     }
   }
 }

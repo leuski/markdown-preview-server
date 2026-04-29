@@ -28,14 +28,24 @@ final class ViewerSettings {
 
   @ObservationIgnored let templateStore: TemplateStore
 
+  /// User's chosen editor target. Drives both cmd-click → editor and
+  /// File > Open in Editor. Persisted as JSON so the full enum
+  /// (preset / custom URL / app bundle) round-trips through
+  /// UserDefaults in a single key.
+  var editorChoice: EditorChoice {
+    didSet { persistEditorChoice() }
+  }
+
   private enum Keys {
     static let rendererID = "MarkdownEye.rendererID"
+    static let editorChoice = "MarkdownEye.editorChoice"
   }
 
   init() {
     self.templateStore = TemplateStore()
     self.selectedRendererID = UserDefaults.standard.string(
       forKey: Keys.rendererID)
+    self.editorChoice = Self.loadEditorChoice()
     Task { @MainActor in await self.discover() }
   }
 
@@ -101,6 +111,21 @@ final class ViewerSettings {
       get: { template.id == self.templateStore.selectedID },
       set: { isOn in if isOn { self.selectTemplate(template) } }
     )
+  }
+
+  private static func loadEditorChoice() -> EditorChoice {
+    guard let data = UserDefaults.standard.data(
+      forKey: Keys.editorChoice),
+      let decoded = try? JSONDecoder().decode(
+        EditorChoice.self, from: data)
+    else { return .default }
+    return decoded
+  }
+
+  private func persistEditorChoice() {
+    guard let data = try? JSONEncoder().encode(editorChoice)
+    else { return }
+    UserDefaults.standard.set(data, forKey: Keys.editorChoice)
   }
 
   private func discover() async {
