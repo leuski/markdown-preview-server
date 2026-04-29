@@ -6,7 +6,7 @@
     {
       "layers" : [
         {
-          "glass" : true,
+          "glass" : false,
           "image-name" : "Galley1.png",
           "name" : "Galley1"
         },
