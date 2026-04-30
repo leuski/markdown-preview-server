@@ -268,13 +268,9 @@ struct ContentView: View {
       .disabled(!model.canGoForward)
       .help("Forward (⌘])")
     }
-    ToolbarItem(placement: .primaryAction) {
-      RendererToolbarPicker(appModel: appModel)
-    }
-    ToolbarItem(placement: .primaryAction) {
-      TemplateToolbarPicker(appModel: appModel)
-    }
-    ToolbarItem(placement: .primaryAction) {
+    ToolbarItemGroup(placement: .primaryAction) {
+      RendererToolbarPicker(appModel: appModel, docModel: model)
+      TemplateToolbarPicker(appModel: appModel, docModel: model)
       Button {
         Task { await model.reload() }
       } label: {
