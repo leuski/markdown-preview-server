@@ -16,7 +16,7 @@ import WebKit
 /// URLs; toolbar buttons drive `goBack`, `goForward`, and `reload`.
 @Observable
 @MainActor
-final class ViewerModel {
+final class DocumentModel {
   let page: WebPage
 
   @ObservationIgnored private let watcher = DocumentWatcher()
@@ -52,7 +52,7 @@ final class ViewerModel {
 
   private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
-    category: "ViewerModel")
+    category: "DocumentModel")
 
   init() {
     var configuration = WebPage.Configuration()
@@ -369,7 +369,7 @@ final class ViewerModel {
 
 /// Reference holder so the URL scheme handler — which captures the
 /// box at WebPage creation time, before settings are injected —
-/// always sees the latest template. ViewerModel updates `template`
+/// always sees the latest template. DocumentModel updates `template`
 /// in `bindSettings(_:)` and at the start of every render.
 @MainActor
 final class TemplateBox {

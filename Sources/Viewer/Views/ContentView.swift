@@ -9,7 +9,7 @@ struct ContentView: View {
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @Environment(\.openWindow) private var openWindow
   @Environment(\.dismiss) private var dismiss
-  @State private var model = ViewerModel()
+  @State private var model = DocumentModel()
   @State private var didRestore = false
   @State private var hostWindow: NSWindow?
 
@@ -289,7 +289,7 @@ struct ContentView: View {
 /// out of `ContentView.body` to keep the modifier chain short enough
 /// for the type-checker.
 private struct SceneValuesModifier: ViewModifier {
-  let model: ViewerModel
+  let model: DocumentModel
   let templates: SceneTemplateChoice
   let processors: SceneProcessorChoice
   let renameContext: RenameContext

@@ -112,7 +112,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
 
   /// Called by every `ContentView` once its `NSWindow` resolves. The
   /// `rebind` closure swaps the window's WindowGroup binding and the
-  /// underlying `ViewerModel` to a new URL.
+  /// underlying `DocumentModel` to a new URL.
   func registerWindow(
     _ window: NSWindow,
     rebind: @escaping @MainActor (URL) -> Void
@@ -233,7 +233,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   }
 
   /// Weak link to a `ContentView`'s `NSWindow` plus the closure that
-  /// rebinds that window's WindowGroup binding + `ViewerModel` to a
+  /// rebinds that window's WindowGroup binding + `DocumentModel` to a
   /// new URL. Closures live for the lifetime of the registration —
   /// they capture `self` from the enclosing view, so the registry
   /// must drop entries when the window goes away to avoid leaks.

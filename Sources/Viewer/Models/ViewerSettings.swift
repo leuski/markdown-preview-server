@@ -5,7 +5,7 @@ import SwiftUI
 
 /// App-wide rendering preferences for the Viewer. Renderer selection
 /// (catalog discovery + persisted ID) and the user's template store
-/// both live here, separately from any single window's `ViewerModel`.
+/// both live here, separately from any single window's `DocumentModel`.
 /// Windows read the active renderer + template at render time, so the
 /// user can switch globally and have every open document re-render.
 @Observable

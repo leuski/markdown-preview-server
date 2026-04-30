@@ -4,11 +4,11 @@ import SwiftUI
 /// scene so menu items can drive Back/Forward/Reload on whichever
 /// document is frontmost.
 private struct ViewerModelKey: FocusedValueKey {
-  typealias Value = ViewerModel
+  typealias Value = DocumentModel
 }
 
 extension FocusedValues {
-  var viewerModel: ViewerModel? {
+  var viewerModel: DocumentModel? {
     get { self[ViewerModelKey.self] }
     set { self[ViewerModelKey.self] = newValue }
   }
@@ -40,7 +40,7 @@ extension FocusedValues {
 
 /// Per-window template choice exposed to commands so the override
 /// menu in `RenderingCommands` can drive it without going through
-/// `ViewerModel`. The struct holds a `Binding` to the active
+/// `DocumentModel`. The struct holds a `Binding` to the active
 /// window's `@SceneStorage` slot.
 private struct ViewerTemplatesKey: FocusedValueKey {
   typealias Value = SceneTemplateChoice

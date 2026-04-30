@@ -74,7 +74,7 @@ struct FileCommands: Commands {
 @MainActor
 private func runRenamePopup(
   currentURL: URL,
-  model: ViewerModel,
+  model: DocumentModel,
   context: RenameContext
 ) {
   let alert = NSAlert()

@@ -6,7 +6,7 @@ import os
 /// Receives `{ "line": <Int> }` messages from the rendered preview and
 /// opens the current document in BBEdit at that line. The bridge has no
 /// own knowledge of the file path — it reads it from `documentURL`,
-/// which the owning ViewerModel keeps current.
+/// which the owning DocumentModel keeps current.
 @MainActor
 final class EditorBridge: NSObject, WKScriptMessageHandler {
   /// Name of the JavaScript message handler. JS calls
@@ -52,7 +52,7 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
 
   var documentURL: URL?
 
-  /// Set by the owning ViewerModel; receives the line clicked.
+  /// Set by the owning DocumentModel; receives the line clicked.
   /// Routing the actual open call through the model lets it consult
   /// the user's `EditorChoice` from `ViewerSettings`.
   var onEditorClick: ((Int) -> Void)?
