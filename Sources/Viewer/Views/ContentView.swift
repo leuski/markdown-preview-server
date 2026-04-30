@@ -365,7 +365,7 @@ private struct RendererToolbarPicker: View {
   }
 
   private var label: String {
-    appModel.activeProcessor?.name ?? "No processor"
+    appModel.processors.selected.name
   }
 }
 

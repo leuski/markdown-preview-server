@@ -14,7 +14,7 @@ extension SceneProcessorChoiceValue: @retroactive ProcessorModel {
     case .local(let value):
       return value.name
     case .global(let value):
-      return "Global (\(value.active.name))"
+      return "Global (\(value.selected.name))"
     }
   }
 
@@ -23,7 +23,7 @@ extension SceneProcessorChoiceValue: @retroactive ProcessorModel {
     case .local(let value):
       return value.value
     case .global(let value):
-      return value.active.value
+      return value.selected.value
     }
   }
 
@@ -32,9 +32,9 @@ extension SceneProcessorChoiceValue: @retroactive ProcessorModel {
     case .local(let value):
       return value.isAvailable
     case .global:
-      // The global resolution always falls back to something
-      // available — even when the user's pick is unavailable, the
-      // catalog's first-available entry stands in.
+      // The global resolution always returns a usable entry — the
+      // ProcessorChoice.selected getter falls back to the built-in
+      // when the persisted pick is missing or unavailable.
       return true
     }
   }
@@ -95,6 +95,6 @@ final class SceneProcessorChoice: ChoiceModel {
   /// renders with the global processor even if a stale local pick is
   /// still stored.
   public var globalProcessor: ProcessorChoice.Value {
-    source.active
+    source.selected
   }
 }

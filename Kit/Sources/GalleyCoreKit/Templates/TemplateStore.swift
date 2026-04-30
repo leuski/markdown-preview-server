@@ -11,6 +11,12 @@ public final class TemplateStore {
   @ObservationIgnored public let directoryURL: URL
   @ObservationIgnored private var watcherTask: Task<Void, Never>?
 
+  /// Fires after every `reload()` completes (initial + watcher-driven).
+  /// `ProcessorStore.discover()` is awaited directly, but template
+  /// reloads happen inside the file-system watcher, so callers that
+  /// need to react (e.g. to run reconciliation) hook in here.
+  @ObservationIgnored public var onReload: (@MainActor () -> Void)?
+
   public init() {
     self.directoryURL = URL.ourApplicationSupportDirectory / "Templates"
 
@@ -23,10 +29,6 @@ public final class TemplateStore {
 
   public func existingTemplate(forID id: String?) -> Template? {
     templates.first { $0.id == id }
-  }
-
-  public func template(forID id: String?) -> Template {
-    existingTemplate(forID: id) ?? .default
   }
 
   public func revealFolder() {
@@ -49,6 +51,7 @@ public final class TemplateStore {
     if combined.map(\.id) != templates.map(\.id) {
       templates = combined
     }
+    onReload?()
   }
 
   private func makeTemplate(at url: URL) -> Template? {

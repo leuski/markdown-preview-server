@@ -47,48 +47,67 @@ public final class ProcessorChoice: ChoiceModel, Hashable {
     store.processors.map(Value.init)
   }
 
-  /// The user's literal pick, or the first processor in the catalog
-  /// when no pick is recorded. May refer to an unavailable entry —
-  /// the menu should display it as checked-but-disabled, and renderers
-  /// should resolve via `active` to fall back to something usable.
+  /// The current pick, always usable. Resolves to the persisted entry
+  /// when it exists in the catalog and is available; otherwise to the
+  /// built-in. Persisted state is only rewritten by `reconcile()` —
+  /// callers reading `selected` never see an unavailable processor.
   public var selected: Value {
     get {
       access(keyPath: \.selected)
-      return Value(store.processor1(
-        forID: UserDefaults.standard.string(forKey: key)))
+      let persisted = readPersisted()
+      if let entry = store.processors.first(
+        where: { $0.id == persisted?.id }),
+         entry.isAvailable
+      {
+        return Value(entry)
+      }
+      return Value(.builtIn)
     }
     set {
-      let oldValue = UserDefaults.standard.string(forKey: key)
-      let newValue = newValue.value.id
-      guard oldValue != newValue else { return }
+      let new = PersistedChoice(
+        id: newValue.value.id, name: newValue.name)
+      guard new != readPersisted() else { return }
       withMutation(keyPath: \.selected) {
-        UserDefaults.standard.set(newValue, forKey: key)
+        writePersisted(new)
       }
     }
   }
 
-  /// User's pick if currently available, otherwise the first
-  /// available entry in the catalog. Use this to drive rendering;
-  /// use `selected` for what the menu should mark as checked.
-  public var active: Value {
-    let pick = selected
-    if pick.isAvailable { return pick }
-    if let firstAvailable = store.processors.first(where: \.isAvailable) {
-      return Value(firstAvailable)
+  /// If the persisted pick is missing or unavailable, write the
+  /// built-in through and return the lost name so the caller can
+  /// surface a notification. Returns nil when no heal was needed.
+  /// Run after `ProcessorStore.discover()` settles the catalog.
+  @discardableResult
+  public func reconcile() -> String? {
+    guard let persisted = readPersisted() else { return nil }
+    if let entry = store.processors.first(where: { $0.id == persisted.id }),
+       entry.isAvailable
+    {
+      return nil
     }
-    return Value(.builtIn)
-  }
-
-  /// Non-nil when the user's literal pick exists in the catalog but
-  /// the underlying tool is not installed — UI surfaces this so the
-  /// fallback isn't silent.
-  public var preferredButUnavailable: Value? {
-    let pick = selected
-    return pick.isAvailable ? nil : pick
+    selected = Value(.builtIn)
+    return persisted.name
   }
 
   public init(store: ProcessorStore, key: String) {
     self.store = store
     self.key = key
   }
+
+  private func readPersisted() -> PersistedChoice? {
+    guard let data = UserDefaults.standard.data(forKey: key) else {
+      return nil
+    }
+    return try? JSONDecoder().decode(PersistedChoice.self, from: data)
+  }
+
+  private func writePersisted(_ value: PersistedChoice) {
+    let data = try? JSONEncoder().encode(value)
+    UserDefaults.standard.set(data, forKey: key)
+  }
+}
+
+private struct PersistedChoice: Codable, Equatable {
+  let id: String
+  let name: String
 }

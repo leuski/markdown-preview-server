@@ -37,8 +37,9 @@ struct SettingsView: View {
         }
       } label: {
         Text("Markdown processor")
-        if let stale = model.preferredButUnavailableProcessor {
-          Text(staleMessage(for: stale, fallback: activeDisplayName))
+        if let displaced = model.displacedProcessorName {
+          Text(displacedMessage(
+            displaced: displaced, current: currentDisplayName))
             .fixedSize(horizontal: true, vertical: false)
         }
       }
@@ -69,22 +70,20 @@ struct SettingsView: View {
 
   @ViewBuilder
   private var rendererPicker: some View {
-    Menu(activeDisplayName) {
+    Menu(currentDisplayName) {
       RendererMenu(appModel: model)
     }
     .fixedSize()
   }
 
-  private var activeDisplayName: String {
-    model.processors.active.name
+  private var currentDisplayName: String {
+    model.processors.selected.name
   }
 
-  private func staleMessage(
-    for entry: Processor, fallback: String) -> String
+  private func displacedMessage(
+    displaced: String, current: String) -> String
   {
-    "\(entry.name) is not installed — using \(fallback)."
-    + (entry.installHint.map { hint in
-      " Install with `\(hint)`, then click Rescan."} ?? "")
+    "\(displaced) is not installed — switched to \(current)."
   }
 
   private func commitPort() {

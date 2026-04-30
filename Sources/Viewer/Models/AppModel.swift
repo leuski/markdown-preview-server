@@ -12,10 +12,19 @@ import SwiftUI
 @MainActor
 final class AppModel {
   @ObservationIgnored let templateStore: TemplateStore
-  @ObservationIgnored let templates: TemplateChoice
+  let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore
-  @ObservationIgnored let processors: ProcessorChoice
+  let processors: ProcessorChoice
   @ObservationIgnored let editors: EditorChoice
+
+  /// The display name of a previously-picked processor that is no
+  /// longer available. Set by `reconcile()` after discovery; cleared
+  /// when the user dismisses the notice or makes a new selection.
+  var displacedProcessorName: String?
+
+  /// The display name of a previously-picked template whose folder is
+  /// no longer present.
+  var displacedTemplateName: String?
 
   /// When on, each window can pin its own renderer / template that
   /// wins over the global selection. Stored per-window via
@@ -60,36 +69,29 @@ final class AppModel {
       rawValue: UserDefaults.standard.string(forKey: Keys.openBehavior)
         ?? "")
       ?? .newWindow
+
+    // Initial template reconcile (TemplateStore.reload() ran during
+    // its own init, before onReload was set).
+    self.displacedTemplateName = self.templates.reconcile()
+    store.onReload = { [weak self] in self?.afterTemplateReload() }
+
     if !skipDiscovery {
-      Task { @MainActor in await self.discover() }
+      Task { @MainActor in await self.rediscoverRenderers() }
     }
   }
 
   func template(forID id: String) -> Template? {
-    templateStore.template(forID: id)
-  }
-
-  /// User's preferred processor if available, otherwise the first
-  /// available entry; `nil` only when nothing is available.
-  var activeProcessor: Processor? {
-    let value = processors.active.value
-    return value.isAvailable ? value : nil
+    templateStore.existingTemplate(forID: id)
   }
 
   /// Renderer to use for the current preview. Wraps swift-markdown
   /// with `annotatesSourceLines: true` so cmd-click → BBEdit works.
   var activeRenderer: any MarkdownRenderer {
-    activeProcessor?.renderer ?? SwiftMarkdownRenderer()
+    processors.selected.value.renderer ?? SwiftMarkdownRenderer()
   }
 
   var activeTemplate: Template {
     templates.selected.value
-  }
-
-  /// Non-nil when the user's preferred renderer exists in the catalog
-  /// but its underlying tool is not installed.
-  var preferredButUnavailableProcessor: Processor? {
-    processors.preferredButUnavailable?.value
   }
 
   func selectTemplate(_ template: Template) {
@@ -98,10 +100,15 @@ final class AppModel {
 
   func rediscoverRenderers() async {
     await processorStore.discover()
+    if let displaced = processors.reconcile() {
+      displacedProcessorName = displaced
+    }
   }
 
-  private func discover() async {
-    await processorStore.discover()
+  private func afterTemplateReload() {
+    if let displaced = templates.reconcile() {
+      displacedTemplateName = displaced
+    }
   }
 
   func revealTemplatesFolder() {

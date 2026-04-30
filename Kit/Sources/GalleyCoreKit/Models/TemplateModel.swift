@@ -50,24 +50,60 @@ public final class TemplateChoice: ChoiceModel, Hashable {
     store.templates.map(Value.init)
   }
 
+  /// The current pick, always usable. Resolves to the persisted entry
+  /// when it exists in the catalog; otherwise to the default template.
+  /// Persisted state is only rewritten by `reconcile()` — callers
+  /// reading `selected` never see a missing template.
   public var selected: Value {
     get {
       access(keyPath: \.selected)
-      return Value(store.template(
-        forID: UserDefaults.standard.string(forKey: key)))
+      let persisted = readPersisted()
+      if let entry = store.existingTemplate(forID: persisted?.id) {
+        return Value(entry)
+      }
+      return Value(.default)
     }
     set {
-      let oldValue = UserDefaults.standard.string(forKey: key)
-      let newValue = newValue.value.id
-      guard oldValue != newValue else { return }
+      let new = PersistedChoice(
+        id: newValue.value.id, name: newValue.name)
+      guard new != readPersisted() else { return }
       withMutation(keyPath: \.selected) {
-        UserDefaults.standard.set(newValue, forKey: key)
+        writePersisted(new)
       }
     }
+  }
+
+  /// If the persisted pick is missing from the catalog, write the
+  /// default through and return the lost name so the caller can
+  /// surface a notification. Returns nil when no heal was needed.
+  /// Run after `TemplateStore.reload()` settles the catalog.
+  @discardableResult
+  public func reconcile() -> String? {
+    guard let persisted = readPersisted() else { return nil }
+    if store.existingTemplate(forID: persisted.id) != nil { return nil }
+    selected = Value(.default)
+    return persisted.name
   }
 
   public init(store: TemplateStore, key: String) {
     self.store = store
     self.key = key
   }
+
+  private func readPersisted() -> PersistedChoice? {
+    guard let data = UserDefaults.standard.data(forKey: key) else {
+      return nil
+    }
+    return try? JSONDecoder().decode(PersistedChoice.self, from: data)
+  }
+
+  private func writePersisted(_ value: PersistedChoice) {
+    let data = try? JSONEncoder().encode(value)
+    UserDefaults.standard.set(data, forKey: key)
+  }
+}
+
+private struct PersistedChoice: Codable, Equatable {
+  let id: String
+  let name: String
 }

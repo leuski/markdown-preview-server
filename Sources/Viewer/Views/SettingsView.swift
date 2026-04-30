@@ -132,7 +132,7 @@ struct SettingsView: View {
     Menu {
       ProcessorMenuCore(model: appModel.processors)
     } label: {
-      Text(appModel.activeProcessor?.name ?? "no processor found")
+      Text(appModel.processors.selected.name)
     }
   }
 

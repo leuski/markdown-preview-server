@@ -34,19 +34,28 @@ final class AppModel {
   }
 
   @ObservationIgnored let templateStore: TemplateStore
-  @ObservationIgnored let templates: TemplateChoice
+  let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore
-  @ObservationIgnored let processors: ProcessorChoice
+  let processors: ProcessorChoice
   @ObservationIgnored lazy var server: PreviewServerController = {
     PreviewServerController(
       templateStore: self.templateStore,
       selectedTemplateProvider: { [weak self] in
-        await self?.templates.selected.template ?? .default
+        await self?.templates.selected.value ?? .default
       },
       rendererProvider: { [weak self] in
-        await self?.processors.active.processor.renderer
+        await self?.processors.selected.value.renderer
       })
   }()
+
+  /// The display name of a previously-picked processor that is no
+  /// longer available. Set by `reconcile()` after discovery; cleared
+  /// when the user dismisses the notice or makes a new selection.
+  var displacedProcessorName: String?
+
+  /// The display name of a previously-picked template whose folder is
+  /// no longer present.
+  var displacedTemplateName: String?
 
   private enum Keys {
     static let port = "MarkdownPreviewer.port"
@@ -66,10 +75,21 @@ final class AppModel {
     self.processors = ProcessorChoice(
       store: processorStore, key: Keys.rendererID)
 
+    // Initial template reconcile (TemplateStore.reload() ran during
+    // its own init, before onReload was set).
+    self.displacedTemplateName = self.templates.reconcile()
+    store.onReload = { [weak self] in self?.afterTemplateReload() }
+
     startServer()
 
     Task { @MainActor in
       await self.rediscoverRenderers()
+    }
+  }
+
+  private func afterTemplateReload() {
+    if let displaced = templates.reconcile() {
+      displacedTemplateName = displaced
     }
   }
 
@@ -88,16 +108,13 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
-  /// Non-nil when the user's preferred renderer exists in the catalog
-  /// but its underlying tool is not installed — UI surfaces this so the
-  /// fallback isn't silent.
-  var preferredButUnavailableProcessor: Processor? {
-    processors.preferredButUnavailable?.processor
-  }
-
-  /// Re-runs discovery (e.g. after the user installs a new tool).
+  /// Re-runs discovery (e.g. after the user installs a new tool) and
+  /// reconciles the persisted pick against the fresh catalog.
   func rediscoverRenderers() async {
     await processorStore.discover()
+    if let displaced = processors.reconcile() {
+      displacedProcessorName = displaced
+    }
   }
 
   private func startServer() {
