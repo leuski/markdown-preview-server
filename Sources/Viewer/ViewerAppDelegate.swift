@@ -25,7 +25,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// Reference to the shared `AppModel`, set by `ViewerApp` so
   /// `application(_:open:)` and friends can consult `openBehavior`
   /// without a SwiftUI environment lookup.
-  @ObservationIgnored weak var settings: AppModel?
+  @ObservationIgnored weak var appModel: AppModel?
 
   /// Window registry — each `ContentView` registers its `NSWindow`
   /// along with a closure that rebinds the window to a new URL. Used
@@ -74,7 +74,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// already on screen; with no windows, every mode collapses to
   /// "spawn a new window" since there's no frontmost to tab onto.
   func dispatch(_ url: URL) {
-    let behavior = settings?.openBehavior ?? .newWindow
+    let behavior = appModel?.openBehavior ?? .newWindow
 
     // Pre-launch (or no windows yet): only newWindow makes sense.
     // Queue if the SwiftUI handler isn't installed; otherwise just

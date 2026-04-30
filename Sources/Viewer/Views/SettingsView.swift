@@ -8,14 +8,14 @@ import GalleyCoreKit
 /// fields below let the user supply a URL template or pick an
 /// `.app` bundle.
 struct SettingsView: View {
-  @Bindable var settings: AppModel
+  @Bindable var appModel: AppModel
 
   @ViewBuilder
   var editorPicker: some View {
     VStack(alignment: .leading, spacing: 8) {
       LabeledContent {
-        Menu(settings.editors.selected.name) {
-          EditorMenuCore(model: settings.editors)
+        Menu(appModel.editors.selected.name) {
+          EditorMenuCore(model: appModel.editors)
         }
         .fixedSize()
       } label: {
@@ -27,7 +27,7 @@ struct SettingsView: View {
 
   @ViewBuilder
   private var detailFields: some View {
-    switch settings.editors.selected {
+    switch appModel.editors.selected {
     case .preset:
       EmptyView()
 
@@ -69,7 +69,7 @@ struct SettingsView: View {
       HStack {
         Text("Open document")
         Spacer()
-        Picker(selection: $settings.openBehavior) {
+        Picker(selection: $appModel.openBehavior) {
           ForEach(OpenBehavior.allCases) { behavior in
             Text(behavior.displayName).tag(behavior)
           }
@@ -95,7 +95,7 @@ struct SettingsView: View {
   @ViewBuilder
   private var rediscoverRenderersButton: some View {
     Button {
-      Task { await settings.rediscoverRenderers() }
+      Task { await appModel.rediscoverRenderers() }
     } label: {
       Image(systemName: "arrow.clockwise")
         .frame(width: 16, height: 16)
@@ -108,7 +108,7 @@ struct SettingsView: View {
   @ViewBuilder
   private var revealTemplatesButton: some View {
     Button {
-      settings.revealTemplatesFolder()
+      appModel.revealTemplatesFolder()
     } label: {
       Image(systemName: "folder")
         .frame(width: 16, height: 16)
@@ -121,18 +121,18 @@ struct SettingsView: View {
   @ViewBuilder
   private var templatePicker: some View {
     Menu {
-      TemplateMenuCore(model: settings.templates)
+      TemplateMenuCore(model: appModel.templates)
     } label: {
-      Text(settings.activeTemplate.name)
+      Text(appModel.activeTemplate.name)
     }
   }
 
   @ViewBuilder
   private var processorPicker: some View {
     Menu {
-      ProcessorMenuCore(model: settings.processors)
+      ProcessorMenuCore(model: appModel.processors)
     } label: {
-      Text(settings.activeProcessor?.name ?? "no processor found")
+      Text(appModel.activeProcessor?.name ?? "no processor found")
     }
   }
 
@@ -175,7 +175,7 @@ struct SettingsView: View {
       Section {
         Toggle(
           "Allow per-window processor and template overrides",
-          isOn: $settings.enablePerDocumentOverrides)
+          isOn: $appModel.enablePerDocumentOverrides)
         Text(
           "Adds a Format menu section that lets each window pin its own "
           + "Markdown processor or template, overriding the global "
@@ -197,13 +197,13 @@ struct SettingsView: View {
   private var customURLBinding: Binding<String> {
     Binding(
       get: {
-        if case .customURL(let template) = settings.editors.selected {
+        if case .customURL(let template) = appModel.editors.selected {
           return template
         }
         return ""
       },
       set: { newValue in
-        settings.editors.selected = .customURL(template: newValue)
+        appModel.editors.selected = .customURL(template: newValue)
       }
     )
   }
@@ -213,7 +213,7 @@ struct SettingsView: View {
   /// in `values` updates too.
   private func pickAppBundle() {
     guard let url = EditorChoice.defaultPickAppBundle() else { return }
-    settings.editors.selected = .appBundle(url)
+    appModel.editors.selected = .appBundle(url)
   }
 }
 
@@ -240,5 +240,5 @@ struct EditorMenuCore: View {
 }
 
 #Preview {
-  SettingsView(settings: AppModel(skipDiscovery: true))
+  SettingsView(appModel: AppModel(skipDiscovery: true))
 }

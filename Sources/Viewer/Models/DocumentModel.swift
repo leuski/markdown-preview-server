@@ -22,7 +22,7 @@ final class DocumentModel {
   @ObservationIgnored private let watcher = DocumentWatcher()
   @ObservationIgnored private let bridge = EditorBridge()
   @ObservationIgnored private let linkBridge = LinkBridge()
-  @ObservationIgnored private weak var settings: AppModel?
+  @ObservationIgnored private weak var appModel: AppModel?
   @ObservationIgnored private let templateBox: TemplateBox
 
   /// Per-window template / processor choices. Each struct holds a
@@ -89,7 +89,7 @@ final class DocumentModel {
     }
 
     // Cmd-click in the preview: route through the model so we read
-    // the current `EditorChoice` from settings on every click.
+    // the current `EditorChoice` from appModel on every click.
     bridge.onEditorClick = { [weak self] line in
       guard let self else { return }
       Task { await self.openInEditor(line: line) }
@@ -104,24 +104,24 @@ final class DocumentModel {
       logger.warning("openInEditor ignored: no document URL bound")
       return
     }
-    let value = settings?.editors.selected ?? .default
+    let value = appModel?.editors.selected ?? .default
     await openFileInEditor(
       value, fileURL: url, line: line, logger: logger)
   }
 
   // MARK: - Public entry points
 
-  /// Inject the shared rendering settings and the per-window template
+  /// Inject the shared rendering appModel and the per-window template
   /// / processor choices. Called by ContentView before the first bind;
   /// safe to call again. Both choice structs read/write the view's
   /// `@SceneStorage`-backed override slots, so the model and the
   /// override menus agree by construction.
   func bindSettings(
-    _ settings: AppModel,
+    _ appModel: AppModel,
     templates: SceneTemplateChoice,
     processors: SceneProcessorChoice
   ) {
-    self.settings = settings
+    self.appModel = appModel
     self.templates = templates
     self.processors = processors
     templateBox.template = resolvedTemplate()
@@ -325,9 +325,9 @@ final class DocumentModel {
   /// always use the global selection.
   private func resolvedRenderer() -> any MarkdownRenderer {
     guard let processors else {
-      return settings?.activeRenderer ?? SwiftMarkdownRenderer()
+      return appModel?.activeRenderer ?? SwiftMarkdownRenderer()
     }
-    if settings?.enablePerDocumentOverrides == true {
+    if appModel?.enablePerDocumentOverrides == true {
       let pick = processors.selected.processor
       if let renderer = pick.renderer { return renderer }
       // Local pick is unavailable — fall back to the resolved global
@@ -340,9 +340,9 @@ final class DocumentModel {
 
   private func resolvedTemplate() -> any Template {
     guard let templates else {
-      return settings?.activeTemplate ?? BuiltInTemplate.shared
+      return appModel?.activeTemplate ?? BuiltInTemplate.shared
     }
-    if settings?.enablePerDocumentOverrides == true {
+    if appModel?.enablePerDocumentOverrides == true {
       return templates.selected.template
     }
     // Per-document override is off: always use the global selection,
@@ -368,7 +368,7 @@ final class DocumentModel {
 }
 
 /// Reference holder so the URL scheme handler — which captures the
-/// box at WebPage creation time, before settings are injected —
+/// box at WebPage creation time, before appModel are injected —
 /// always sees the latest template. DocumentModel updates `template`
 /// in `bindSettings(_:)` and at the start of every render.
 @MainActor

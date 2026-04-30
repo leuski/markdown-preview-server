@@ -5,7 +5,7 @@ import WebKit
 
 struct ContentView: View {
   @Binding var fileURL: URL?
-  @Environment(AppModel.self) private var settings
+  @Environment(AppModel.self) private var appModel
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @Environment(\.openWindow) private var openWindow
   @Environment(\.dismiss) private var dismiss
@@ -33,12 +33,12 @@ struct ContentView: View {
   /// window-local pick is active.
   private var templates: SceneTemplateChoice {
     SceneTemplateChoice(
-      source: settings.templates,
+      source: appModel.templates,
       storage: $overrideTemplateID)
   }
   private var processors: SceneProcessorChoice {
     SceneProcessorChoice(
-      source: settings.processors,
+      source: appModel.processors,
       storage: $overrideRendererID)
   }
 
@@ -114,9 +114,9 @@ struct ContentView: View {
       // restore, or in-window navigation), reveal the window.
       if new != nil { hostWindow?.alphaValue = 1 }
     }
-    .onChange(of: settings.processors.selected) { reloadModel() }
-    .onChange(of: settings.templates.selected) { reloadModel() }
-    .onChange(of: settings.enablePerDocumentOverrides) { reloadModel() }
+    .onChange(of: appModel.processors.selected) { reloadModel() }
+    .onChange(of: appModel.templates.selected) { reloadModel() }
+    .onChange(of: appModel.enablePerDocumentOverrides) { reloadModel() }
     .onChange(of: overrideTemplateID) { reloadModel() }
     .onChange(of: overrideRendererID) { reloadModel() }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
@@ -140,12 +140,12 @@ struct ContentView: View {
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
     model.bindSettings(
-      settings,
+      appModel,
       templates: templates,
       processors: processors)
-    // Keep the delegate's settings reference fresh — `application(_:open:)`
+    // Keep the delegate's appModel reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
-    appDelegate.settings = settings
+    appDelegate.appModel = appModel
 
     // First view to come up captures `openWindow` for the delegate
     // so Finder file opens and File > Open Recent route into new
@@ -269,10 +269,10 @@ struct ContentView: View {
       .help("Forward (⌘])")
     }
     ToolbarItem(placement: .primaryAction) {
-      RendererToolbarPicker(settings: settings)
+      RendererToolbarPicker(appModel: appModel)
     }
     ToolbarItem(placement: .primaryAction) {
-      TemplateToolbarPicker(settings: settings)
+      TemplateToolbarPicker(appModel: appModel)
     }
     ToolbarItem(placement: .primaryAction) {
       Button {
@@ -358,11 +358,11 @@ private final class ResolvingView: NSView {
 }
 
 private struct RendererToolbarPicker: View {
-  @Bindable var settings: AppModel
+  @Bindable var appModel: AppModel
 
   var body: some View {
     Menu {
-      ProcessorMenu(settings: settings)
+      ProcessorMenu(appModel: appModel)
     } label: {
       Label(label, systemImage: "wand.and.stars")
     }
@@ -370,16 +370,16 @@ private struct RendererToolbarPicker: View {
   }
 
   private var label: String {
-    settings.activeProcessor?.name ?? "No processor"
+    appModel.activeProcessor?.name ?? "No processor"
   }
 }
 
 private struct TemplateToolbarPicker: View {
-  @Bindable var settings: AppModel
+  @Bindable var appModel: AppModel
 
   var body: some View {
     Menu {
-      TemplateMenu(settings: settings)
+      TemplateMenu(appModel: appModel)
     } label: {
       Label(label, systemImage: "doc.richtext")
     }
@@ -387,6 +387,6 @@ private struct TemplateToolbarPicker: View {
   }
 
   private var label: String {
-    settings.templates.selected.name
+    appModel.templates.selected.name
   }
 }

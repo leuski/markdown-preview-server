@@ -45,26 +45,26 @@ where Model: ChoiceModel, Model.Value: TemplateModel
 struct TemplateMenu<Model>: View
 where Model: ChoiceModel, Model.Value: TemplateModel
 {
-  init(model: Model, settings: AppModel) {
-    self.model = model
-    self.settings = settings
-  }
-
   let model: Model
-  @Bindable var settings: AppModel
+  @Bindable var appModel: AppModel
+
+  init(model: Model, appModel: AppModel) {
+    self.model = model
+    self.appModel = appModel
+  }
 
   var body: some View {
     TemplateMenuCore(model: model)
     Divider()
     Button("Reveal Templates Folder") {
-      settings.revealTemplatesFolder()
+      appModel.revealTemplatesFolder()
     }
   }
 }
 
 extension TemplateMenu where Model == TemplateChoice {
-  init(settings: AppModel) {
-    self.init(model: settings.templates, settings: settings)
+  init(appModel: AppModel) {
+    self.init(model: appModel.templates, appModel: appModel)
   }
 }
 
@@ -89,25 +89,25 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 struct ProcessorMenu<Model>: View
 where Model: ChoiceModel, Model.Value: ProcessorModel
 {
-  init(model: Model, settings: AppModel) {
-    self.model = model
-    self.settings = settings
-  }
-
   let model: Model
-  @Bindable var settings: AppModel
+  @Bindable var appModel: AppModel
+
+  init(model: Model, appModel: AppModel) {
+    self.model = model
+    self.appModel = appModel
+  }
 
   var body: some View {
     ProcessorMenuCore(model: model)
     Divider()
     Button("Rescan Installed Processors") {
-      Task { await settings.rediscoverRenderers() }
+      Task { await appModel.rediscoverRenderers() }
     }
   }
 }
 
 extension ProcessorMenu where Model == ProcessorChoice {
-  init(settings: AppModel) {
-    self.init(model: settings.processors, settings: settings)
+  init(appModel: AppModel) {
+    self.init(model: appModel.processors, appModel: appModel)
   }
 }
