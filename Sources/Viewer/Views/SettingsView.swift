@@ -234,7 +234,7 @@ struct EditorMenuCore: View {
         }
       }
     ], id: \.kind) { value in
-      Toggle(value.name, isOn: model.selectedBinding(value))
+      Toggle(value.name, isOn: model.isSelectedBinding(value))
     }
   }
 }
