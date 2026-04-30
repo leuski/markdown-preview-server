@@ -37,11 +37,6 @@ struct SettingsView: View {
         }
       } label: {
         Text("Markdown processor")
-        if let displaced = model.displacedProcessorName {
-          Text(displacedMessage(
-            displaced: displaced, current: currentDisplayName))
-            .fixedSize(horizontal: true, vertical: false)
-        }
       }
 
       LabeledContent {
@@ -71,7 +66,7 @@ struct SettingsView: View {
   @ViewBuilder
   private var rendererPicker: some View {
     Menu(currentDisplayName) {
-      RendererMenu(appModel: model)
+      MenuCore(model: model.processors)
     }
     .fixedSize()
   }
@@ -92,30 +87,6 @@ struct SettingsView: View {
       return
     }
     model.port = value
-  }
-}
-
-struct RendererMenu<Model>: View
-where Model: ChoiceModel, Model.Value: ProcessorModel
-{
-  let model: Model
-
-  var body: some View {
-    let values = model.values
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: model.isSelectedBinding(value))
-        .disabled(!value.isAvailable)
-    }
-  }
-}
-
-extension RendererMenu where Model == ProcessorChoice {
-  init(appModel: AppModel) {
-    self.init(model: appModel.processors)
   }
 }
 

@@ -8,9 +8,11 @@ public protocol TemplateProtocol: Identifiable, Sendable {
   func resolveAsset(file: String) -> URL?
 }
 
-public enum Template: TemplateProtocol {
+public enum Template: TemplateProtocol, CustomStringConvertible {
   case builtIn(BuiltInTemplate)
   case userDefined(UserTemplate)
+
+  public var description: String { name }
 
   public var id: String {
     switch self {

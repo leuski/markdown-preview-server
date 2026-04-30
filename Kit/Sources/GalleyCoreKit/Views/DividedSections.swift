@@ -63,3 +63,26 @@ where ID: Hashable, SelectedValue: Hashable
       .pickerStyle(.inline)
   }
 }
+
+public struct MenuCore<Model>: View
+where Model: ChoiceModel, Model.Element: SectionedChoiceValue
+{
+  let model: Model
+
+  public init(model: Model) {
+    self.model = model
+  }
+
+  public var body: some View {
+    let values = model.values
+      .reduce(into: [:]) { result, value in
+        result[value.section, default: []].append(value)
+      }
+      .sorted { $0.key < $1.key }
+      .map { $0.value }
+    DividedSections(sections: values, id: \.self) { value in
+      Toggle(value.name, isOn: model.isSelectedBinding(value))
+        .disabled(!value.isAvailable)
+    }
+  }
+}

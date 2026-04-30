@@ -4,11 +4,12 @@ import Observation
 /// One row in the BBEdit-style processor picker. The `renderer` is `nil`
 /// when the underlying tool is not installed; the row is still shown so
 /// the user can see what is available and how to install it.
-public struct Processor: Sendable, Identifiable {
+public struct Processor: Sendable, Identifiable, CustomStringConvertible {
   public let id: String
   public let name: String
   public let installHint: String?
   public let renderer: (any MarkdownRenderer)?
+  public var description: String { name }
 
   public init(
     id: String,

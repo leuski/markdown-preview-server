@@ -95,7 +95,7 @@ final class AppModel {
   }
 
   func selectTemplate(_ template: Template) {
-    templates.selected = TemplateChoice.Value(template)
+    templates.selected = TemplateChoice.Element(template)
   }
 
   func rediscoverRenderers() async {

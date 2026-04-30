@@ -8,25 +8,8 @@
 import SwiftUI
 import GalleyCoreKit
 
-struct TemplateMenuCore<Model>: View
-where Model: ChoiceModel, Model.Value: TemplateModel
-{
-  let model: Model
-
-  var body: some View {
-    let values = model.values
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: model.isSelectedBinding(value))
-    }
-  }
-}
-
 struct TemplateMenu<Model>: View
-where Model: ChoiceModel, Model.Value: TemplateModel
+where Model: ChoiceModel, Model.Element: SectionedChoiceValue
 {
   let model: Model
   @Bindable var appModel: AppModel
@@ -37,7 +20,7 @@ where Model: ChoiceModel, Model.Value: TemplateModel
   }
 
   var body: some View {
-    TemplateMenuCore(model: model)
+    MenuCore(model: model)
     Divider()
     Button("Reveal Templates Folder") {
       appModel.revealTemplatesFolder()
@@ -51,27 +34,8 @@ extension TemplateMenu where Model == TemplateChoice {
   }
 }
 
-struct ProcessorMenuCore<Model>: View
-where Model: ChoiceModel, Model.Value: ProcessorModel
-{
-  let model: Model
-
-  var body: some View {
-    // Don't use picker, we cannot show disabled text.
-    let values = model.values
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: model.isSelectedBinding(value))
-        .disabled(!value.isAvailable)
-    }
-  }
-}
-
 struct ProcessorMenu<Model>: View
-where Model: ChoiceModel, Model.Value: ProcessorModel
+where Model: ChoiceModel, Model.Element: SectionedChoiceValue
 {
   let model: Model
   @Bindable var appModel: AppModel
@@ -82,7 +46,7 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
   }
 
   var body: some View {
-    ProcessorMenuCore(model: model)
+    MenuCore(model: model)
     Divider()
     Button("Rescan Installed Processors") {
       Task { await appModel.rediscoverRenderers() }

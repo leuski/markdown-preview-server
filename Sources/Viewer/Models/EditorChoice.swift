@@ -52,7 +52,7 @@ enum EditorPreset: String, Codable, CaseIterable, Identifiable,
 @Observable
 @MainActor
 final class EditorChoice: ChoiceModel {
-  enum Value: ChoiceValue, Codable {
+  enum Element: ChoiceValue, Codable {
     case preset(EditorPreset)
     case customURL(template: String)
     case appBundle(URL?)
@@ -88,20 +88,20 @@ final class EditorChoice: ChoiceModel {
       }
     }
 
-    static let `default`: Value = .preset(.bbedit)
+    static let `default`: Element = .preset(.bbedit)
   }
 
-  private(set) var values: [Value]
+  private(set) var values: [Element]
 
-  @ObservationIgnored private var storedSelected: Value
+  @ObservationIgnored private var storedSelected: Element
 
-  var selected: Value {
+  var selected: Element {
     get {
       access(keyPath: \.selected)
       return storedSelected
     }
     set {
-      let resolved: Value
+      let resolved: Element
       switch newValue {
       case .appBundle(nil):
         // Re-use whichever URL the appBundle slot already has if it
@@ -138,7 +138,7 @@ final class EditorChoice: ChoiceModel {
     self.key = key
     self.pickAppBundle = pickAppBundle
 
-    var initial: [Value] = EditorPreset.allCases.map { .preset($0) }
+    var initial: [Element] = EditorPreset.allCases.map { .preset($0) }
     initial.append(.customURL(template: EditorPreset.bbedit.template))
     initial.append(.appBundle(nil))
 
@@ -162,9 +162,9 @@ final class EditorChoice: ChoiceModel {
     UserDefaults.standard.set(data, forKey: key)
   }
 
-  private static func load(key: String) -> Value? {
+  private static func load(key: String) -> Element? {
     guard let data = UserDefaults.standard.data(forKey: key),
-          let decoded = try? JSONDecoder().decode(Value.self, from: data)
+          let decoded = try? JSONDecoder().decode(Element.self, from: data)
     else { return nil }
     return decoded
   }
@@ -215,7 +215,7 @@ func substituteEditorTemplate(
 /// `.appBundle(nil)` is a no-op — the panel hasn't been answered yet.
 @MainActor
 func openFileInEditor(
-  _ value: EditorChoice.Value,
+  _ value: EditorChoice.Element,
   fileURL: URL,
   line: Int? = nil,
   logger: Logger? = nil
