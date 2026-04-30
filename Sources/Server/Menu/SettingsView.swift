@@ -108,7 +108,7 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
       values.filter { $0.kind == .builtIn },
       values.filter { $0.kind == .userDefined }
     ], id: \.self) { value in
-      Toggle(value.name, isOn: model.selectedBinding(value))
+      Toggle(value.name, isOn: model.isSelectedBinding(value))
         .disabled(!value.isAvailable)
     }
   }
@@ -117,22 +117,6 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 extension RendererMenu where Model == ProcessorChoice {
   init(appModel: AppModel) {
     self.init(model: appModel.processors)
-  }
-}
-
-struct DividedSections<Item, ID, Content: View>: View
-where ID: Hashable
-{
-  let sections: [[Item]]
-  let id: KeyPath<Item, ID>
-  @ViewBuilder let content: (Item) -> Content
-
-  var body: some View {
-    let nonEmpty = sections.filter { !$0.isEmpty }
-    ForEach(Array(nonEmpty.enumerated()), id: \.offset) { index, section in
-      if index > 0 { Divider() }
-      ForEach(section, id: id) { content($0) }
-    }
   }
 }
 

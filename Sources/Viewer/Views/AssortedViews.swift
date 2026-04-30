@@ -8,22 +8,6 @@
 import SwiftUI
 import GalleyCoreKit
 
-/// Renders an array of arrays as a single ForEach with `Divider()`
-/// between non-empty sections. Used to group built-in and
-/// user-installed renderers in the menu.
-struct DividedSections<Item, ID, Content: View>: View where ID: Hashable {
-  let sections: [[Item]]
-  let id: KeyPath<Item, ID>
-  @ViewBuilder let content: (Item) -> Content
-
-  var body: some View {
-    let nonEmpty = sections.filter { !$0.isEmpty }
-    ForEach(Array(nonEmpty.enumerated()), id: \.offset) { index, section in
-      if index > 0 { Divider() }
-      ForEach(section, id: id) { content($0) }
-    }
-  }
-}
 
 struct TemplateMenuCore<Model>: View
 where Model: ChoiceModel, Model.Value: TemplateModel

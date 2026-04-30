@@ -60,7 +60,7 @@ struct MenuBarContent: View {
         values.filter { $0.kind == .builtIn },
         values.filter { $0.kind == .userDefined }
       ], id: \.self) { item in
-        Toggle(item.name, isOn: templates.selectedBinding(item))
+        Toggle(item.name, isOn: templates.isSelectedBinding(item))
       }
       Divider()
       Button("Reveal Templates Folder") {

@@ -28,7 +28,7 @@ public extension ChoiceModel {
   /// `SceneTemplateChoice` writing through a `Binding`). A
   /// value-type conformer with a mutating setter cannot satisfy the
   /// closure capture, and won't compile here.
-  func selectedBinding(_ value: Value) -> Binding<Bool> {
+  func isSelectedBinding(_ value: Value) -> Binding<Bool> {
     Binding(
       get: { self.selected == value },
       set: { newValue in if newValue { self.selected = value } }
