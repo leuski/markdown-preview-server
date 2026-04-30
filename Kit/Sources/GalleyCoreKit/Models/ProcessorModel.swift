@@ -10,7 +10,7 @@ public enum ProcessorModelKind {
 }
 
 public protocol ProcessorModel: ChoiceValue {
-  var processor: Processor { get }
+  var value: Processor { get }
   var name: String { get }
   var kind: ProcessorModelKind { get }
   var isAvailable: Bool { get }
@@ -19,7 +19,6 @@ public protocol ProcessorModel: ChoiceValue {
 public typealias ProcessorChoiceValue = AnyChoiceValue<Processor>
 
 extension ProcessorChoiceValue: ProcessorModel {
-  public var processor: Processor { value }
   public var name: String { value.name }
   public var isAvailable: Bool { value.isAvailable }
   public var kind: ProcessorModelKind {

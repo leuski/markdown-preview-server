@@ -12,7 +12,7 @@ public enum TemplateModelKind {
 }
 
 public protocol TemplateModel: ChoiceValue {
-  var template: Template { get }
+  var value: Template { get }
   var name: String { get }
   var kind: TemplateModelKind { get }
 }
@@ -20,7 +20,6 @@ public protocol TemplateModel: ChoiceValue {
 public typealias TemplateChoiceValue = AnyChoiceValue<Template>
 
 extension TemplateChoiceValue: TemplateModel {
-  public var template: Template { value }
   public var name: String { value.name }
   public var kind: TemplateModelKind {
     switch value {

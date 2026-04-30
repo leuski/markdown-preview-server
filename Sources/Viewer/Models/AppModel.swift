@@ -72,8 +72,8 @@ final class AppModel {
   /// User's preferred processor if available, otherwise the first
   /// available entry; `nil` only when nothing is available.
   var activeProcessor: Processor? {
-    let value = processors.active
-    return value.isAvailable ? value.processor : nil
+    let value = processors.active.value
+    return value.isAvailable ? value : nil
   }
 
   /// Renderer to use for the current preview. Wraps swift-markdown
@@ -83,13 +83,13 @@ final class AppModel {
   }
 
   var activeTemplate: Template {
-    templates.selected.template
+    templates.selected.value
   }
 
   /// Non-nil when the user's preferred renderer exists in the catalog
   /// but its underlying tool is not installed.
   var preferredButUnavailableProcessor: Processor? {
-    processors.preferredButUnavailable?.processor
+    processors.preferredButUnavailable?.value
   }
 
   func selectTemplate(_ template: Template) {

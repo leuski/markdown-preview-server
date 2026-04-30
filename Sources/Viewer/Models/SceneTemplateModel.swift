@@ -20,12 +20,12 @@ extension SceneTemplateChoiceValue: @retroactive TemplateModel {
     }
   }
 
-  public var template: Template {
+  public var value: Template {
     switch self {
     case .local(let value):
-      return value.template
+      return value.value
     case .global(let value):
-      return value.selected.template
+      return value.selected.value
     }
   }
 
@@ -70,7 +70,7 @@ final class SceneTemplateChoice: ChoiceModel {
   public var selected: Value {
     get {
       if let id = owner?.overrideTemplateID,
-         let value = source.values.first(where: { $0.template.id == id })
+         let value = source.values.first(where: { $0.value.id == id })
       {
         return .local(value)
       }
@@ -79,7 +79,7 @@ final class SceneTemplateChoice: ChoiceModel {
     set {
       switch newValue {
       case .local(let value):
-        owner?.overrideTemplateID = value.template.id
+        owner?.overrideTemplateID = value.value.id
       case .global:
         owner?.overrideTemplateID = nil
       }
@@ -91,6 +91,6 @@ final class SceneTemplateChoice: ChoiceModel {
   /// renders with the global template even if a stale local pick is
   /// still stored.
   public var globalTemplate: Template {
-    source.selected.template
+    source.selected.value
   }
 }

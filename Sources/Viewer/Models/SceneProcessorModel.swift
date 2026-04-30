@@ -18,12 +18,12 @@ extension SceneProcessorChoiceValue: @retroactive ProcessorModel {
     }
   }
 
-  public var processor: Processor {
+  public var value: Processor {
     switch self {
     case .local(let value):
-      return value.processor
+      return value.value
     case .global(let value):
-      return value.active.processor
+      return value.active.value
     }
   }
 
@@ -74,7 +74,7 @@ final class SceneProcessorChoice: ChoiceModel {
   public var selected: Value {
     get {
       if let id = owner?.overrideRendererID,
-         let value = source.values.first(where: { $0.processor.id == id })
+         let value = source.values.first(where: { $0.value.id == id })
       {
         return .local(value)
       }
@@ -83,7 +83,7 @@ final class SceneProcessorChoice: ChoiceModel {
     set {
       switch newValue {
       case .local(let value):
-        owner?.overrideRendererID = value.processor.id
+        owner?.overrideRendererID = value.value.id
       case .global:
         owner?.overrideRendererID = nil
       }

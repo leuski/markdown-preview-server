@@ -337,13 +337,12 @@ final class DocumentModel {
       return appModel?.activeRenderer ?? SwiftMarkdownRenderer()
     }
     if appModel?.enablePerDocumentOverrides == true {
-      let pick = processors.selected.processor
-      if let renderer = pick.renderer { return renderer }
+      if let renderer = processors.selected.value.renderer { return renderer }
       // Local pick is unavailable — fall back to the resolved global
       // (which itself falls back to the catalog's first-available
       // entry).
     }
-    return processors.globalProcessor.processor.renderer
+    return processors.globalProcessor.value.renderer
       ?? SwiftMarkdownRenderer()
   }
 
@@ -352,7 +351,7 @@ final class DocumentModel {
       return appModel?.activeTemplate ?? .default
     }
     if appModel?.enablePerDocumentOverrides == true {
-      return templates.selected.template
+      return templates.selected.value
     }
     // Per-document override is off: always use the global selection,
     // even if a window happens to have a stale local pick.
