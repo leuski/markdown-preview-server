@@ -5,7 +5,7 @@ import WebKit
 
 struct ContentView: View {
   @Binding var fileURL: URL?
-  @Environment(ViewerSettings.self) private var settings
+  @Environment(AppModel.self) private var settings
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @Environment(\.openWindow) private var openWindow
   @Environment(\.dismiss) private var dismiss
@@ -20,7 +20,7 @@ struct ContentView: View {
 
   /// Per-window renderer / template overrides. `nil` means "no
   /// override — use the global selection." Only honored when
-  /// `ViewerSettings.enablePerDocumentOverrides` is on.
+  /// `AppModel.enablePerDocumentOverrides` is on.
   @SceneStorage("MarkdownEye.overrideRendererID")
   private var overrideRendererID: String?
   @SceneStorage("MarkdownEye.overrideTemplateID")
@@ -358,7 +358,7 @@ private final class ResolvingView: NSView {
 }
 
 private struct RendererToolbarPicker: View {
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
 
   var body: some View {
     Menu {
@@ -375,7 +375,7 @@ private struct RendererToolbarPicker: View {
 }
 
 private struct TemplateToolbarPicker: View {
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
 
   var body: some View {
     Menu {

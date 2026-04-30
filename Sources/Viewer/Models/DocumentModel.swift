@@ -8,7 +8,7 @@ import WebKit
 
 /// Per-document state for the native viewer. Owns the WebPage, the
 /// file watcher, and the editor bridge. Renderer and template come
-/// from the shared `ViewerSettings` so global selection changes
+/// from the shared `AppModel` so global selection changes
 /// re-render every open window.
 ///
 /// In-window navigation is browser-style: clicking a markdown link
@@ -22,7 +22,7 @@ final class DocumentModel {
   @ObservationIgnored private let watcher = DocumentWatcher()
   @ObservationIgnored private let bridge = EditorBridge()
   @ObservationIgnored private let linkBridge = LinkBridge()
-  @ObservationIgnored private weak var settings: ViewerSettings?
+  @ObservationIgnored private weak var settings: AppModel?
   @ObservationIgnored private let templateBox: TemplateBox
 
   /// Per-window template / processor choices. Each struct holds a
@@ -117,7 +117,7 @@ final class DocumentModel {
   /// `@SceneStorage`-backed override slots, so the model and the
   /// override menus agree by construction.
   func bindSettings(
-    _ settings: ViewerSettings,
+    _ settings: AppModel,
     templates: SceneTemplateChoice,
     processors: SceneProcessorChoice
   ) {

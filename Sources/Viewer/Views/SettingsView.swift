@@ -8,7 +8,7 @@ import GalleyCoreKit
 /// fields below let the user supply a URL template or pick an
 /// `.app` bundle.
 struct SettingsView: View {
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
 
   @ViewBuilder
   var editorPicker: some View {
@@ -240,5 +240,5 @@ struct EditorMenuCore: View {
 }
 
 #Preview {
-  SettingsView(settings: ViewerSettings(skipDiscovery: true))
+  SettingsView(settings: AppModel(skipDiscovery: true))
 }

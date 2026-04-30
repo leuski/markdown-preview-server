@@ -5,13 +5,13 @@ import SwiftUI
 /// template pickers as menu items so users can switch globally
 /// without opening a settings window.
 ///
-/// When `ViewerSettings.enablePerDocumentOverrides` is on, the same
+/// When `AppModel.enablePerDocumentOverrides` is on, the same
 /// menus drive the frontmost window's per-document choice; the
 /// `.global` value at the top of each list represents "Use Global
 /// Setting." When the flag is off, the menus drive the global
 /// selection directly.
 struct RenderingCommands: Commands {
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
   @FocusedValue(\.viewerTemplates) private var templates
   @FocusedValue(\.viewerProcessors) private var processors
 

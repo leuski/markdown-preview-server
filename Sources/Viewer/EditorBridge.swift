@@ -54,7 +54,7 @@ final class EditorBridge: NSObject, WKScriptMessageHandler {
 
   /// Set by the owning DocumentModel; receives the line clicked.
   /// Routing the actual open call through the model lets it consult
-  /// the user's `EditorChoice` from `ViewerSettings`.
+  /// the user's `EditorChoice` from `AppModel`.
   var onEditorClick: ((Int) -> Void)?
 
   private let logger = Logger(

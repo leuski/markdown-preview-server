@@ -22,10 +22,10 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   @ObservationIgnored private(set) var openHandler: ((URL) -> Void)?
   @ObservationIgnored private var pending: [URL] = []
 
-  /// Reference to the shared `ViewerSettings`, set by `ViewerApp` so
+  /// Reference to the shared `AppModel`, set by `ViewerApp` so
   /// `application(_:open:)` and friends can consult `openBehavior`
   /// without a SwiftUI environment lookup.
-  @ObservationIgnored weak var settings: ViewerSettings?
+  @ObservationIgnored weak var settings: AppModel?
 
   /// Window registry — each `ContentView` registers its `NSWindow`
   /// along with a closure that rebinds the window to a new URL. Used
@@ -70,7 +70,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   }
 
   /// Single entry point all "open this URL" requests funnel through.
-  /// Honors `ViewerSettings.openBehavior` when at least one window is
+  /// Honors `AppModel.openBehavior` when at least one window is
   /// already on screen; with no windows, every mode collapses to
   /// "spawn a new window" since there's no frontmost to tab onto.
   func dispatch(_ url: URL) {

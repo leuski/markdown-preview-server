@@ -45,13 +45,13 @@ where Model: ChoiceModel, Model.Value: TemplateModel
 struct TemplateMenu<Model>: View
 where Model: ChoiceModel, Model.Value: TemplateModel
 {
-  init(model: Model, settings: ViewerSettings) {
+  init(model: Model, settings: AppModel) {
     self.model = model
     self.settings = settings
   }
 
   let model: Model
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
 
   var body: some View {
     TemplateMenuCore(model: model)
@@ -63,7 +63,7 @@ where Model: ChoiceModel, Model.Value: TemplateModel
 }
 
 extension TemplateMenu where Model == TemplateChoice {
-  init(settings: ViewerSettings) {
+  init(settings: AppModel) {
     self.init(model: settings.templates, settings: settings)
   }
 }
@@ -89,13 +89,13 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 struct ProcessorMenu<Model>: View
 where Model: ChoiceModel, Model.Value: ProcessorModel
 {
-  init(model: Model, settings: ViewerSettings) {
+  init(model: Model, settings: AppModel) {
     self.model = model
     self.settings = settings
   }
 
   let model: Model
-  @Bindable var settings: ViewerSettings
+  @Bindable var settings: AppModel
 
   var body: some View {
     ProcessorMenuCore(model: model)
@@ -107,7 +107,7 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
 }
 
 extension ProcessorMenu where Model == ProcessorChoice {
-  init(settings: ViewerSettings) {
+  init(settings: AppModel) {
     self.init(model: settings.processors, settings: settings)
   }
 }

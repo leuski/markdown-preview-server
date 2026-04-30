@@ -10,7 +10,7 @@ import SwiftUI
 /// user can switch globally and have every open document re-render.
 @Observable
 @MainActor
-final class ViewerSettings {
+final class AppModel {
   @ObservationIgnored let templateStore: TemplateStore
   @ObservationIgnored let templates: TemplateChoice
   @ObservationIgnored let processorStore: ProcessorStore

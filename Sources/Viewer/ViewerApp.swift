@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct ViewerApp: App {
   @NSApplicationDelegateAdaptor(ViewerAppDelegate.self) var appDelegate
-  @State private var settings = ViewerSettings()
+  @State private var settings = AppModel()
 
   var body: some Scene {
     WindowGroup(for: URL.self) { $url in
