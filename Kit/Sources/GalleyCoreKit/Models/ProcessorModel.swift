@@ -16,29 +16,20 @@ public protocol ProcessorModel: ChoiceValue {
   var isAvailable: Bool { get }
 }
 
+public typealias ProcessorChoiceValue = AnyChoiceValue<Processor>
+
+extension ProcessorChoiceValue: ProcessorModel {
+  public var processor: Processor { value }
+  public var name: String { value.name }
+  public var isAvailable: Bool { value.isAvailable }
+  public var kind: ProcessorModelKind {
+    value.isBuiltIn ? .builtIn : .userDefined
+  }
+}
+
 @Observable @MainActor
 public final class ProcessorChoice: ChoiceModel, Hashable {
-  public struct Value: ProcessorModel {
-    public let processor: Processor
-
-    public init(processor: Processor) {
-      self.processor = processor
-    }
-
-    public var name: String { processor.name }
-    public var isAvailable: Bool { processor.isAvailable }
-    public var kind: ProcessorModelKind {
-      processor.isBuiltIn ? .builtIn : .userDefined
-    }
-
-    nonisolated public static func == (lhs: Value, rhs: Value) -> Bool {
-      lhs.processor.id == rhs.processor.id
-    }
-
-    nonisolated public func hash(into hasher: inout Hasher) {
-      hasher.combine(processor.id)
-    }
-  }
+  public typealias Value = ProcessorChoiceValue
 
   nonisolated public static func == (
     lhs: ProcessorChoice, rhs: ProcessorChoice) -> Bool
@@ -64,15 +55,12 @@ public final class ProcessorChoice: ChoiceModel, Hashable {
   public var selected: Value {
     get {
       access(keyPath: \.selected)
-      let id = UserDefaults.standard.string(forKey: key)
-      let resolved = id.flatMap { store.processor(forID: $0) }
-        ?? store.processors.first
-        ?? .builtIn
-      return Value(processor: resolved)
+      return Value(store.processor1(
+        forID: UserDefaults.standard.string(forKey: key)))
     }
     set {
       let oldValue = UserDefaults.standard.string(forKey: key)
-      let newValue = newValue.processor.id
+      let newValue = newValue.value.id
       guard oldValue != newValue else { return }
       withMutation(keyPath: \.selected) {
         UserDefaults.standard.set(newValue, forKey: key)
@@ -87,9 +75,9 @@ public final class ProcessorChoice: ChoiceModel, Hashable {
     let pick = selected
     if pick.isAvailable { return pick }
     if let firstAvailable = store.processors.first(where: \.isAvailable) {
-      return Value(processor: firstAvailable)
+      return Value(firstAvailable)
     }
-    return Value(processor: .builtIn)
+    return Value(.builtIn)
   }
 
   /// Non-nil when the user's literal pick exists in the catalog but

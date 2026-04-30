@@ -51,8 +51,8 @@ public final class ProcessorStore {
     self.processors = [.builtIn]
   }
 
-  public func processor(forID id: String) -> Processor? {
-    processors.first { $0.id == id }
+  public func processor1(forID id: String?) -> Processor {
+    processors.first { $0.id == id } ?? .builtIn
   }
 
   public func discover() async {

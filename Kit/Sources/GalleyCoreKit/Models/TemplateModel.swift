@@ -12,38 +12,27 @@ public enum TemplateModelKind {
 }
 
 public protocol TemplateModel: ChoiceValue {
-  var template: any Template { get }
+  var template: Template { get }
   var name: String { get }
   var kind: TemplateModelKind { get }
 }
 
-@Observable @MainActor
-public final class TemplateChoice: ChoiceModel, Hashable {
-  public struct Value: TemplateModel {
-    public let template: any Template
+public typealias TemplateChoiceValue = AnyChoiceValue<Template>
 
-    public init(template: any Template) {
-      self.template = template
-    }
-    public var kind: TemplateModelKind {
-      if template is BuiltInTemplate {
-        .builtIn
-      } else {
-        .userDefined
-      }
-    }
-    public var name: String {
-      template.name
-    }
-
-    nonisolated public static func == (lhs: Value, rhs: Value) -> Bool {
-      lhs.template.id == rhs.template.id
-    }
-
-    nonisolated public func hash(into hasher: inout Hasher) {
-      hasher.combine(template.id)
+extension TemplateChoiceValue: TemplateModel {
+  public var template: Template { value }
+  public var name: String { value.name }
+  public var kind: TemplateModelKind {
+    switch value {
+    case .builtIn: .builtIn
+    case .userDefined: .userDefined
     }
   }
+}
+
+@Observable @MainActor
+public final class TemplateChoice: ChoiceModel, Hashable {
+  public typealias Value = TemplateChoiceValue
 
   nonisolated public static func == (
     lhs: TemplateChoice, rhs: TemplateChoice) -> Bool
@@ -65,14 +54,12 @@ public final class TemplateChoice: ChoiceModel, Hashable {
   public var selected: Value {
     get {
       access(keyPath: \.selected)
-      return Value(template: UserDefaults.standard.string(forKey: key)
-        .flatMap { id in
-          store.templates.first(where: { $0.id == id })
-        } ?? .default)
+      return Value(store.template(
+        forID: UserDefaults.standard.string(forKey: key)))
     }
     set {
       let oldValue = UserDefaults.standard.string(forKey: key)
-      let newValue = newValue.template.id
+      let newValue = newValue.value.id
       guard oldValue != newValue else { return }
       withMutation(keyPath: \.selected) {
         UserDefaults.standard.set(newValue, forKey: key)

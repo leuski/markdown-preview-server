@@ -22,7 +22,7 @@ where ID: Hashable
     self.id = id
     self.content = content
   }
-  
+
   let sections: [[Item]]
   let id: KeyPath<Item, ID>
   @ViewBuilder let content: (Item) -> Content

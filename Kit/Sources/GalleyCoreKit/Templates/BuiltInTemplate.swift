@@ -1,6 +1,6 @@
 import Foundation
 
-public struct BuiltInTemplate: Template {
+public struct BuiltInTemplate: TemplateProtocol {
   public static let id = "__builtin__"
   public static let name = "Default"
   public static let shared = BuiltInTemplate()

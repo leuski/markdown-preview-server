@@ -25,7 +25,7 @@ struct PreviewSchemeHandler: URLSchemeHandler {
   /// Reads the active template at request time. Avoids stale state
   /// when the user switches templates: the next asset request picks
   /// up the new directory.
-  let templateProvider: @MainActor @Sendable () -> any Template
+  let templateProvider: @MainActor @Sendable () -> Template
 
   private static let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",

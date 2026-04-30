@@ -22,7 +22,7 @@ public final class PreviewServerController {
 
   @ObservationIgnored private let templateStore: TemplateStore
   @ObservationIgnored private let selectedTemplateProvider: @Sendable ()
-  async -> any Template
+  async -> Template
   @ObservationIgnored private let rendererProvider: @Sendable ()
   async -> (any MarkdownRenderer)?
 
@@ -31,7 +31,7 @@ public final class PreviewServerController {
 
   public init(
     templateStore: TemplateStore,
-    selectedTemplateProvider: @escaping @Sendable () async -> any Template,
+    selectedTemplateProvider: @escaping @Sendable () async -> Template,
     rendererProvider: @escaping @Sendable () async -> (any MarkdownRenderer)?
   ) {
     self.templateStore = templateStore

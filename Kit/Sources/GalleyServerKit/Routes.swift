@@ -17,7 +17,7 @@ enum Routes {
     on server: HTTPServer,
     hostURL: URL,
     templateStore: TemplateStore,
-    selectedTemplateProvider: @Sendable @escaping () async -> any Template,
+    selectedTemplateProvider: @Sendable @escaping () async -> Template,
     rendererProvider: @Sendable @escaping () async -> (any MarkdownRenderer)?,
     watcher: DocumentWatcher
   ) async {
@@ -68,7 +68,7 @@ enum Routes {
   private static func previewOrAssetResponse(
     request: HTTPRequest,
     hostURL: URL,
-    selectedTemplate: any Template,
+    selectedTemplate: Template,
     renderer: (any MarkdownRenderer)?
   ) async -> HTTPResponse {
     guard let documentURL = decodeFilePath(
@@ -105,7 +105,7 @@ enum Routes {
     documentURL: URL,
     request: HTTPRequest,
     hostURL: URL,
-    template: any Template,
+    template: Template,
     renderer: any MarkdownRenderer
   ) async -> HTTPResponse {
     guard FileManager.default.isReadableFile(atPath: documentURL.path) else {
@@ -217,7 +217,8 @@ enum Routes {
     guard
       let documentURL = decodeFilePath(
         from: request.path, prefix: "/\(RouteNames.events)"),
-      MarkdownFileTypes.extensions.contains(documentURL.pathExtension.lowercased())
+      MarkdownFileTypes.extensions.contains(
+        documentURL.pathExtension.lowercased())
     else {
       return HTTPResponses.badRequest("Invalid event path")
     }
@@ -387,8 +388,8 @@ private struct TemplateStoreRef: Sendable {
     self.store = store
   }
 
-  func template(id: String) async -> (any Template)? {
-    await MainActor.run { store.template(forID: id) }
+  func template(id: String) async -> Template? {
+    await MainActor.run { store.existingTemplate(forID: id) }
   }
 }
 

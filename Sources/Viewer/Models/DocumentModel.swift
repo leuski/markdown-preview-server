@@ -50,7 +50,8 @@ final class DocumentModel {
   private var currentIndex: Int = -1
 
   var canGoBack: Bool { currentIndex > 0 }
-  var canGoForward: Bool { currentIndex >= 0 && currentIndex < history.count - 1 }
+  var canGoForward: Bool {
+    currentIndex >= 0 && currentIndex < history.count - 1 }
 
   /// Increments on every `bind(to:)` call. Watcher loops captured by
   /// older bind invocations check this and bail out when superseded.
@@ -81,7 +82,7 @@ final class DocumentModel {
     let box = TemplateBox()
     self.templateBox = box
     let handler = PreviewSchemeHandler(
-      templateProvider: { box.template ?? BuiltInTemplate.shared })
+      templateProvider: { box.template ?? .default })
     configuration.urlSchemeHandlers[PreviewSchemeHandler.scheme] = handler
 
     self.page = WebPage(configuration: configuration)
@@ -125,10 +126,12 @@ final class DocumentModel {
   func bindSettings(_ appModel: AppModel) {
     self.appModel = appModel
     if templates == nil {
-      templates = SceneTemplateChoice(source: appModel.templates, owner: self)
+      templates = SceneTemplateChoice(
+        source: appModel.templates, owner: self)
     }
     if processors == nil {
-      processors = SceneProcessorChoice(source: appModel.processors, owner: self)
+      processors = SceneProcessorChoice(
+        source: appModel.processors, owner: self)
     }
     templateBox.template = resolvedTemplate()
   }
@@ -344,9 +347,9 @@ final class DocumentModel {
       ?? SwiftMarkdownRenderer()
   }
 
-  private func resolvedTemplate() -> any Template {
+  private func resolvedTemplate() -> Template {
     guard let templates else {
-      return appModel?.activeTemplate ?? BuiltInTemplate.shared
+      return appModel?.activeTemplate ?? .default
     }
     if appModel?.enablePerDocumentOverrides == true {
       return templates.selected.template
@@ -367,9 +370,8 @@ final class DocumentModel {
     }
   }
 
-  private func restoreScrollY(_ y: Double) async {
-    let js = "window.scrollTo(0, \(y));"
-    _ = try? await page.callJavaScript(js)
+  private func restoreScrollY(_ yPos: Double) async {
+    _ = try? await page.callJavaScript("window.scrollTo(0, \(yPos));")
   }
 }
 
@@ -379,7 +381,7 @@ final class DocumentModel {
 /// in `bindSettings(_:)` and at the start of every render.
 @MainActor
 final class TemplateBox {
-  var template: (any Template)?
+  var template: Template?
 }
 
 /// Serializable form of a window's back/forward stack. Persisted via

@@ -65,7 +65,7 @@ final class AppModel {
     }
   }
 
-  func template(forID id: String) -> (any Template)? {
+  func template(forID id: String) -> Template? {
     templateStore.template(forID: id)
   }
 
@@ -82,7 +82,7 @@ final class AppModel {
     activeProcessor?.renderer ?? SwiftMarkdownRenderer()
   }
 
-  var activeTemplate: any Template {
+  var activeTemplate: Template {
     templates.selected.template
   }
 
@@ -92,8 +92,8 @@ final class AppModel {
     processors.preferredButUnavailable?.processor
   }
 
-  func selectTemplate(_ template: any Template) {
-    templates.selected = TemplateChoice.Value(template: template)
+  func selectTemplate(_ template: Template) {
+    templates.selected = TemplateChoice.Value(template)
   }
 
   func rediscoverRenderers() async {

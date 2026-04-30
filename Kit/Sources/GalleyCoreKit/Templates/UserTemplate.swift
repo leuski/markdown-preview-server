@@ -1,6 +1,6 @@
 import Foundation
 
-public struct UserTemplate: Template {
+public struct UserTemplate: TemplateProtocol {
   public let id: String
   public let name: String
   public let directoryURL: URL

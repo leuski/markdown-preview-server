@@ -93,7 +93,8 @@ private func runRenamePopup(
   guard alert.runModal() == .alertFirstButtonReturn else { return }
   let newName = field.stringValue
     .trimmingCharacters(in: .whitespacesAndNewlines)
-  guard !newName.isEmpty, newName != currentURL.lastPathComponent else { return }
+  guard !newName.isEmpty, newName != currentURL.lastPathComponent
+  else { return }
 
   Task { @MainActor in
     do {

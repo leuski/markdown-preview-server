@@ -8,6 +8,37 @@
 import GalleyCoreKit
 import SwiftUI
 
+typealias SceneTemplateChoiceValue = SceneChoiceModelValue<TemplateChoice>
+
+extension SceneTemplateChoiceValue: @retroactive TemplateModel {
+  public var name: String {
+    switch self {
+    case .local(let value):
+      return value.name
+    case .global(let value):
+      return "Global (\(value.selected.name))"
+    }
+  }
+
+  public var template: Template {
+    switch self {
+    case .local(let value):
+      return value.template
+    case .global(let value):
+      return value.selected.template
+    }
+  }
+
+  public var kind: TemplateModelKind {
+    switch self {
+    case .local(let value):
+      return value.kind
+    case .global:
+      return .global
+    }
+  }
+}
+
 /// Per-window template choice. A reference type so SwiftUI's
 /// Observation tracks `selected` automatically — value-type
 /// conformers couldn't propagate scene-storage writes to the menu
@@ -16,60 +47,8 @@ import SwiftUI
 /// that the owning view derives from `@SceneStorage`, so the
 /// per-window override id persists with the rest of the scene state.
 @Observable @MainActor
-public final class SceneTemplateChoice: ChoiceModel {
-  public enum Value: TemplateModel {
-    case local(TemplateChoice.Value)
-    case global(TemplateChoice)
-
-    nonisolated public static func == (lhs: Value, rhs: Value) -> Bool {
-      switch (lhs, rhs) {
-      case (.local(let lhs), .local(let rhs)):
-        return lhs == rhs
-      case (.global(let lhs), .global(let rhs)):
-        return lhs == rhs
-      default:
-        return false
-      }
-    }
-
-    nonisolated public func hash(into hasher: inout Hasher) {
-      switch self {
-      case .local(let value):
-        0.hash(into: &hasher)
-        value.hash(into: &hasher)
-      case .global(let value):
-        1.hash(into: &hasher)
-        value.hash(into: &hasher)
-      }
-    }
-
-    public var name: String {
-      switch self {
-      case .local(let value):
-        return value.name
-      case .global(let value):
-        return "Global (\(value.selected.name))"
-      }
-    }
-
-    public var template: any Template {
-      switch self {
-      case .local(let value):
-        return value.template
-      case .global(let value):
-        return value.selected.template
-      }
-    }
-
-    public var kind: TemplateModelKind {
-      switch self {
-      case .local(let value):
-        return value.kind
-      case .global:
-        return .global
-      }
-    }
-  }
+final class SceneTemplateChoice: ChoiceModel {
+  typealias Value = SceneTemplateChoiceValue
 
   @ObservationIgnored public let source: TemplateChoice
   /// Reads/writes `owner.overrideTemplateID`, which is itself an
@@ -111,7 +90,7 @@ public final class SceneTemplateChoice: ChoiceModel {
   /// Used when per-document overrides are turned off so the window
   /// renders with the global template even if a stale local pick is
   /// still stored.
-  public var globalTemplate: any Template {
+  public var globalTemplate: Template {
     source.selected.template
   }
 }

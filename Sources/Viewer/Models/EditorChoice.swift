@@ -6,7 +6,9 @@ import os
 import UniformTypeIdentifiers
 
 /// A built-in editor whose URL scheme + line-jump format we know.
-enum EditorPreset: String, Codable, CaseIterable, Identifiable, Hashable, Sendable {
+enum EditorPreset: String, Codable, CaseIterable, Identifiable,
+                   Hashable, Sendable
+{
   case bbedit
   case textmate
   case vscode
@@ -130,7 +132,8 @@ final class EditorChoice: ChoiceModel {
 
   init(
     key: String = "MarkdownEye.editorChoice",
-    pickAppBundle: @escaping @MainActor () -> URL? = EditorChoice.defaultPickAppBundle
+    pickAppBundle: @escaping @MainActor () -> URL? = EditorChoice
+      .defaultPickAppBundle
   ) {
     self.key = key
     self.pickAppBundle = pickAppBundle
@@ -193,10 +196,10 @@ func substituteEditorTemplate(
     .subtracting(CharacterSet(charactersIn: "&=+?#"))
   let urlEncoded = fileURL.absoluteString
     .addingPercentEncoding(withAllowedCharacters: allowed)
-    ?? fileURL.absoluteString
+  ?? fileURL.absoluteString
   let pathEncoded = fileURL.path
     .addingPercentEncoding(withAllowedCharacters: .urlPathAllowed)
-    ?? fileURL.path
+  ?? fileURL.path
   let lineStr = line.map(String.init) ?? ""
   return template
     .replacingOccurrences(of: "{url}", with: urlEncoded)

@@ -6,7 +6,7 @@ import AppKit
 @Observable
 @MainActor
 public final class TemplateStore {
-  public private(set) var templates: [any Template] = []
+  public private(set) var templates: [Template] = []
 
   @ObservationIgnored public let directoryURL: URL
   @ObservationIgnored private var watcherTask: Task<Void, Never>?
@@ -21,8 +21,12 @@ public final class TemplateStore {
     startWatching()
   }
 
-  public func template(forID id: String) -> (any Template)? {
+  public func existingTemplate(forID id: String?) -> Template? {
     templates.first { $0.id == id }
+  }
+
+  public func template(forID id: String?) -> Template {
+    existingTemplate(forID: id) ?? .default
   }
 
   public func revealFolder() {
@@ -37,17 +41,17 @@ public final class TemplateStore {
       includingPropertiesForKeys: [.isDirectoryKey],
       options: [.skipsHiddenFiles])) ?? []
 
-    let discovered: [any Template] = contents.compactMap(makeTemplate(at:))
+    let discovered: [Template] = contents.compactMap(makeTemplate(at:))
       .sorted { $0.name.localizedCaseInsensitiveCompare($1.name)
         == .orderedAscending }
 
-    let combined: [any Template] = [BuiltInTemplate.shared] + discovered
+    let combined: [Template] = [.default] + discovered
     if combined.map(\.id) != templates.map(\.id) {
       templates = combined
     }
   }
 
-  private func makeTemplate(at url: URL) -> UserTemplate? {
+  private func makeTemplate(at url: URL) -> Template? {
     let resolved = url.safe
 
     if resolved.directoryExists {
@@ -56,11 +60,11 @@ public final class TemplateStore {
         let html = resolved / candidate
         if html.itemExists {
           let name = url.lastPathComponent
-          return UserTemplate(
+          return .userDefined(.init(
             id: name,
             name: name,
             directoryURL: resolved,
-            htmlURL: html)
+            htmlURL: html))
         }
       }
       return nil
@@ -73,11 +77,11 @@ public final class TemplateStore {
     guard ext == "html" || ext == "htm" else { return nil }
 
     let baseName = url.fileName
-    return UserTemplate(
+    return .userDefined(.init(
       id: baseName,
       name: baseName,
       directoryURL: resolved.parent,
-      htmlURL: resolved)
+      htmlURL: resolved))
   }
 
   private func startWatching() {
