@@ -31,14 +31,27 @@ where Model: ChoiceModel, Model.Value: TemplateModel
   let model: Model
 
   var body: some View {
+    // `Picker` with `.inline` style is the canonical macOS pattern
+    // for a single-selection menu. Unlike a row of `Toggle`s with
+    // custom bindings, Picker keeps the NSMenu item checkmarks in
+    // sync with the current selection automatically.
     let values = model.values
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: model.selectedBinding(value))
-    }
+    Picker(selection: pickerBinding) {
+      DividedSections(sections: [
+        values.filter { $0.kind == .global },
+        values.filter { $0.kind == .builtIn },
+        values.filter { $0.kind == .userDefined }
+      ], id: \.self) { value in
+        Text(value.name).tag(value)
+      }
+    } label: { EmptyView() }
+    .pickerStyle(.inline)
+  }
+
+  private var pickerBinding: Binding<Model.Value> {
+    Binding(
+      get: { model.selected },
+      set: { model.selected = $0 })
   }
 }
 
@@ -74,15 +87,26 @@ where Model: ChoiceModel, Model.Value: ProcessorModel
   let model: Model
 
   var body: some View {
+    // See `TemplateMenuCore` — Picker with .inline keeps NSMenu
+    // checkmarks in sync; Toggle-with-custom-bindings did not.
     let values = model.values
-    DividedSections(sections: [
-      values.filter { $0.kind == .global },
-      values.filter { $0.kind == .builtIn },
-      values.filter { $0.kind == .userDefined }
-    ], id: \.self) { value in
-      Toggle(value.name, isOn: model.selectedBinding(value))
-        .disabled(!value.isAvailable)
-    }
+    Picker(selection: pickerBinding) {
+      DividedSections(sections: [
+        values.filter { $0.kind == .global },
+        values.filter { $0.kind == .builtIn },
+        values.filter { $0.kind == .userDefined }
+      ], id: \.self) { value in
+        Text(value.name).tag(value)
+          .disabled(!value.isAvailable)
+      }
+    } label: { EmptyView() }
+    .pickerStyle(.inline)
+  }
+
+  private var pickerBinding: Binding<Model.Value> {
+    Binding(
+      get: { model.selected },
+      set: { model.selected = $0 })
   }
 }
 

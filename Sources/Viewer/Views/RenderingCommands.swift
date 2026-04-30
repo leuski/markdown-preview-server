@@ -17,6 +17,11 @@ struct RenderingCommands: Commands {
 
   var body: some Commands {
     CommandMenu("Format") {
+      // Subscribe to per-window selections so this body re-evaluates
+      // and the system menu rebuilds when an override flips. NSMenu
+      // doesn't pick up internal Toggle invalidations on its own.
+      let _ = templates?.selected
+      let _ = processors?.selected
       if appModel.enablePerDocumentOverrides, let choice = processors {
         Menu("Markdown Processor") {
           ProcessorMenu(model: choice, appModel: appModel)

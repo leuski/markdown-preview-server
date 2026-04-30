@@ -26,22 +26,6 @@ struct ContentView: View {
   @SceneStorage("MarkdownEye.overrideTemplateID")
   private var overrideTemplateID: String?
 
-  /// Per-window template / processor choices. Each reads/writes its
-  /// `@SceneStorage` slot above so the override is persisted
-  /// automatically. The `.global` value renders as "Use Global
-  /// Setting" in the menu and is the resolved choice when no
-  /// window-local pick is active.
-  private var templates: SceneTemplateChoice {
-    SceneTemplateChoice(
-      source: appModel.templates,
-      storage: $overrideTemplateID)
-  }
-  private var processors: SceneProcessorChoice {
-    SceneProcessorChoice(
-      source: appModel.processors,
-      storage: $overrideRendererID)
-  }
-
   var body: some View {
     Group {
       if fileURL != nil {
@@ -96,8 +80,6 @@ struct ContentView: View {
     .toolbar { toolbarContent }
     .modifier(SceneValuesModifier(
       model: model,
-      templates: templates,
-      processors: processors,
       renameContext: RenameContext(
         url: model.documentURL,
         apply: { newURL in
@@ -117,8 +99,17 @@ struct ContentView: View {
     .onChange(of: appModel.processors.selected) { reloadModel() }
     .onChange(of: appModel.templates.selected) { reloadModel() }
     .onChange(of: appModel.enablePerDocumentOverrides) { reloadModel() }
-    .onChange(of: overrideTemplateID) { reloadModel() }
-    .onChange(of: overrideRendererID) { reloadModel() }
+    // The model is the source of truth for the window's choice
+    // state; mirror its changes to scene storage and trigger a
+    // reload. Hydration in launchTask handles the other direction.
+    .onChange(of: model.overrideTemplateID) { _, new in
+      overrideTemplateID = new
+      reloadModel()
+    }
+    .onChange(of: model.overrideRendererID) { _, new in
+      overrideRendererID = new
+      reloadModel()
+    }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
   }
 
@@ -139,10 +130,11 @@ struct ContentView: View {
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
   private func launchTask() async {
-    model.bindSettings(
-      appModel,
-      templates: templates,
-      processors: processors)
+    model.bindSettings(appModel)
+    // Hydrate the per-window overrides from scene storage on first
+    // bind — covers cold launch and state restoration both.
+    model.overrideTemplateID = overrideTemplateID
+    model.overrideRendererID = overrideRendererID
     // Keep the delegate's appModel reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
     appDelegate.appModel = appModel
@@ -283,18 +275,18 @@ struct ContentView: View {
 
 /// Publishes the per-window scene values commands rely on. Lifted
 /// out of `ContentView.body` to keep the modifier chain short enough
-/// for the type-checker.
+/// for the type-checker. Choice models live on `DocumentModel`; we
+/// publish whatever it has — `nil` until `bindSettings` runs, which
+/// is what the consumers (`RenderingCommands`) already handle.
 private struct SceneValuesModifier: ViewModifier {
   let model: DocumentModel
-  let templates: SceneTemplateChoice
-  let processors: SceneProcessorChoice
   let renameContext: RenameContext
 
   func body(content: Content) -> some View {
     content
       .focusedSceneValue(\.viewerModel, model)
-      .focusedSceneValue(\.viewerTemplates, templates)
-      .focusedSceneValue(\.viewerProcessors, processors)
+      .focusedSceneValue(\.viewerTemplates, model.templates)
+      .focusedSceneValue(\.viewerProcessors, model.processors)
       .focusedSceneValue(\.viewerRenameContext, renameContext)
   }
 }
@@ -355,10 +347,17 @@ private final class ResolvingView: NSView {
 
 private struct RendererToolbarPicker: View {
   @Bindable var appModel: AppModel
+  @Bindable var docModel: DocumentModel
 
   var body: some View {
     Menu {
-      ProcessorMenu(appModel: appModel)
+      if appModel.enablePerDocumentOverrides,
+         let processors = docModel.processors
+      {
+        ProcessorMenu(model: processors, appModel: appModel)
+      } else {
+        ProcessorMenu(appModel: appModel)
+      }
     } label: {
       Label(label, systemImage: "wand.and.stars")
     }
@@ -372,10 +371,17 @@ private struct RendererToolbarPicker: View {
 
 private struct TemplateToolbarPicker: View {
   @Bindable var appModel: AppModel
+  @Bindable var docModel: DocumentModel
 
   var body: some View {
     Menu {
-      TemplateMenu(appModel: appModel)
+      if appModel.enablePerDocumentOverrides,
+         let templates = docModel.templates
+      {
+        TemplateMenu(model: templates, appModel: appModel)
+      } else {
+        TemplateMenu(appModel: appModel)
+      }
     } label: {
       Label(label, systemImage: "doc.richtext")
     }

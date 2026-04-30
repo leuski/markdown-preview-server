@@ -25,13 +25,19 @@ final class DocumentModel {
   @ObservationIgnored private weak var appModel: AppModel?
   @ObservationIgnored private let templateBox: TemplateBox
 
-  /// Per-window template / processor choices. Each struct holds a
-  /// `Binding<String?>` to a `@SceneStorage` slot owned by the view,
-  /// so reading/writing `selected` is the same as reading/writing
-  /// the persisted scene state. `nil` until
-  /// `bindSettings(_:templates:processors:)` runs.
-  @ObservationIgnored private var templates: SceneTemplateChoice?
-  @ObservationIgnored private var processors: SceneProcessorChoice?
+  /// Per-window template / processor choices. Reference types so
+  /// SwiftUI's Observation tracks `selected` for menus that bind to
+  /// them. `nil` until `bindSettings(_:)` runs.
+  var templates: SceneTemplateChoice?
+  var processors: SceneProcessorChoice?
+
+  /// Window-local override ids. `nil` = "use the global selection."
+  /// Owned here so they're plain `@Observable` properties — view
+  /// menus that read them participate in Observation the same way
+  /// `TemplateChoice.selected` (UserDefaults-backed) does. Persisted
+  /// to `@SceneStorage` from `ContentView` via `.onChange`.
+  var overrideTemplateID: String?
+  var overrideRendererID: String?
 
   private(set) var documentURL: URL?
   private(set) var lastError: String?
@@ -111,19 +117,19 @@ final class DocumentModel {
 
   // MARK: - Public entry points
 
-  /// Inject the shared rendering appModel and the per-window template
-  /// / processor choices. Called by ContentView before the first bind;
-  /// safe to call again. Both choice structs read/write the view's
-  /// `@SceneStorage`-backed override slots, so the model and the
-  /// override menus agree by construction.
-  func bindSettings(
-    _ appModel: AppModel,
-    templates: SceneTemplateChoice,
-    processors: SceneProcessorChoice
-  ) {
+  /// Inject the shared rendering appModel. Called by ContentView
+  /// before the first bind; safe to call again. Builds the per-window
+  /// choice models lazily once — they read/write `overrideTemplateID`
+  /// / `overrideRendererID` on `self` (Observable), and the view
+  /// layer is responsible for syncing those to/from `@SceneStorage`.
+  func bindSettings(_ appModel: AppModel) {
     self.appModel = appModel
-    self.templates = templates
-    self.processors = processors
+    if templates == nil {
+      templates = SceneTemplateChoice(source: appModel.templates, owner: self)
+    }
+    if processors == nil {
+      processors = SceneProcessorChoice(source: appModel.processors, owner: self)
+    }
     templateBox.template = resolvedTemplate()
   }
 

@@ -6,16 +6,13 @@
 import GalleyCoreKit
 import SwiftUI
 
-public struct SceneProcessorChoice: ChoiceModel {
-
-  private let source: ProcessorChoice
-  private let storage: Binding<String?>
-
-  public init(source: ProcessorChoice, storage: Binding<String?>) {
-    self.source = source
-    self.storage = storage
-  }
-
+/// Per-window processor choice. Reference type for the same reason as
+/// `SceneTemplateChoice` — Observation tracks `selected` so menus
+/// rebuild when the per-window override id flips. The id itself is
+/// persisted through a `Binding<String?>` the owning view derives
+/// from `@SceneStorage`.
+@Observable @MainActor
+public final class SceneProcessorChoice: ChoiceModel {
   public enum Value: ProcessorModel {
     case local(ProcessorChoice.Value)
     case global(ProcessorChoice)
@@ -82,24 +79,34 @@ public struct SceneProcessorChoice: ChoiceModel {
     }
   }
 
+  @ObservationIgnored public let source: ProcessorChoice
+  /// See `SceneTemplateChoice.owner`.
+  @ObservationIgnored private weak var owner: DocumentModel?
+
+  init(source: ProcessorChoice, owner: DocumentModel) {
+    self.source = source
+    self.owner = owner
+  }
+
   public var values: [Value] {
-    [.global(source)] + source.values.map { value in .local(value) }
+    [.global(source)] + source.values.map { .local($0) }
   }
 
   public var selected: Value {
     get {
-      let id = storage.wrappedValue
-      return source.values
-        .first(where: { $0.processor.id == id })
-        .map { .local($0) }
-      ?? .global(source)
+      if let id = owner?.overrideRendererID,
+         let value = source.values.first(where: { $0.processor.id == id })
+      {
+        return .local(value)
+      }
+      return .global(source)
     }
-    nonmutating set {
+    set {
       switch newValue {
       case .local(let value):
-        storage.wrappedValue = value.processor.id
+        owner?.overrideRendererID = value.processor.id
       case .global:
-        storage.wrappedValue = nil
+        owner?.overrideRendererID = nil
       }
     }
   }
