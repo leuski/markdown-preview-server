@@ -176,33 +176,31 @@ final class DocumentModel {
   /// renderer doesn't emit source positions, or if no positioned
   /// block is visible (very short docs, mostly).
   private func topmostVisibleSourceLine() async -> Int? {
+    // `callJavaScript` wraps the source in an async function and
+    // captures a top-level `return`. An IIFE here would just
+    // discard its value — the bug that made every "Open in
+    // Editor" land at the top of the file.
     let script = """
-      (function () {
-        var nodes = document.querySelectorAll(
-          '[data-source-line], [data-pos], [data-sourcepos]');
-        var best = null;
-        for (var i = 0; i < nodes.length; i++) {
-          var node = nodes[i];
-          var rect = node.getBoundingClientRect();
-          // Skip blocks fully above the viewport — they're behind
-          // the user's reading position. The first one with bottom
-          // >= 0 (i.e. partially visible or just below the top) is
-          // what we want.
-          if (rect.bottom < 0) continue;
-          var n = NaN;
-          if (node.dataset.sourceLine) {
-            n = parseInt(node.dataset.sourceLine, 10);
-          } else {
-            var raw = node.dataset.pos || node.dataset.sourcepos || '';
-            var m = raw.match(/(\\d+):\\d+/);
-            if (m) n = parseInt(m[1], 10);
-          }
-          if (Number.isNaN(n)) continue;
-          best = n;
-          break;
+      var nodes = document.querySelectorAll(
+        '[data-source-line], [data-pos], [data-sourcepos]');
+      for (var i = 0; i < nodes.length; i++) {
+        var node = nodes[i];
+        var rect = node.getBoundingClientRect();
+        // Skip blocks fully above the viewport — behind the user's
+        // reading position. First with bottom >= 0 is what we want.
+        if (rect.bottom < 0) continue;
+        var n = NaN;
+        if (node.dataset.sourceLine) {
+          n = parseInt(node.dataset.sourceLine, 10);
+        } else {
+          var raw = node.dataset.pos || node.dataset.sourcepos || '';
+          var m = raw.match(/(\\d+):\\d+/);
+          if (m) n = parseInt(m[1], 10);
         }
-        return best;
-      })();
+        if (Number.isNaN(n)) continue;
+        return n;
+      }
+      return null;
       """
     do {
       let value = try await page.callJavaScript(script)
