@@ -42,6 +42,11 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// creation is async w.r.t. the dispatch loop.
   @ObservationIgnored private var pendingTabHosts: [NSWindow] = []
 
+  /// Active FTUE open panel, kept so we can cancel it when an
+  /// incoming document rebinds the placeholder out from under the
+  /// launch picker.
+  @ObservationIgnored private weak var activeOpenPanel: NSOpenPanel?
+
   /// Mirrors `NSDocumentController.shared.recentDocumentURLs`. Updated
   /// whenever we record or clear a recent URL. Bind from the File
   /// menu's Open Recent submenu.
@@ -84,27 +89,57 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
       return
     }
 
+    // Priority for every behavior: prefer a real document window
+    // (tab/replace target) over the launch placeholder. A coexisting
+    // placeholder will self-dismiss once it sees `hasAnyDocumentWindow`
+    // is true. Falling back to the placeholder happens only when no
+    // real doc window exists yet.
     switch behavior {
     case .newWindow:
+      // If the only thing up is the placeholder, rebind it instead
+      // of stacking another empty window. With a real doc window
+      // present the user explicitly wants a new window, so just
+      // spawn — the placeholder (if any) will dismiss itself.
+      if frontmostDocumentRegistration() == nil,
+         let placeholder = frontmostPlaceholderRegistration()
+      {
+        activeOpenPanel?.cancel(nil)
+        placeholder.rebind(url)
+        return
+      }
       openHandler(url)
 
     case .newTab:
-      // Mark the current frontmost as the tab host. The freshly
-      // spawned window will read this in its WindowAccessor and
-      // merge itself into that window's tab group.
-      if let host = frontmostRegisteredWindow() {
+      // Tab onto the frontmost real document window. The freshly
+      // spawned window's WindowAccessor will consume the queued host
+      // and merge into its tab group.
+      if let host = frontmostDocumentRegistration()?.window {
         pendingTabHosts.append(host)
+        openHandler(url)
+        return
+      }
+      // No real doc to tab onto — reuse the placeholder if present
+      // (cancelling its FTUE picker), else spawn fresh.
+      if let placeholder = frontmostPlaceholderRegistration() {
+        activeOpenPanel?.cancel(nil)
+        placeholder.rebind(url)
+        return
       }
       openHandler(url)
 
     case .replaceCurrent:
-      // Rebind the frontmost window in place; fall back to a new
-      // window if there's nothing to reuse.
-      if let registration = frontmostRegistration() {
+      // Replace the frontmost real doc; if none, reuse a placeholder;
+      // else spawn fresh.
+      if let registration = frontmostDocumentRegistration() {
         registration.rebind(url)
-      } else {
-        openHandler(url)
+        return
       }
+      if let placeholder = frontmostPlaceholderRegistration() {
+        activeOpenPanel?.cancel(nil)
+        placeholder.rebind(url)
+        return
+      }
+      openHandler(url)
     }
   }
 
@@ -115,14 +150,31 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// underlying `DocumentModel` to a new URL.
   func registerWindow(
     _ window: NSWindow,
+    initialURL: URL?,
     rebind: @escaping @MainActor (URL) -> Void
   ) {
+    // A window that's already bound to a URL at registration time is
+    // a real document window — not a placeholder. Setting
+    // `hasDocument` here (rather than waiting for `markWindowReady`)
+    // lets `dispatch` and `runLaunchPicker` see the truth immediately,
+    // before the model's binding completes asynchronously.
     registrations[ObjectIdentifier(window)] = WindowRegistration(
-      window: window, rebind: rebind)
+      window: window, rebind: rebind, hasDocument: initialURL != nil)
   }
 
   func unregisterWindow(_ window: NSWindow) {
     registrations.removeValue(forKey: ObjectIdentifier(window))
+  }
+
+  /// Flip a registration from "placeholder" to "real document window"
+  /// so subsequent dispatches treat it as a valid tab host. Called
+  /// once `model.documentURL` becomes non-nil for the first time.
+  func markWindowReady(_ window: NSWindow) {
+    let key = ObjectIdentifier(window)
+    if var reg = registrations[key] {
+      reg.hasDocument = true
+      registrations[key] = reg
+    }
   }
 
   /// Consume the oldest pending `newTab` host. The new window calls
@@ -150,6 +202,47 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
 
   private func frontmostRegisteredWindow() -> NSWindow? {
     frontmostRegistration()?.window
+  }
+
+  /// Frontmost registration whose window already has a document
+  /// bound — i.e. is a real viewer tab host, not the alpha=0 launch
+  /// placeholder.
+  private func frontmostDocumentRegistration() -> WindowRegistration? {
+    let keys = [NSApp.mainWindow, NSApp.keyWindow]
+      .compactMap { $0 }
+      .map { ObjectIdentifier($0) }
+    for key in keys {
+      if let reg = registrations[key],
+         reg.hasDocument,
+         reg.window != nil
+      {
+        return reg
+      }
+    }
+    return registrations.values.first {
+      $0.hasDocument && $0.window != nil
+    }
+  }
+
+  /// First registration that is still a placeholder (no document
+  /// bound yet). Used to redirect newTab / replaceCurrent dispatches
+  /// at the launch placeholder rather than tabbing onto it.
+  private func frontmostPlaceholderRegistration() -> WindowRegistration? {
+    registrations.values.first {
+      !$0.hasDocument && $0.window != nil
+    }
+  }
+
+  /// True when at least one registered window already has a document
+  /// bound. The launch placeholder uses this to decide whether to
+  /// dismiss itself instead of running the FTUE open panel — if a
+  /// real document window has appeared (from a URL dispatched out of
+  /// `application(_:open:)` or anywhere else), the placeholder is
+  /// redundant.
+  func hasAnyDocumentWindow() -> Bool {
+    registrations.values.contains {
+      $0.hasDocument && $0.window != nil
+    }
   }
 
   /// Allow an untitled placeholder window so SwiftUI has a host view
@@ -187,20 +280,30 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// Open one or more files via NSOpenPanel and dispatch them through
   /// the same routing path as Finder opens.
   func presentOpenPanel() {
-    application(NSApp, open: runOpenPanel())
+    Task { application(NSApp, open: await runOpenPanel()) }
   }
 
-  /// Run NSOpenPanel synchronously and return the picked URLs without
-  /// dispatching anywhere. Used by the launch flow so the caller can
-  /// load the file into the placeholder window rather than spawning
-  /// a new one.
-  func runOpenPanel() -> [URL] {
+  /// Run NSOpenPanel and return the picked URLs without dispatching
+  /// anywhere. Used by the launch flow so the caller can load the file
+  /// into the placeholder window rather than spawning a new one.
+  ///
+  /// Uses the async `begin` form rather than `runModal` because
+  /// `runModal` cannot start inside a SwiftUI/CoreAnimation transaction
+  /// commit — the launch picker fires from `.task(id:)` which runs
+  /// during view update.
+  func runOpenPanel() async -> [URL] {
     let panel = NSOpenPanel()
     panel.allowsMultipleSelection = true
     panel.canChooseDirectories = false
     panel.canChooseFiles = true
     panel.allowedContentTypes = Self.openPanelContentTypes
-    guard panel.runModal() == .OK else { return [] }
+    activeOpenPanel = panel
+    let response: NSApplication.ModalResponse =
+      await withCheckedContinuation { continuation in
+        panel.begin { continuation.resume(returning: $0) }
+      }
+    if activeOpenPanel === panel { activeOpenPanel = nil }
+    guard response == .OK else { return [] }
     return panel.urls
   }
 
@@ -240,6 +343,7 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   private struct WindowRegistration {
     weak var window: NSWindow?
     let rebind: @MainActor (URL) -> Void
+    var hasDocument: Bool
   }
 
   private static let openPanelContentTypes: [UTType] = {

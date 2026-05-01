@@ -84,7 +84,10 @@ struct ContentView: View {
           {
             host.addTabbedWindow(window, ordered: .above)
           }
-          appDelegate.registerWindow(window) { newURL in
+          appDelegate.registerWindow(
+            window,
+            initialURL: fileURL
+          ) { newURL in
             replaceDocument(with: newURL)
           }
         }
@@ -108,8 +111,15 @@ struct ContentView: View {
     .onChange(of: model.documentURL) { _, new in
       saveHistory()
       // First time content is bound (whether via initial bind,
-      // restore, or in-window navigation), reveal the window.
-      if new != nil { hostWindow?.alphaValue = 1 }
+      // restore, or in-window navigation), reveal the window and
+      // promote it from "placeholder" to "real document window" so
+      // future dispatches can tab onto it.
+      if new != nil {
+        hostWindow?.alphaValue = 1
+        if let window = hostWindow {
+          appDelegate.markWindowReady(window)
+        }
+      }
     }
     .onChange(of: appModel.processors.selected) { reloadModel() }
     .onChange(of: appModel.templates.selected) { reloadModel() }
@@ -220,7 +230,28 @@ struct ContentView: View {
     }
     if Task.isCancelled || fileURL != nil { return }
 
-    let picks = appDelegate.runOpenPanel()
+    // Settle window: if `application(_:open:)` fired a URL into the
+    // existing `openHandler` (warm-launch dispatch), the spawned
+    // doc window may still be attaching. Give it a moment to arrive
+    // and register before we decide whether the picker is needed.
+    try? await Task.sleep(for: .milliseconds(150))
+    if Task.isCancelled || fileURL != nil { return }
+
+    // A real document window already exists (either spawned from a
+    // dispatched URL or restored from a previous session). This
+    // placeholder is redundant — close it instead of pestering the
+    // user with the FTUE open panel.
+    if appDelegate.hasAnyDocumentWindow() {
+      dismiss()
+      return
+    }
+
+    let picks = await appDelegate.runOpenPanel()
+    // An incoming dispatch can rebind this placeholder while the
+    // panel is up — in that case the panel was cancelled out from
+    // under us and `fileURL` is now non-nil. Don't dismiss the
+    // window we just got handed a document for.
+    if Task.isCancelled || fileURL != nil { return }
     guard let first = picks.first else {
       dismiss()
       return
