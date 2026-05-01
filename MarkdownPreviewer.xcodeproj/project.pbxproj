@@ -13,6 +13,7 @@
 		626E96E32F9E8DFE00BD51F9 /* Markdown in Frameworks */ = {isa = PBXBuildFile; productRef = 626E96E22F9E8DFE00BD51F9 /* Markdown */; };
 		62D5C88F2F9FBD0000CADD72 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = 62D5C88E2F9FBD0000CADD72 /* Scripts */; };
 		62D5D5572FA29AE800CADD72 /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = 62D5D5562FA29AE800CADD72 /* TestPlan.xctestplan */; };
+		62D5DED32FA43D7900CADD72 /* Scripts in Resources */ = {isa = PBXBuildFile; fileRef = 62D5C88E2F9FBD0000CADD72 /* Scripts */; };
 		62F00001000000000000F004 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F002 /* GalleyCoreKit */; };
 		62F00001000000000000F005 /* GalleyCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F003 /* GalleyCoreKit */; };
 		62F00001000000000000F009 /* GalleyServerKit in Frameworks */ = {isa = PBXBuildFile; productRef = 62F00001000000000000F008 /* GalleyServerKit */; };
@@ -298,6 +299,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				62D5DED32FA43D7900CADD72 /* Scripts in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -545,7 +547,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.leuski.galley-server";
 				PRODUCT_NAME = "Markdown Preview Server";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -577,7 +579,7 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 15.6;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.MarkdownPreviewer;
+				PRODUCT_BUNDLE_IDENTIFIER = "net.leuski.galley-server";
 				PRODUCT_NAME = "Markdown Preview Server";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -649,7 +651,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "net.leuski.Markdown-Eye";
+				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.galley;
 				PRODUCT_NAME = Galley;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -681,7 +683,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = "net.leuski.Markdown-Eye";
+				PRODUCT_BUNDLE_IDENTIFIER = net.leuski.galley;
 				PRODUCT_NAME = Galley;
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
