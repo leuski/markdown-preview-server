@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 @main
 struct ViewerApp: App {
@@ -44,10 +45,12 @@ struct FileCommands: Commands {
 
   var body: some Commands {
     CommandGroup(replacing: .newItem) {
-      Button("Open…") { delegate.presentOpenPanel() }
+      Button("Open…", systemImage: "arrow.up.forward") {
+        delegate.presentOpenPanel()
+      }
         .keyboardShortcut("o", modifiers: .command)
 
-      Menu("Open Recent") {
+      Menu("Open Recent", systemImage: "clock") {
         ForEach(delegate.recentURLs, id: \.self) { url in
           Button(url.lastPathComponent) {
             delegate.openRecent(url)
@@ -62,14 +65,14 @@ struct FileCommands: Commands {
     }
 
     CommandGroup(after: .saveItem) {
-      Button("Rename…") {
+      Button("Rename…", systemImage: "pencil") {
         guard let model, let context = renameContext, let url = context.url
         else { return }
         runRenamePopup(currentURL: url, model: model, context: context)
       }
       .disabled(renameContext?.url == nil)
 
-      Button("Open in Editor") {
+      Button("Open in Editor", systemImage: "arrow.up.forward.app") {
         guard let model else { return }
         Task { await model.openInEditor(line: nil) }
       }
@@ -136,6 +139,36 @@ private func runRenamePopup(
       context.apply(newURL)
     } catch {
       NSSound.beep()
+    }
+  }
+}
+
+/// Run a save panel and export the rendered document to PDF. Engages
+/// print-media CSS in `DocumentModel.exportPDF` so template `@page`
+/// rules style page breaks and margins.
+@MainActor
+private func runExportPDFPanel(model: DocumentModel) {
+  guard let url = model.documentURL else { return }
+
+  let panel = NSSavePanel()
+  panel.title = "Export as PDF"
+  panel.allowedContentTypes = [.pdf]
+  panel.nameFieldStringValue =
+    url.deletingPathExtension().lastPathComponent + ".pdf"
+  panel.directoryURL = url.deletingLastPathComponent()
+
+  guard panel.runModal() == .OK, let destination = panel.url else { return }
+
+  let window = NSApp.keyWindow
+  Task { @MainActor in
+    do {
+      try await model.exportPDF(to: destination, on: window)
+    } catch {
+      let alert = NSAlert()
+      alert.messageText = "Couldn’t export PDF"
+      alert.informativeText = error.localizedDescription
+      alert.alertStyle = .warning
+      alert.runModal()
     }
   }
 }

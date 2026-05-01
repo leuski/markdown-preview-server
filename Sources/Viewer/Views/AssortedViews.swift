@@ -14,25 +14,22 @@ struct TemplateMenu: View {
   @Bindable var appModel: AppModel
   let templates: SceneTemplateChoice?
 
+  var title: String {
+    appModel.enablePerDocumentOverrides && templates != nil
+    ? localTitle : globalTitle
+  }
+
   var body: some View {
-    Menu {
+    Menu(title, systemImage: "doc.richtext") {
       if appModel.enablePerDocumentOverrides, let templates {
         MenuCore(model: templates)
       } else {
         MenuCore(model: appModel.templates)
       }
       Divider()
-      Button {
+      Button("Reveal Templates Folder", systemImage: "folder") {
         appModel.revealTemplatesFolder()
-      } label: {
-        Label(
-          "Reveal Templates Folder",
-          systemImage: "folder")
       }
-    } label: {
-      Label(
-        appModel.enablePerDocumentOverrides && templates != nil
-        ? localTitle : globalTitle, systemImage: "doc.richtext")
     }
   }
 }
@@ -43,25 +40,25 @@ struct ProcessorMenu: View {
   @Bindable var appModel: AppModel
   let processors: SceneProcessorChoice?
 
+  var title: String {
+    appModel.enablePerDocumentOverrides && processors != nil
+    ? localTitle : globalTitle
+  }
+
   var body: some View {
-    Menu {
+    Menu(title, systemImage: "wand.and.stars") {
       if appModel.enablePerDocumentOverrides, let processors {
         MenuCore(model: processors)
       } else {
         MenuCore(model: appModel.processors)
       }
       Divider()
-      Button {
+      Button(
+        "Rescan Installed Processors",
+        systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
+      {
         Task { await appModel.rediscoverRenderers() }
-      } label: {
-        Label(
-          "Rescan Installed Processors",
-          systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
       }
-    } label: {
-      Label(
-        appModel.enablePerDocumentOverrides && processors != nil
-        ? localTitle : globalTitle, systemImage: "wand.and.stars")
     }
   }
 }

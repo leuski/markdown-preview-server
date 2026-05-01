@@ -49,11 +49,9 @@ struct Action {
 
   @ViewBuilder @MainActor
   func menuItem(model: DocumentModel?) -> some View {
-    Button {
+    Button(title, systemImage: image) {
       guard let model else { return }
       action(model)
-    } label: {
-      Label(title, systemImage: image)
     }
     .disabled(!(model.map { isEnabled($0) } ?? false))
     .keyboardShortcut(shortcut)
@@ -61,11 +59,9 @@ struct Action {
 
   @ViewBuilder @MainActor
   func toolbarItem(model: DocumentModel?) -> some View {
-    Button {
+    Button(title, systemImage: image) {
       guard let model else { return }
       action(model)
-    } label: {
-      Label(title, systemImage: image)
     }
     .disabled(!(model.map { isEnabled($0) } ?? false))
     .help(helpLabel)
