@@ -22,8 +22,12 @@ struct TemplateMenu: View {
         MenuCore(model: appModel.templates)
       }
       Divider()
-      Button("Reveal Templates Folder") {
+      Button {
         appModel.revealTemplatesFolder()
+      } label: {
+        Label(
+          "Reveal Templates Folder",
+          systemImage: "folder")
       }
     } label: {
       Label(
@@ -47,8 +51,12 @@ struct ProcessorMenu: View {
         MenuCore(model: appModel.processors)
       }
       Divider()
-      Button("Rescan Installed Processors") {
+      Button {
         Task { await appModel.rediscoverRenderers() }
+      } label: {
+        Label(
+          "Rescan Installed Processors",
+          systemImage: "arrow.trianglehead.2.clockwise.rotate.90")
       }
     } label: {
       Label(

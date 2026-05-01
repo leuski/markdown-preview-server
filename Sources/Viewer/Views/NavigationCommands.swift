@@ -74,9 +74,7 @@ struct NavigationCommands: Commands {
   @FocusedValue(\.viewerModel) private var model
 
   var body: some Commands {
-    ToolbarCommands()
-
-    CommandGroup(after: .toolbar) {
+    CommandGroup(before: .toolbar) {
       Action.zoomIn.menuItem(model: model)
       Action.zoomOut.menuItem(model: model)
       Action.resetZoom.menuItem(model: model)
@@ -89,5 +87,7 @@ struct NavigationCommands: Commands {
 
       Divider()
     }
+    
+    ToolbarCommands()
   }
 }
