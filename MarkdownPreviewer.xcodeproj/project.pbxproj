@@ -263,7 +263,7 @@
 			packageReferences = (
 				626E8DCB2F9DDC4A00BD51F9 /* XCRemoteSwiftPackageReference "FlyingFox" */,
 				626E96E12F9E8DFE00BD51F9 /* XCRemoteSwiftPackageReference "swift-markdown" */,
-				626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */,
+				626EAA012FA0000100BD51F9 /* XCLocalSwiftPackageReference "swift-core-kit" */,
 				62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */,
 			);
 			preferredProjectObjectVersion = 77;
@@ -737,6 +737,10 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
+		626EAA012FA0000100BD51F9 /* XCLocalSwiftPackageReference "swift-core-kit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = swift-core-kit;
+		};
 		62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = Kit;
@@ -760,20 +764,12 @@
 				minimumVersion = 0.7.3;
 			};
 		};
-		626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/leuski/swift-core-kit.git";
-			requirement = {
-				branch = main;
-				kind = branch;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		626E8D8D2F9DD98A00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
+			package = 626EAA012FA0000100BD51F9 /* XCLocalSwiftPackageReference "swift-core-kit" */;
 			productName = ALFoundation;
 		};
 		626E8DCC2F9DDC4A00BD51F9 /* FlyingFox */ = {
@@ -798,7 +794,7 @@
 		};
 		626E8DD72F9DDC9B00BD51F9 /* ALFoundation */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = 626EAA012FA0000100BD51F9 /* XCRemoteSwiftPackageReference "swift-core-kit" */;
+			package = 626EAA012FA0000100BD51F9 /* XCLocalSwiftPackageReference "swift-core-kit" */;
 			productName = ALFoundation;
 		};
 		626E96E22F9E8DFE00BD51F9 /* Markdown */ = {

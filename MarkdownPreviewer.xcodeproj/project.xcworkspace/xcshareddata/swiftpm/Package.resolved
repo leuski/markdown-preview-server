@@ -1,5 +1,5 @@
 {
-  "originHash" : "a18e7214af16da3d0b9f19f6f6a843d76cad0e5c948b1c4ffec1a10007b51066",
+  "originHash" : "417d10a6c5f14d0c5da29a7804c97f0ad12a1e3507eee170fd7ad95231cf216f",
   "pins" : [
     {
       "identity" : "flyingfox",
@@ -13,10 +13,10 @@
     {
       "identity" : "swift-argument-parser",
       "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leuski//swift-argument-parser.git",
+      "location" : "ssh://git@gitlab.int.mybuddy.ai:2222/bsr/swift-argument-parser.git",
       "state" : {
         "branch" : "property-metadata",
-        "revision" : "11117696cb478986736d2dfc386f4a95f96d18dd"
+        "revision" : "8fd4536067af136861e04820a00a3a0e88c232e2"
       }
     },
     {
@@ -26,15 +26,6 @@
       "state" : {
         "revision" : "5d9bdaa4228b381639fff09403e39a04926e2dbe",
         "version" : "0.7.1"
-      }
-    },
-    {
-      "identity" : "swift-core-kit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/leuski/swift-core-kit.git",
-      "state" : {
-        "branch" : "main",
-        "revision" : "989c90ff946f3ed820d4d93a0c72ca6ed1a5e48a"
       }
     },
     {

@@ -1,5 +1,27 @@
 // swift-tools-version: 6.0
 import PackageDescription
+import Foundation
+
+/// Prefer a sibling-directory checkout of `name` (typically a
+/// symlink at `../<name>` from this package root) when it exists,
+/// so library development can iterate without a publish/bump cycle.
+/// Drop a `.use_remote` file next to `Package.swift` to force the
+/// remote branch even when the local path is present.
+func pickLocalOrRemotePackage(
+  path relPath: String,
+  url: String,
+  branch: String
+) -> Package.Dependency {
+  let cwd = FileManager.default.currentDirectoryPath
+  let fullPath = cwd + "/" + relPath
+  let useRemoteHint = cwd + "/.use_remote"
+  if FileManager.default.fileExists(atPath: fullPath),
+     !FileManager.default.fileExists(atPath: useRemoteHint)
+  {
+    return .package(path: fullPath)
+  }
+  return .package(url: url, branch: branch)
+}
 
 let package = Package(
   name: "GalleyKit",
@@ -17,7 +39,8 @@ let package = Package(
     .package(
       url: "https://github.com/swiftlang/swift-markdown",
       from: "0.7.3"),
-    .package(
+    pickLocalOrRemotePackage(
+      path: "../swift-core-kit",
       url: "https://github.com/leuski/swift-core-kit.git",
       branch: "main")
   ],

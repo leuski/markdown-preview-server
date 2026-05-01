@@ -53,8 +53,12 @@ public actor DocumentWatcher {
   }
 
   private func consume(url: URL, key: String) async {
-    let events = url.fileEvents(
-      eventMask: [.write, .extend, .rename, .delete],
+    // `contentChanges` watches the parent directory via FSEvents and
+    // filters for `url`, which survives editor atomic saves
+    // (write-temp + rename) — the previous `fileEvents` watcher held
+    // an fd to the original inode and went silent after one rename.
+    let events = url.contentChanges(
+      latency: 0.05,
       queue: .global(qos: .userInitiated))
 
     var debounce: Task<Void, Never>?
