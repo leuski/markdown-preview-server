@@ -93,6 +93,11 @@ final class EditorChoice: ChoiceModel {
 
   private(set) var values: [Element]
 
+  /// EditorChoice owns its own UserDefaults persistence (see
+  /// `persist()`), so the protocol's read-side here returns nil —
+  /// nothing for an outside coordinator to mirror to scene storage.
+  var persistent: String? { nil }
+
   @ObservationIgnored private var storedSelected: Element
 
   var selected: Element {

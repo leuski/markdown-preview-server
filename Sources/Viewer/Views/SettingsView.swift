@@ -121,7 +121,7 @@ struct SettingsView: View {
   @ViewBuilder
   private var templatePicker: some View {
     Menu {
-      TemplateMenuCore(model: appModel.templates)
+      MenuCore(model: appModel.templates)
     } label: {
       Text(appModel.activeTemplate.name)
     }
@@ -130,7 +130,7 @@ struct SettingsView: View {
   @ViewBuilder
   private var processorPicker: some View {
     Menu {
-      ProcessorMenuCore(model: appModel.processors)
+      MenuCore(model: appModel.processors)
     } label: {
       Text(appModel.processors.selected.name)
     }
@@ -240,5 +240,7 @@ struct EditorMenuCore: View {
 }
 
 #Preview {
-  SettingsView(appModel: AppModel(skipDiscovery: true))
+  SettingsView(appModel: AppModel(
+    templateStore: TemplateStore(),
+    processorStore: ProcessorStore()))
 }
