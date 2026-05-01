@@ -65,3 +65,18 @@ struct ProcessorMenu: View {
     }
   }
 }
+
+struct SubtitleModifier: ViewModifier {
+  func body(content: Content) -> some View {
+    content
+      .font(.caption)
+      .foregroundStyle(.secondary)
+      .fixedSize(horizontal: false, vertical: true)
+  }
+}
+
+extension View {
+  func subtitle() -> some View {
+    self.modifier(SubtitleModifier())
+  }
+}

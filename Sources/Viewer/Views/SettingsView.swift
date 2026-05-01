@@ -42,9 +42,7 @@ struct SettingsView: View {
             .labelsHidden()
         }
         Text("Use {url}, {path}, and {line} as placeholders.")
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .fixedSize(horizontal: false, vertical: true)
+          .subtitle()
       }
 
     case .appBundle:
@@ -53,9 +51,7 @@ struct SettingsView: View {
           Text(
             "Line numbers are not passed to applications selected this way."
           )
-          .font(.caption)
-          .foregroundStyle(.secondary)
-          .fixedSize(horizontal: false, vertical: true)
+          .subtitle()
           Spacer()
           Button("Choose Application…") { pickAppBundle() }
         }
@@ -86,9 +82,7 @@ struct SettingsView: View {
             always used.
             """
       )
-      .font(.caption)
-      .foregroundStyle(.secondary)
-      .fixedSize(horizontal: false, vertical: true)
+      .subtitle()
     }
   }
 
@@ -144,12 +138,14 @@ struct SettingsView: View {
 
       Section {
         editorPicker
-        LabeledContent {
-          Button("Install scripts…") {
-            ScriptInstaller.installScripts()
+        if appModel.editors.selected == .preset(.bbedit) {
+          LabeledContent {
+            Button("Install scripts…") {
+              ScriptInstaller.installScripts()
+            }
+          } label: {
+            Text("Integration")
           }
-        } label: {
-          Text("Integration")
         }
 
         LabeledContent {
@@ -169,7 +165,6 @@ struct SettingsView: View {
         } label: {
           Text("Template")
         }
-
       }
 
       Section {
@@ -181,8 +176,7 @@ struct SettingsView: View {
           + "Markdown processor or template, overriding the global "
           + "selection."
         )
-        .font(.caption)
-        .foregroundStyle(.secondary)
+        .subtitle()
       }
     }
     .padding()

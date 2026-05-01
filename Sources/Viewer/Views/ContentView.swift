@@ -504,10 +504,6 @@ private struct RendererToolbarPicker: View {
     .scaleEffect(toolbarMenuIconScale, anchor: .center)
     .help("Markdown processor")
   }
-
-  private var label: String {
-    appModel.processors.selected.name
-  }
 }
 
 private struct TemplateToolbarPicker: View {
