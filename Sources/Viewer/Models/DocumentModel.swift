@@ -148,16 +148,71 @@ final class DocumentModel {
   }
 
   /// Open the current document in the user's chosen editor.
-  /// `line` is non-nil for cmd-click on a `data-source-line` block;
-  /// nil for File > Open in Editor (jump to top).
+  /// `line` is non-nil for cmd-click on a `data-source-line` block.
+  /// When nil (File > Open in Editor), we try to land the editor on
+  /// the source line the user is currently reading by querying the
+  /// topmost visible position-tagged block in the WebView; falls
+  /// back to opening at the file with no line if the active renderer
+  /// emits no source positions.
   func openInEditor(line: Int? = nil) async {
     guard let url = documentURL else {
       logger.warning("openInEditor ignored: no document URL bound")
       return
     }
+    let resolvedLine: Int?
+    if let line {
+      resolvedLine = line
+    } else {
+      resolvedLine = await topmostVisibleSourceLine()
+    }
     let value = appModel?.editors.selected ?? .default
     await openFileInEditor(
-      value, fileURL: url, line: line, logger: logger)
+      value, fileURL: url, line: resolvedLine, logger: logger)
+  }
+
+  /// Find the smallest source line of any block currently in (or
+  /// just above) the viewport. Reads the same three attribute
+  /// flavors `EditorBridge` understands. Returns nil if the active
+  /// renderer doesn't emit source positions, or if no positioned
+  /// block is visible (very short docs, mostly).
+  private func topmostVisibleSourceLine() async -> Int? {
+    let script = """
+      (function () {
+        var nodes = document.querySelectorAll(
+          '[data-source-line], [data-pos], [data-sourcepos]');
+        var best = null;
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          var rect = node.getBoundingClientRect();
+          // Skip blocks fully above the viewport — they're behind
+          // the user's reading position. The first one with bottom
+          // >= 0 (i.e. partially visible or just below the top) is
+          // what we want.
+          if (rect.bottom < 0) continue;
+          var n = NaN;
+          if (node.dataset.sourceLine) {
+            n = parseInt(node.dataset.sourceLine, 10);
+          } else {
+            var raw = node.dataset.pos || node.dataset.sourcepos || '';
+            var m = raw.match(/(\\d+):\\d+/);
+            if (m) n = parseInt(m[1], 10);
+          }
+          if (Number.isNaN(n)) continue;
+          best = n;
+          break;
+        }
+        return best;
+      })();
+      """
+    do {
+      let value = try await page.callJavaScript(script)
+      if let number = value as? Int { return number }
+      if let number = value as? Double { return Int(number) }
+      if let number = value as? NSNumber { return number.intValue }
+      return nil
+    } catch {
+      return nil
+    }
   }
 
   // MARK: - Public entry points

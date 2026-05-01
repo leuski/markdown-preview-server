@@ -122,10 +122,10 @@ struct ContentView: View {
       model: model,
       appModel: appModel,
       onDocumentBound: handleDocumentBound,
-      onTemplatePersistent: { overrideTemplatePersistent = $0 },
-      onRendererPersistent: { overrideRendererPersistent = $0 },
-      onZoom: { pageZoomStored = $0 },
-      onScrollY: { scrollYStored = $0 },
+      onTemplatePersistent: mirrorPerFileTemplate,
+      onRendererPersistent: mirrorPerFileRenderer,
+      onZoom: mirrorPerFileZoom,
+      onScrollY: mirrorPerFileScrollY,
       reload: reloadModel))
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
   }
@@ -148,6 +148,66 @@ struct ContentView: View {
 
   private func reloadModel() {
     Task { await model.reload() }
+  }
+
+  /// Read `PerFileStateStore` for `url` and patch any value the
+  /// scene's storage hasn't already overridden. Leaves untouched
+  /// fields the user has explicitly modified in this scene
+  /// (recognized by their value being non-default).
+  private func hydrateFromPerFileState(
+    store: PerFileStateStore, url: URL
+  ) {
+    let stored = store.state(for: url)
+    if pageZoomStored == 1.0, let z = stored.pageZoom {
+      pageZoomStored = z
+    }
+    if scrollYStored == 0, let y = stored.scrollY {
+      scrollYStored = y
+    }
+    if overrideTemplatePersistent == nil,
+       let t = stored.templatePersistent
+    {
+      overrideTemplatePersistent = t
+    }
+    if overrideRendererPersistent == nil,
+       let r = stored.rendererPersistent
+    {
+      overrideRendererPersistent = r
+    }
+  }
+
+  /// Persist the new value to both `@SceneStorage` (for restoration
+  /// of *this* window) and `PerFileStateStore` (for the next time
+  /// this URL is opened anywhere). `keyPath` writes the field on the
+  /// per-file record — `nil` for "back to default" so the store's
+  /// dictionary doesn't accumulate dead entries.
+  private func mirrorPerFileZoom(_ value: Double) {
+    pageZoomStored = value
+    writePerFileState { $0.pageZoom = value == 1.0 ? nil : value }
+  }
+
+  private func mirrorPerFileScrollY(_ value: Double) {
+    scrollYStored = value
+    writePerFileState { $0.scrollY = value == 0 ? nil : value }
+  }
+
+  private func mirrorPerFileTemplate(_ value: String?) {
+    overrideTemplatePersistent = value
+    writePerFileState { $0.templatePersistent = value }
+  }
+
+  private func mirrorPerFileRenderer(_ value: String?) {
+    overrideRendererPersistent = value
+    writePerFileState { $0.rendererPersistent = value }
+  }
+
+  private func writePerFileState(
+    _ mutation: (inout PerFileState) -> Void
+  ) {
+    guard let appModel = boot.model,
+          let url = model.documentURL
+    else { return }
+    appModel.perFileState.update(url, mutation)
   }
 
   /// Swap this window's bound document for `newURL` in place. Used by
@@ -176,6 +236,19 @@ struct ContentView: View {
   /// fires processor discovery has completed and the persisted pick
   /// has been decoded against the live catalog.
   private func launchTask(appModel: AppModel) async {
+    // Fresh open of a file we've seen before: hydrate the
+    // window's `@SceneStorage` slots from `PerFileStateStore` so
+    // zoom / scroll / per-document overrides come back the way the
+    // user left them, even though this is a brand-new scene with no
+    // restoration data of its own. State-restored windows skip this
+    // — their `@SceneStorage` already carries the most recent
+    // window-specific values, which beat per-file defaults.
+    let willRestore = !didRestore && decodeHistory(historyJSON) != nil
+    if let fileURL, !willRestore {
+      hydrateFromPerFileState(
+        store: appModel.perFileState, url: fileURL)
+    }
+
     // Hydrate zoom from scene storage *before* the first render so
     // the page comes up at the right size — `setZoom` only triggers
     // a JS update; the next render reads `pageZoom` to inject CSS.

@@ -739,7 +739,7 @@
 /* Begin XCLocalSwiftPackageReference section */
 		626EAA012FA0000100BD51F9 /* XCLocalSwiftPackageReference "swift-core-kit" */ = {
 			isa = XCLocalSwiftPackageReference;
-			relativePath = swift-core-kit;
+			relativePath = "swift-core-kit";
 		};
 		62F00001000000000000F001 /* XCLocalSwiftPackageReference "Kit" */ = {
 			isa = XCLocalSwiftPackageReference;

@@ -16,6 +16,7 @@ final class AppModel {
   @ObservationIgnored let processorStore: ProcessorStore
   let processors: ProcessorChoice
   @ObservationIgnored let editors: EditorChoice
+  @ObservationIgnored let perFileState: PerFileStateStore
 
   /// When on, each window can pin its own renderer / template that
   /// wins over the global selection. Stored per-window via
@@ -54,6 +55,7 @@ final class AppModel {
     self.templateStore = templateStore
     self.processorStore = processorStore
     self.editors = EditorChoice()
+    self.perFileState = PerFileStateStore()
     self.enablePerDocumentOverrides = UserDefaults.standard.bool(
       forKey: Keys.perDocOverrides)
     self.openBehavior = OpenBehavior(
