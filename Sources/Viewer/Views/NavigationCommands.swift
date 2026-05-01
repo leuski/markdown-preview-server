@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 
 /// Bridges the active Viewer window's model into the App's command
@@ -74,6 +75,27 @@ struct NavigationCommands: Commands {
 
   var body: some Commands {
     CommandGroup(after: .toolbar) {
+
+      Divider()
+
+      Button("Zoom In") {
+        model?.zoomIn()
+      }
+      .disabled(!(model?.canZoomIn ?? false))
+      .keyboardShortcut("+", modifiers: .command)
+
+      Button("Zoom Out") {
+        model?.zoomOut()
+      }
+      .disabled(!(model?.canZoomOut ?? false))
+      .keyboardShortcut("-", modifiers: .command)
+
+      Button("Actual Size") {
+        model?.resetZoom()
+      }
+      .disabled(!(model?.canResetZoom ?? false))
+      .keyboardShortcut("0", modifiers: .command)
+
       Divider()
 
       Button("Back") {

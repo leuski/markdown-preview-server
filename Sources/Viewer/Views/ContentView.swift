@@ -27,6 +27,10 @@ struct ContentView: View {
   @SceneStorage("MarkdownEye.overrideTemplatePersistent")
   private var overrideTemplatePersistent: String?
 
+  /// Per-window zoom factor. Mirrored to/from `model.pageZoom` so the
+  /// window comes back at the size the user left it.
+  @SceneStorage("MarkdownEye.pageZoom") private var pageZoomStored: Double = 1.0
+
   var body: some View {
     if let appModel = boot.model {
       readyBody(appModel: appModel)
@@ -95,7 +99,7 @@ struct ContentView: View {
       onDetach: { window in
         if let window { appDelegate.unregisterWindow(window) }
       }))
-    .toolbar { toolbarContent(appModel: appModel) }
+    .toolbar(id: "viewer.main") { toolbarContent(appModel: appModel) }
     .modifier(SceneValuesModifier(
       model: model,
       renameContext: RenameContext(
@@ -108,34 +112,28 @@ struct ContentView: View {
       ?? fileURL?.lastPathComponent
       ?? "Markdown Preview")
     .task(id: fileURL) { await launchTask(appModel: appModel) }
-    .onChange(of: model.documentURL) { _, new in
-      saveHistory()
-      // First time content is bound (whether via initial bind,
-      // restore, or in-window navigation), reveal the window and
-      // promote it from "placeholder" to "real document window" so
-      // future dispatches can tab onto it.
-      if new != nil {
-        hostWindow?.alphaValue = 1
-        if let window = hostWindow {
-          appDelegate.markWindowReady(window)
-        }
-      }
-    }
-    .onChange(of: appModel.processors.selected) { reloadModel() }
-    .onChange(of: appModel.templates.selected) { reloadModel() }
-    .onChange(of: appModel.enablePerDocumentOverrides) { reloadModel() }
-    // Scene choices are the source of truth for the window's pick;
-    // mirror their `persistent` strings to scene storage and trigger
-    // a reload. Hydration in launchTask handles the reverse direction.
-    .onChange(of: model.templates?.persistent) { _, new in
-      overrideTemplatePersistent = new
-      reloadModel()
-    }
-    .onChange(of: model.processors?.persistent) { _, new in
-      overrideRendererPersistent = new
-      reloadModel()
-    }
+    .modifier(ChangeHandlers(
+      model: model,
+      appModel: appModel,
+      onDocumentBound: handleDocumentBound,
+      onTemplatePersistent: { overrideTemplatePersistent = $0 },
+      onRendererPersistent: { overrideRendererPersistent = $0 },
+      onZoom: { pageZoomStored = $0 },
+      reload: reloadModel))
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
+  }
+
+  /// First time content is bound (whether via initial bind, restore,
+  /// or in-window navigation), reveal the window and promote it from
+  /// "placeholder" to "real document window" so future dispatches can
+  /// tab onto it.
+  private func handleDocumentBound(_ new: URL?) {
+    saveHistory()
+    guard new != nil else { return }
+    hostWindow?.alphaValue = 1
+    if let window = hostWindow {
+      appDelegate.markWindowReady(window)
+    }
   }
 
   private func reloadModel() {
@@ -158,6 +156,10 @@ struct ContentView: View {
   /// fires processor discovery has completed and the persisted pick
   /// has been decoded against the live catalog.
   private func launchTask(appModel: AppModel) async {
+    // Hydrate zoom from scene storage *before* the first render so
+    // the page comes up at the right size — `setZoom` only triggers
+    // a JS update; the next render reads `pageZoom` to inject CSS.
+    model.setZoom(pageZoomStored)
     let displaced = model.bindSettings(
       appModel,
       templatePersistent: overrideTemplatePersistent,
@@ -298,8 +300,17 @@ struct ContentView: View {
   }
 
   @ToolbarContentBuilder
-  private func toolbarContent(appModel: AppModel) -> some ToolbarContent {
-    ToolbarItemGroup(placement: .navigation) {
+  private func toolbarContent(
+    appModel: AppModel
+  ) -> some CustomizableToolbarContent {
+    navigationToolbarItems
+    mainToolbarItems(appModel: appModel)
+    zoomToolbarItems
+  }
+
+  @ToolbarContentBuilder
+  private var navigationToolbarItems: some CustomizableToolbarContent {
+    ToolbarItem(id: "back", placement: .navigation) {
       Button {
         Task { await model.goBack() }
       } label: {
@@ -307,7 +318,10 @@ struct ContentView: View {
       }
       .disabled(!model.canGoBack)
       .help("Back (⌘[)")
+    }
+    .customizationBehavior(.default)
 
+    ToolbarItem(id: "forward", placement: .navigation) {
       Button {
         Task { await model.goForward() }
       } label: {
@@ -316,9 +330,24 @@ struct ContentView: View {
       .disabled(!model.canGoForward)
       .help("Forward (⌘])")
     }
-    ToolbarItemGroup(placement: .primaryAction) {
+    .customizationBehavior(.default)
+  }
+
+  @ToolbarContentBuilder
+  private func mainToolbarItems(
+    appModel: AppModel
+  ) -> some CustomizableToolbarContent {
+    ToolbarItem(id: "renderer", placement: .primaryAction) {
       RendererToolbarPicker(appModel: appModel, docModel: model)
+    }
+    .customizationBehavior(.default)
+
+    ToolbarItem(id: "template", placement: .primaryAction) {
       TemplateToolbarPicker(appModel: appModel, docModel: model)
+    }
+    .customizationBehavior(.default)
+
+    ToolbarItem(id: "reload", placement: .primaryAction) {
       Button {
         Task { await model.reload() }
       } label: {
@@ -326,6 +355,78 @@ struct ContentView: View {
       }
       .help("Reload (⌘R)")
     }
+    .customizationBehavior(.default)
+  }
+
+  @ToolbarContentBuilder
+  private var zoomToolbarItems: some CustomizableToolbarContent {
+    ToolbarItem(id: "zoomOut", placement: .primaryAction) {
+      Button {
+        model.zoomOut()
+      } label: {
+        Label("Zoom Out", systemImage: "minus.magnifyingglass")
+      }
+      .disabled(!model.canZoomOut)
+      .help("Zoom Out (⌘−)")
+    }
+    .defaultCustomization(.hidden)
+
+    ToolbarItem(id: "zoomReset", placement: .primaryAction) {
+      Button {
+        model.resetZoom()
+      } label: {
+        Label(zoomLabel, systemImage: "1.magnifyingglass")
+      }
+      .disabled(!model.canResetZoom)
+      .help("Actual Size (⌘0)")
+    }
+    .defaultCustomization(.hidden)
+
+    ToolbarItem(id: "zoomIn", placement: .primaryAction) {
+      Button {
+        model.zoomIn()
+      } label: {
+        Label("Zoom In", systemImage: "plus.magnifyingglass")
+      }
+      .disabled(!model.canZoomIn)
+      .help("Zoom In (⌘+)")
+    }
+    .defaultCustomization(.hidden)
+  }
+
+  private var zoomLabel: String {
+    let percent = Int((model.pageZoom * 100).rounded())
+    return "\(percent)%"
+  }
+}
+
+/// Bundles every `.onChange` handler `readyBody` needs. Keeps the
+/// view body short and isolates the mirroring logic between model
+/// state and the enclosing scene's `@SceneStorage` slots.
+private struct ChangeHandlers: ViewModifier {
+  let model: DocumentModel
+  let appModel: AppModel
+  let onDocumentBound: (URL?) -> Void
+  let onTemplatePersistent: (String?) -> Void
+  let onRendererPersistent: (String?) -> Void
+  let onZoom: (Double) -> Void
+  let reload: () -> Void
+
+  func body(content: Content) -> some View {
+    content
+      .onChange(of: model.documentURL) { _, new in onDocumentBound(new) }
+      .onChange(of: appModel.processors.selected) { reload() }
+      .onChange(of: appModel.templates.selected) { reload() }
+      .onChange(of: appModel.enablePerDocumentOverrides) { reload() }
+      .onChange(of: model.templates?.persistent) { _, new in
+        onTemplatePersistent(new)
+        reload()
+      }
+      .onChange(of: model.processors?.persistent) { _, new in
+        onRendererPersistent(new)
+        reload()
+      }
+      .onChange(of: model.pageZoom) { _, new in onZoom(new) }
   }
 }
 

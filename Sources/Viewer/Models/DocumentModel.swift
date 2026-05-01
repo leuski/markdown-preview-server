@@ -34,6 +34,23 @@ final class DocumentModel {
   private(set) var documentURL: URL?
   private(set) var lastError: String?
 
+  /// Page zoom factor for the rendered preview. Applied via a CSS
+  /// `zoom` rule injected into the document head; updated live via JS
+  /// when the user changes it without re-rendering.
+  private(set) var pageZoom: Double = 1.0
+
+  /// Discrete zoom stops, matching what Safari and Preview offer so
+  /// repeated ⌘+ presses land on familiar values.
+  private static let zoomStops: [Double] = [
+    0.5, 0.67, 0.75, 0.8, 0.9, 1.0, 1.1, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0
+  ]
+  private static let minZoom: Double = 0.5
+  private static let maxZoom: Double = 3.0
+
+  var canZoomIn: Bool { pageZoom < Self.maxZoom - 0.001 }
+  var canZoomOut: Bool { pageZoom > Self.minZoom + 0.001 }
+  var canResetZoom: Bool { abs(pageZoom - 1.0) > 0.001 }
+
   /// Visited documents in chronological order; `currentIndex` points
   /// at the one currently rendered. Navigation actions move
   /// `currentIndex` and rebind without truncating the stack — so
@@ -215,6 +232,65 @@ final class DocumentModel {
     await renderCurrent(preserveScroll: true)
   }
 
+  // MARK: - Zoom
+
+  func zoomIn() {
+    let next = Self.zoomStops.first { $0 > pageZoom + 0.001 }
+      ?? Self.maxZoom
+    setZoom(next)
+  }
+
+  func zoomOut() {
+    let prev = Self.zoomStops.last { $0 < pageZoom - 0.001 }
+      ?? Self.minZoom
+    setZoom(prev)
+  }
+
+  func resetZoom() {
+    setZoom(1.0)
+  }
+
+  /// Set zoom directly. Pinned to `[minZoom, maxZoom]`. Updates the
+  /// live page via JS — no re-render needed.
+  func setZoom(_ factor: Double) {
+    let clamped = min(max(factor, Self.minZoom), Self.maxZoom)
+    guard abs(clamped - pageZoom) > 0.001 else { return }
+    pageZoom = clamped
+    Task { await applyZoomToPage() }
+  }
+
+  /// Push the current `pageZoom` to the live document. Idempotent —
+  /// updates the dedicated `<style>` element if present, otherwise
+  /// inserts it.
+  private func applyZoomToPage() async {
+    let css = "html{zoom:\(pageZoom);}"
+    let script = """
+      (function(){
+        var s = document.getElementById('md-eye-zoom');
+        if (!s) {
+          s = document.createElement('style');
+          s.id = 'md-eye-zoom';
+          document.head.appendChild(s);
+        }
+        s.textContent = \(jsStringLiteral(css));
+      })();
+      """
+    _ = try? await page.callJavaScript(script)
+  }
+
+  /// Embed the current zoom as a `<style>` element in the rendered
+  /// HTML so the page comes up at the right size on the very first
+  /// frame — applying via JS after load would briefly flash at 100%.
+  private func injectZoomStyle(into html: String) -> String {
+    let style = "<style id=\"md-eye-zoom\">html{zoom:\(pageZoom);}</style>"
+    if let range = html.range(
+      of: "</head>", options: .caseInsensitive)
+    {
+      return html.replacingCharacters(in: range, with: style + "</head>")
+    }
+    return style + html
+  }
+
   /// Rename the current document on disk and re-bind the watcher /
   /// bridges to the new path. History entries that point at the old
   /// URL are rewritten in place so Back/Forward stays correct.
@@ -304,7 +380,8 @@ final class DocumentModel {
         documentURL: url,
         origin: origin)
       let substituted = context.substitute(into: templateHTML)
-      let html = template.rewriteAssets(in: substituted, origin: origin)
+      let rewritten = template.rewriteAssets(in: substituted, origin: origin)
+      let html = injectZoomStyle(into: rewritten)
       logger.debug("Loading rendered HTML (\(html.count) bytes)")
       do {
         for try await _ in page.load(html: html, baseURL: origin) {}
@@ -363,6 +440,32 @@ final class DocumentModel {
   private func restoreScrollY(_ yPos: Double) async {
     _ = try? await page.callJavaScript("window.scrollTo(0, \(yPos));")
   }
+}
+
+/// Escape a Swift string into a JavaScript double-quoted string
+/// literal. Only used for a CSS rule we control, but kept strict so
+/// future zoom-related callers can pass arbitrary text safely.
+private func jsStringLiteral(_ value: String) -> String {
+  var out = "\""
+  for scalar in value.unicodeScalars {
+    switch scalar {
+    case "\\": out += "\\\\"
+    case "\"": out += "\\\""
+    case "\n": out += "\\n"
+    case "\r": out += "\\r"
+    case "\t": out += "\\t"
+    case "\u{2028}": out += "\\u2028"
+    case "\u{2029}": out += "\\u2029"
+    default:
+      if scalar.value < 0x20 {
+        out += String(format: "\\u%04x", scalar.value)
+      } else {
+        out += String(scalar)
+      }
+    }
+  }
+  out += "\""
+  return out
 }
 
 /// Reference holder so the URL scheme handler — which captures the
