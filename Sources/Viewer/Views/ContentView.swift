@@ -31,6 +31,12 @@ struct ContentView: View {
   /// window comes back at the size the user left it.
   @SceneStorage("MarkdownEye.pageZoom") private var pageZoomStored: Double = 1.0
 
+  /// Per-window resting scroll position in pixels. Mirrored from
+  /// `model.currentScrollY` whenever the user pauses scrolling, so a
+  /// relaunched window comes back at the same place. Hydrated into
+  /// `model` at first bind / restore.
+  @SceneStorage("MarkdownEye.scrollY") private var scrollYStored: Double = 0
+
   var body: some View {
     if let appModel = boot.model {
       readyBody(appModel: appModel)
@@ -119,6 +125,7 @@ struct ContentView: View {
       onTemplatePersistent: { overrideTemplatePersistent = $0 },
       onRendererPersistent: { overrideRendererPersistent = $0 },
       onZoom: { pageZoomStored = $0 },
+      onScrollY: { scrollYStored = $0 },
       reload: reloadModel))
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
   }
@@ -202,7 +209,9 @@ struct ContentView: View {
     // Restore a saved session (back/forward stack) for this scene.
     if !didRestore, let snapshot = decodeHistory(historyJSON) {
       didRestore = true
-      await model.restore(snapshot: snapshot)
+      await model.restore(
+        snapshot: snapshot,
+        initialScrollY: scrollYStored > 0 ? scrollYStored : nil)
       if let current = model.documentURL { appDelegate.record(current) }
       return
     }
@@ -211,7 +220,10 @@ struct ContentView: View {
     if let fileURL {
       appDelegate.record(fileURL)
       let line = appDelegate.consumePendingScrollLine(for: fileURL)
-      await model.bind(to: fileURL, scrollToLine: line)
+      await model.bind(
+        to: fileURL,
+        scrollToLine: line,
+        initialScrollY: scrollYStored > 0 ? scrollYStored : nil)
       return
     }
 
@@ -389,6 +401,7 @@ private struct ChangeHandlers: ViewModifier {
   let onTemplatePersistent: (String?) -> Void
   let onRendererPersistent: (String?) -> Void
   let onZoom: (Double) -> Void
+  let onScrollY: (Double) -> Void
   let reload: () -> Void
 
   func body(content: Content) -> some View {
@@ -406,6 +419,7 @@ private struct ChangeHandlers: ViewModifier {
         reload()
       }
       .onChange(of: model.pageZoom) { _, new in onZoom(new) }
+      .onChange(of: model.currentScrollY) { _, new in onScrollY(new) }
   }
 }
 

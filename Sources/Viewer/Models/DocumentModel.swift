@@ -22,6 +22,7 @@ final class DocumentModel {
   @ObservationIgnored private let watcher = DocumentWatcher()
   @ObservationIgnored private let bridge = EditorBridge()
   @ObservationIgnored private let linkBridge = LinkBridge()
+  @ObservationIgnored private let scrollBridge = ScrollBridge()
   @ObservationIgnored private weak var appModel: AppModel?
   @ObservationIgnored private let templateBox: TemplateBox
 
@@ -72,6 +73,18 @@ final class DocumentModel {
   /// scroll runs so subsequent file-watcher reloads don't re-jump.
   @ObservationIgnored private var pendingScrollLine: Int?
 
+  /// One-shot pixel scroll target consumed by the next render. Set
+  /// by `bind` / `restore` from the window's persisted
+  /// `@SceneStorage` slot so a freshly-launched window comes back at
+  /// the position it was left. Cleared after one apply so in-window
+  /// navigation and file-watcher reloads aren't jerked back.
+  @ObservationIgnored private var pendingScrollY: Double?
+
+  /// Latest known scroll position, updated by `ScrollBridge` from a
+  /// debounced JS listener. ContentView mirrors this to
+  /// `@SceneStorage` so the next session can hydrate `pendingScrollY`.
+  private(set) var currentScrollY: Double = 0
+
   private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.galley",
     category: "DocumentModel")
@@ -81,12 +94,19 @@ final class DocumentModel {
     let controller = configuration.userContentController
     controller.add(bridge, name: EditorBridge.messageName)
     controller.add(linkBridge, name: LinkBridge.messageName)
+    controller.add(scrollBridge, name: ScrollBridge.messageName)
     // One script handles both cmd-click → editor and plain click →
     // in-window nav, so we don't depend on capture-phase ordering
     // between two listeners — which appears to drop the editor
     // listener after the first navigation in macOS 26 WebPage.
     controller.addUserScript(WKUserScript(
       source: EditorBridge.userScript,
+      injectionTime: .atDocumentEnd,
+      forMainFrameOnly: true))
+    // Debounced scroll listener — feeds `currentScrollY` so
+    // ContentView can persist the resting position via `@SceneStorage`.
+    controller.addUserScript(WKUserScript(
+      source: ScrollBridge.userScript,
       injectionTime: .atDocumentEnd,
       forMainFrameOnly: true))
 
@@ -115,6 +135,15 @@ final class DocumentModel {
     bridge.onEditorClick = { [weak self] line in
       guard let self else { return }
       Task { await self.openInEditor(line: line) }
+    }
+
+    // Latest debounced scroll position. `@ObservationIgnored` would
+    // suppress the SwiftUI invalidation that lets ContentView mirror
+    // this to `@SceneStorage`, so we leave it observed — the listener
+    // fires at most every ~150 ms, well below per-frame cost.
+    scrollBridge.onScroll = { [weak self] y in
+      guard let self else { return }
+      currentScrollY = y
     }
   }
 
@@ -162,27 +191,40 @@ final class DocumentModel {
   ///
   /// `scrollToLine` is the source line the rendered preview should
   /// scroll to once the page finishes loading — non-nil when the open
-  /// came in via `galley://...?line=N` from an editor script. The
-  /// value is consumed once and applies only to the first render of
-  /// this bind; subsequent file-watcher reloads preserve scroll
-  /// position normally.
-  func bind(to url: URL, scrollToLine: Int? = nil) async {
+  /// came in via `galley://...?line=N` from an editor script.
+  /// `initialScrollY` hydrates the resting scroll position from the
+  /// window's `@SceneStorage` slot. Both are consumed once and apply
+  /// only to the first render of this bind; subsequent file-watcher
+  /// reloads preserve current scroll normally. `scrollToLine` wins
+  /// over `initialScrollY` if both happen to be set.
+  func bind(
+    to url: URL,
+    scrollToLine: Int? = nil,
+    initialScrollY: Double? = nil
+  ) async {
     history = [url]
     currentIndex = 0
     pendingScrollLine = scrollToLine
+    pendingScrollY = initialScrollY
     await rebindCurrent()
   }
 
   /// Restore a previously-saved history stack. Used at window
   /// re-open time to pick up where the user left off — the active
   /// document and the back/forward stack are both re-established.
-  func restore(snapshot: HistorySnapshot) async {
+  /// `initialScrollY` hydrates the resting scroll position the same
+  /// way `bind` does.
+  func restore(
+    snapshot: HistorySnapshot,
+    initialScrollY: Double? = nil
+  ) async {
     guard !snapshot.urls.isEmpty,
           snapshot.currentIndex >= 0,
           snapshot.currentIndex < snapshot.urls.count
     else { return }
     history = snapshot.urls
     currentIndex = snapshot.currentIndex
+    pendingScrollY = initialScrollY
     await rebindCurrent()
   }
 
@@ -404,7 +446,14 @@ final class DocumentModel {
           // One-shot — consume before the JS call so an in-flight
           // file-watcher reload doesn't re-jump.
           pendingScrollLine = nil
+          pendingScrollY = nil
           await scrollToSourceLine(line)
+        } else if let y = pendingScrollY {
+          pendingScrollY = nil
+          if y > 0 {
+            currentScrollY = y
+            await restoreScrollY(y)
+          }
         } else if savedScrollY > 0 {
           await restoreScrollY(savedScrollY)
         }
