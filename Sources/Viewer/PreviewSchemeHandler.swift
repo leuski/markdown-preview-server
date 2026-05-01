@@ -12,15 +12,15 @@ import ALFoundation
 /// `Template.rewriteAssets(...)` rewriting logic produces URLs that
 /// resolve correctly here too.
 ///
-/// Origin is `mdeye://local`. The Viewer sets the WebPage's `baseURL`
+/// Origin is `galley://local`. The Viewer sets the WebPage's `baseURL`
 /// to the same origin so any unrewritten relative URLs (e.g. those
 /// in inline `<img>` markup the document author wrote) flow through
 /// the handler as well.
 
 @MainActor
 struct PreviewSchemeHandler: URLSchemeHandler {
-  static let scheme = URLScheme("mdeye") !! "Should not happen"
-  static let originURL: URL = "mdeye://local"
+  static let scheme = URLScheme("galley") !! "Should not happen"
+  static let originURL: URL = "galley://local"
 
   /// Reads the active template at request time. Avoids stale state
   /// when the user switches templates: the next asset request picks
