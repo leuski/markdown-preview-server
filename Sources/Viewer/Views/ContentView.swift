@@ -129,6 +129,9 @@ struct ContentView: View {
   /// tab onto it.
   private func handleDocumentBound(_ new: URL?) {
     saveHistory()
+    if let window = hostWindow {
+      appDelegate.updateCurrentURL(window, new)
+    }
     guard new != nil else { return }
     hostWindow?.alphaValue = 1
     if let window = hostWindow {
@@ -148,7 +151,16 @@ struct ContentView: View {
     appDelegate.record(newURL)
     if fileURL != newURL { fileURL = newURL }
     let line = appDelegate.consumePendingScrollLine(for: newURL)
-    Task { await model.bind(to: newURL, scrollToLine: line) }
+    Task {
+      // Same URL re-dispatch (e.g. BBEdit's preview script firing
+      // again on a file already showing): just scroll, don't tear
+      // down history. A fresh URL takes the full bind path.
+      if model.documentURL == newURL, let line {
+        await model.scrollToSourceLine(line)
+      } else {
+        await model.bind(to: newURL, scrollToLine: line)
+      }
+    }
   }
 
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when

@@ -73,7 +73,7 @@ final class DocumentModel {
   @ObservationIgnored private var pendingScrollLine: Int?
 
   private let logger = Logger(
-    subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
+    subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.galley",
     category: "DocumentModel")
 
   init() {
@@ -471,7 +471,11 @@ final class DocumentModel {
   /// No-ops cleanly when the active renderer doesn't emit positions
   /// (multimarkdown, discount, Markdown.pl) — the user just lands at
   /// the top of the document.
-  private func scrollToSourceLine(_ line: Int) async {
+  ///
+  /// Public so ContentView can fire a scroll-only update when a
+  /// `galley://` open targets a URL already bound to a window —
+  /// we don't want to reset history just to re-jump the cursor.
+  func scrollToSourceLine(_ line: Int) async {
     let script = """
       (function() {
         var nodes = document.querySelectorAll(
