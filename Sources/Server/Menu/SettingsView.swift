@@ -41,7 +41,9 @@ struct SettingsView: View {
 
       LabeledContent {
         Button("Install scripts…") {
-          ScriptInstaller.installScripts(model: model)
+          ScriptInstaller.installScripts(context: [
+            "__LOCATION__": model.hostURL.appendingPreviewPath().absoluteString
+          ])
         }
       } label: {
         Text("BBEdit integration")

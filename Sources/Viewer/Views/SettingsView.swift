@@ -146,7 +146,7 @@ struct SettingsView: View {
         editorPicker
         LabeledContent {
           Button("Install scripts…") {
-            //            ScriptInstaller.installScripts(model: model)
+            ScriptInstaller.installScripts()
           }
         } label: {
           Text("Integration")

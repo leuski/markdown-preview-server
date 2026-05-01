@@ -3,7 +3,7 @@ import ALFoundation
 import SwiftUI
 import GalleyCoreKit
 
-enum ScriptInstaller {
+public enum ScriptInstaller {
   enum InstallError: LocalizedError {
     case sourceMissing
     case copyFailed(URL, any Error)
@@ -85,7 +85,7 @@ enum ScriptInstaller {
   }
 
   @MainActor
-  static func installScripts(model: AppModel) {
+  static public func installScripts(context: [String: String] = [:]) {
     let panel = NSOpenPanel()
     panel.canChooseFiles = false
     panel.canChooseDirectories = true
@@ -104,9 +104,7 @@ enum ScriptInstaller {
     guard panel.runModal() == .OK, let destination = panel.url else { return }
 
     do {
-      try ScriptInstaller.install(to: destination, context: [
-        "__LOCATION__": model.hostURL.appendingPreviewPath().absoluteString
-      ])
+      try ScriptInstaller.install(to: destination, context: context)
       NSWorkspace.shared.activateFileViewerSelecting([destination])
     } catch {
       let alert = NSAlert(error: error)
