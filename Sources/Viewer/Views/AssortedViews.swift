@@ -8,54 +8,52 @@
 import SwiftUI
 import GalleyCoreKit
 
-struct TemplateMenu<Model>: View
-where Model: ChoiceModel, Model.Element: SectionedChoiceValue
-{
-  let model: Model
+struct TemplateMenu: View {
+  let localTitle: String
+  let globalTitle: String
   @Bindable var appModel: AppModel
-
-  init(model: Model, appModel: AppModel) {
-    self.model = model
-    self.appModel = appModel
-  }
+  let templates: SceneTemplateChoice?
 
   var body: some View {
-    MenuCore(model: model)
-    Divider()
-    Button("Reveal Templates Folder") {
-      appModel.revealTemplatesFolder()
+    Menu {
+      if appModel.enablePerDocumentOverrides, let templates {
+        MenuCore(model: templates)
+      } else {
+        MenuCore(model: appModel.templates)
+      }
+      Divider()
+      Button("Reveal Templates Folder") {
+        appModel.revealTemplatesFolder()
+      }
+    } label: {
+      Label(
+        appModel.enablePerDocumentOverrides && templates != nil
+        ? localTitle : globalTitle, systemImage: "doc.richtext")
     }
   }
 }
 
-extension TemplateMenu where Model == TemplateChoice {
-  init(appModel: AppModel) {
-    self.init(model: appModel.templates, appModel: appModel)
-  }
-}
-
-struct ProcessorMenu<Model>: View
-where Model: ChoiceModel, Model.Element: SectionedChoiceValue
-{
-  let model: Model
+struct ProcessorMenu: View {
+  let localTitle: String
+  let globalTitle: String
   @Bindable var appModel: AppModel
-
-  init(model: Model, appModel: AppModel) {
-    self.model = model
-    self.appModel = appModel
-  }
+  let processors: SceneProcessorChoice?
 
   var body: some View {
-    MenuCore(model: model)
-    Divider()
-    Button("Rescan Installed Processors") {
-      Task { await appModel.rediscoverRenderers() }
+    Menu {
+      if appModel.enablePerDocumentOverrides, let processors {
+        MenuCore(model: processors)
+      } else {
+        MenuCore(model: appModel.processors)
+      }
+      Divider()
+      Button("Rescan Installed Processors") {
+        Task { await appModel.rediscoverRenderers() }
+      }
+    } label: {
+      Label(
+        appModel.enablePerDocumentOverrides && processors != nil
+        ? localTitle : globalTitle, systemImage: "wand.and.stars")
     }
-  }
-}
-
-extension ProcessorMenu where Model == ProcessorChoice {
-  init(appModel: AppModel) {
-    self.init(model: appModel.processors, appModel: appModel)
   }
 }

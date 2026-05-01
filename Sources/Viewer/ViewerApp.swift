@@ -12,7 +12,7 @@ struct ViewerApp: App {
         .environment(boot)
         .environment(appDelegate)
     }
-    .defaultSize(width: 600, height: 400)
+    .defaultSize(width: 700, height: 900)
     .windowToolbarStyle(.unifiedCompact)
     .commands {
       FileCommands(delegate: appDelegate)

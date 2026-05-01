@@ -74,50 +74,20 @@ struct NavigationCommands: Commands {
   @FocusedValue(\.viewerModel) private var model
 
   var body: some Commands {
+    ToolbarCommands()
+
     CommandGroup(after: .toolbar) {
+      Action.zoomIn.menuItem(model: model)
+      Action.zoomOut.menuItem(model: model)
+      Action.resetZoom.menuItem(model: model)
 
       Divider()
 
-      Button("Zoom In") {
-        model?.zoomIn()
-      }
-      .disabled(!(model?.canZoomIn ?? false))
-      .keyboardShortcut("+", modifiers: .command)
-
-      Button("Zoom Out") {
-        model?.zoomOut()
-      }
-      .disabled(!(model?.canZoomOut ?? false))
-      .keyboardShortcut("-", modifiers: .command)
-
-      Button("Actual Size") {
-        model?.resetZoom()
-      }
-      .disabled(!(model?.canResetZoom ?? false))
-      .keyboardShortcut("0", modifiers: .command)
+      Action.back.menuItem(model: model)
+      Action.forward.menuItem(model: model)
+      Action.reload.menuItem(model: model)
 
       Divider()
-
-      Button("Back") {
-        guard let model else { return }
-        Task { await model.goBack() }
-      }
-      .disabled(!(model?.canGoBack ?? false))
-      .keyboardShortcut("[", modifiers: .command)
-
-      Button("Forward") {
-        guard let model else { return }
-        Task { await model.goForward() }
-      }
-      .disabled(!(model?.canGoForward ?? false))
-      .keyboardShortcut("]", modifiers: .command)
-
-      Button("Reload") {
-        guard let model else { return }
-        Task { await model.reload() }
-      }
-      .disabled(model == nil)
-      .keyboardShortcut("r", modifiers: .command)
     }
   }
 }

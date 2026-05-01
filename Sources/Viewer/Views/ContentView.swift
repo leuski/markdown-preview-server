@@ -311,24 +311,12 @@ struct ContentView: View {
   @ToolbarContentBuilder
   private var navigationToolbarItems: some CustomizableToolbarContent {
     ToolbarItem(id: "back", placement: .navigation) {
-      Button {
-        Task { await model.goBack() }
-      } label: {
-        Label("Back", systemImage: "chevron.backward")
-      }
-      .disabled(!model.canGoBack)
-      .help("Back (⌘[)")
+      Action.back.toolbarItem(model: model)
     }
     .customizationBehavior(.default)
 
     ToolbarItem(id: "forward", placement: .navigation) {
-      Button {
-        Task { await model.goForward() }
-      } label: {
-        Label("Forward", systemImage: "chevron.forward")
-      }
-      .disabled(!model.canGoForward)
-      .help("Forward (⌘])")
+      Action.forward.toolbarItem(model: model)
     }
     .customizationBehavior(.default)
   }
@@ -348,12 +336,7 @@ struct ContentView: View {
     .customizationBehavior(.default)
 
     ToolbarItem(id: "reload", placement: .primaryAction) {
-      Button {
-        Task { await model.reload() }
-      } label: {
-        Label("Reload", systemImage: "arrow.clockwise")
-      }
-      .help("Reload (⌘R)")
+      Action.reload.toolbarItem(model: model)
     }
     .customizationBehavior(.default)
   }
@@ -361,35 +344,17 @@ struct ContentView: View {
   @ToolbarContentBuilder
   private var zoomToolbarItems: some CustomizableToolbarContent {
     ToolbarItem(id: "zoomOut", placement: .primaryAction) {
-      Button {
-        model.zoomOut()
-      } label: {
-        Label("Zoom Out", systemImage: "minus.magnifyingglass")
-      }
-      .disabled(!model.canZoomOut)
-      .help("Zoom Out (⌘−)")
+      Action.zoomOut.toolbarItem(model: model)
     }
     .defaultCustomization(.hidden)
 
     ToolbarItem(id: "zoomReset", placement: .primaryAction) {
-      Button {
-        model.resetZoom()
-      } label: {
-        Label(zoomLabel, systemImage: "1.magnifyingglass")
-      }
-      .disabled(!model.canResetZoom)
-      .help("Actual Size (⌘0)")
+      Action.resetZoom.toolbarItem(model: model)
     }
     .defaultCustomization(.hidden)
 
     ToolbarItem(id: "zoomIn", placement: .primaryAction) {
-      Button {
-        model.zoomIn()
-      } label: {
-        Label("Zoom In", systemImage: "plus.magnifyingglass")
-      }
-      .disabled(!model.canZoomIn)
-      .help("Zoom In (⌘+)")
+      Action.zoomIn.toolbarItem(model: model)
     }
     .defaultCustomization(.hidden)
   }
@@ -518,22 +483,25 @@ private final class ResolvingView: NSView {
   }
 }
 
+/// Brings a toolbar `Menu` icon down to the visual size of sibling
+/// toolbar buttons. SwiftUI hosts toolbar menus as `NSMenuToolbarItem`
+/// at AppKit's larger metric, and font / imageScale / controlSize all
+/// get dropped at the bridge — only `.scaleEffect` survives because it
+/// runs at the SwiftUI compositor before AppKit sees the rendered
+/// layer. Hit-testing keeps the original frame, which is fine.
+private let toolbarMenuIconScale: CGFloat = 0.8
+
 private struct RendererToolbarPicker: View {
   @Bindable var appModel: AppModel
   @Bindable var docModel: DocumentModel
 
   var body: some View {
-    Menu {
-      if appModel.enablePerDocumentOverrides,
-         let processors = docModel.processors
-      {
-        ProcessorMenu(model: processors, appModel: appModel)
-      } else {
-        ProcessorMenu(appModel: appModel)
-      }
-    } label: {
-      Label(label, systemImage: "wand.and.stars")
-    }
+    ProcessorMenu(
+      localTitle: appModel.processors.selected.name,
+      globalTitle: appModel.processors.selected.name,
+      appModel: appModel,
+      processors: docModel.processors)
+    .scaleEffect(toolbarMenuIconScale, anchor: .center)
     .help("Markdown processor")
   }
 
@@ -547,21 +515,12 @@ private struct TemplateToolbarPicker: View {
   @Bindable var docModel: DocumentModel
 
   var body: some View {
-    Menu {
-      if appModel.enablePerDocumentOverrides,
-         let templates = docModel.templates
-      {
-        TemplateMenu(model: templates, appModel: appModel)
-      } else {
-        TemplateMenu(appModel: appModel)
-      }
-    } label: {
-      Label(label, systemImage: "doc.richtext")
-    }
+    TemplateMenu(
+      localTitle: appModel.templates.selected.name,
+      globalTitle: appModel.templates.selected.name,
+      appModel: appModel,
+      templates: docModel.templates)
+    .scaleEffect(toolbarMenuIconScale, anchor: .center)
     .help("Template")
-  }
-
-  private var label: String {
-    appModel.templates.selected.name
   }
 }
