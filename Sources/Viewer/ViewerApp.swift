@@ -75,6 +75,32 @@ struct FileCommands: Commands {
       }
       .keyboardShortcut("e", modifiers: .command)
       .disabled(model?.documentURL == nil)
+
+      Divider()
+
+      Button("Export as PDF…", systemImage: "arrow.up.document") {
+        guard let model else { return }
+        runExportPDFPanel(model: model)
+      }
+      .keyboardShortcut("e", modifiers: [.command, .shift])
+      .disabled(model?.documentURL == nil)
+    }
+
+    CommandGroup(replacing: .printItem) {
+      Button("Page Setup…", systemImage: "text.page") {
+        guard let model else { return }
+        model.runPageSetup(on: NSApp.keyWindow)
+      }
+      .keyboardShortcut("p", modifiers: [.command, .shift])
+      .disabled(model?.documentURL == nil)
+
+      Button("Print…", systemImage: "printer") {
+        guard let model else { return }
+        let window = NSApp.keyWindow
+        Task { await model.runPrintPanel(on: window) }
+      }
+      .keyboardShortcut("p", modifiers: .command)
+      .disabled(model?.documentURL == nil)
     }
   }
 }

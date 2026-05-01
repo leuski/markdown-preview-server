@@ -44,7 +44,9 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     AsyncThrowingStream { continuation in
       let task = Task { @MainActor in
         do {
-          let (data, mime) = try resolve(request: request)
+          let (data, mime) = try Self.resolve(
+            request: request,
+            templateProvider: templateProvider)
           guard let url = request.url else {
             throw URLError(.badURL)
           }
@@ -69,17 +71,32 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     }
   }
 
-  private func resolve(request: URLRequest) throws -> (Data, String) {
+  /// Shared resolution used by both the SwiftUI `URLSchemeHandler`
+  /// path (for the visible `WebPage`) and the classic
+  /// `WKURLSchemeHandler` adapter used by the offscreen print
+  /// `WKWebView`. The print path can't reach the SwiftUI handler
+  /// because the two protocols don't compose, but they need to
+  /// resolve `x-galley://local/...` URLs identically.
+  @MainActor
+  static func resolve(
+    request: URLRequest,
+    templateProvider: () -> Template
+  ) throws -> (Data, String) {
     guard let url = request.url else { throw URLError(.badURL) }
     guard let route = PreviewRoute(path: url.path) else {
       throw URLError(.unsupportedURL)
     }
-    let assetURL = try resolveAssetURL(for: route)
+    let assetURL = try resolveAssetURL(
+      for: route, templateProvider: templateProvider)
     let data = try Data(contentsOf: assetURL)
     return (data, MIMETypes.mimeType(for: assetURL))
   }
 
-  private func resolveAssetURL(for route: PreviewRoute) throws -> URL {
+  @MainActor
+  private static func resolveAssetURL(
+    for route: PreviewRoute,
+    templateProvider: () -> Template
+  ) throws -> URL {
     switch route {
     case .templateAsset(let id, let file):
       let template = templateProvider()
@@ -90,5 +107,47 @@ struct PreviewSchemeHandler: URLSchemeHandler {
     case .documentAsset(let absolutePath):
       return URL(fileURLWithPath: absolutePath)
     }
+  }
+}
+
+/// Adapter that exposes the same asset resolution to a classic
+/// `WKWebView`. Used by the offscreen print/export web view, which
+/// can't accept a SwiftUI `URLSchemeHandler` (different protocol).
+@MainActor
+final class ClassicPreviewSchemeHandler: NSObject, WKURLSchemeHandler {
+  private let templateProvider: @MainActor @Sendable () -> Template
+
+  init(templateProvider: @escaping @MainActor @Sendable () -> Template) {
+    self.templateProvider = templateProvider
+    super.init()
+  }
+
+  func webView(
+    _ webView: WKWebView, start urlSchemeTask: any WKURLSchemeTask
+  ) {
+    do {
+      let (data, mime) = try PreviewSchemeHandler.resolve(
+        request: urlSchemeTask.request,
+        templateProvider: templateProvider)
+      guard let url = urlSchemeTask.request.url else {
+        throw URLError(.badURL)
+      }
+      let response = URLResponse(
+        url: url,
+        mimeType: mime,
+        expectedContentLength: data.count,
+        textEncodingName: nil)
+      urlSchemeTask.didReceive(response)
+      urlSchemeTask.didReceive(data)
+      urlSchemeTask.didFinish()
+    } catch {
+      urlSchemeTask.didFailWithError(error)
+    }
+  }
+
+  func webView(
+    _ webView: WKWebView, stop urlSchemeTask: any WKURLSchemeTask
+  ) {
+    // No async work to cancel — resolve runs synchronously.
   }
 }
