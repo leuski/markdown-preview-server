@@ -11,27 +11,33 @@ import GalleyServerKit
 
 @main
 struct MarkdownPreviewerApp: App {
-  @State private var model = AppModel()
+  @State private var boot = AppBoot()
 
   var body: some Scene {
     MenuBarExtra {
-      MenuBarContent(
-        model: model,
-        server: model.server,
-        templateStore: model.templateStore,
-        templates: model.templates)
+      if let model = boot.model {
+        MenuBarContent(
+          model: model,
+          server: model.server,
+          templateStore: model.templateStore,
+          templates: model.templates)
+      } else {
+        Text("Starting…")
+      }
     } label: {
-      MenuBarLabel(state: model.server.state)
+      MenuBarLabel(state: boot.model?.server.state ?? .stopped)
     }
     .menuBarExtraStyle(.menu)
 
     Settings {
-      SettingsView(model: model)
+      if let model = boot.model {
+        SettingsView(model: model)
+      } else {
+        ProgressView("Starting…")
+          .padding()
+          .frame(minWidth: 320, minHeight: 200)
+      }
     }
-  }
-
-  init() {
-    // Auto-start the server on launch.
   }
 }
 

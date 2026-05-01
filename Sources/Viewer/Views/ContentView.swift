@@ -5,7 +5,7 @@ import WebKit
 
 struct ContentView: View {
   @Binding var fileURL: URL?
-  @Environment(AppModel.self) private var appModel
+  @Environment(AppBoot.self) private var boot
   @Environment(ViewerAppDelegate.self) private var appDelegate
   @Environment(\.openWindow) private var openWindow
   @Environment(\.dismiss) private var dismiss
@@ -18,15 +18,30 @@ struct ContentView: View {
   /// each get their own history that survives app relaunch.
   @SceneStorage("MarkdownEye.history") private var historyJSON: String = ""
 
-  /// Per-window renderer / template overrides. `nil` means "no
-  /// override — use the global selection." Only honored when
-  /// `AppModel.enablePerDocumentOverrides` is on.
-  @SceneStorage("MarkdownEye.overrideRendererID")
-  private var overrideRendererID: String?
-  @SceneStorage("MarkdownEye.overrideTemplateID")
-  private var overrideTemplateID: String?
+  /// Per-window renderer / template overrides, encoded as
+  /// `{id, name}` JSON blobs from `SceneChoice.persistent`. `nil`
+  /// means "no override — use the global selection." Only honored
+  /// when `AppModel.enablePerDocumentOverrides` is on.
+  @SceneStorage("MarkdownEye.overrideRendererPersistent")
+  private var overrideRendererPersistent: String?
+  @SceneStorage("MarkdownEye.overrideTemplatePersistent")
+  private var overrideTemplatePersistent: String?
 
   var body: some View {
+    if let appModel = boot.model {
+      readyBody(appModel: appModel)
+    } else {
+      // Boot in flight (processor discovery). Keep the window hidden
+      // so the user never sees a pre-render flash. ContentView stays
+      // mounted so `@SceneStorage` and the WindowGroup URL binding
+      // hydrate normally; only the body underneath swaps.
+      Color.clear
+        .background(BootWindowHider())
+    }
+  }
+
+  @ViewBuilder
+  private func readyBody(appModel: AppModel) -> some View {
     Group {
       if fileURL != nil {
         WebView(model.page)
@@ -77,7 +92,7 @@ struct ContentView: View {
       onDetach: { window in
         if let window { appDelegate.unregisterWindow(window) }
       }))
-    .toolbar { toolbarContent }
+    .toolbar { toolbarContent(appModel: appModel) }
     .modifier(SceneValuesModifier(
       model: model,
       renameContext: RenameContext(
@@ -89,7 +104,7 @@ struct ContentView: View {
     .navigationTitle(model.documentURL?.lastPathComponent
       ?? fileURL?.lastPathComponent
       ?? "Markdown Preview")
-    .task(id: fileURL) { await launchTask() }
+    .task(id: fileURL) { await launchTask(appModel: appModel) }
     .onChange(of: model.documentURL) { _, new in
       saveHistory()
       // First time content is bound (whether via initial bind,
@@ -99,15 +114,15 @@ struct ContentView: View {
     .onChange(of: appModel.processors.selected) { reloadModel() }
     .onChange(of: appModel.templates.selected) { reloadModel() }
     .onChange(of: appModel.enablePerDocumentOverrides) { reloadModel() }
-    // The model is the source of truth for the window's choice
-    // state; mirror its changes to scene storage and trigger a
-    // reload. Hydration in launchTask handles the other direction.
-    .onChange(of: model.overrideTemplateID) { _, new in
-      overrideTemplateID = new
+    // Scene choices are the source of truth for the window's pick;
+    // mirror their `persistent` strings to scene storage and trigger
+    // a reload. Hydration in launchTask handles the reverse direction.
+    .onChange(of: model.templates?.persistent) { _, new in
+      overrideTemplatePersistent = new
       reloadModel()
     }
-    .onChange(of: model.overrideRendererID) { _, new in
-      overrideRendererID = new
+    .onChange(of: model.processors?.persistent) { _, new in
+      overrideRendererPersistent = new
       reloadModel()
     }
     .navigationDocument(model.documentURL ?? URL.homeDirectory)
@@ -129,12 +144,22 @@ struct ContentView: View {
 
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
   /// `fileURL` changes — typically once: nil → picked URL.
-  private func launchTask() async {
-    model.bindSettings(appModel)
-    // Hydrate the per-window overrides from scene storage on first
-    // bind — covers cold launch and state restoration both.
-    model.overrideTemplateID = overrideTemplateID
-    model.overrideRendererID = overrideRendererID
+  /// Only mounted once `boot.model` is non-nil, so by the time this
+  /// fires processor discovery has completed and the persisted pick
+  /// has been decoded against the live catalog.
+  private func launchTask(appModel: AppModel) async {
+    let displaced = model.bindSettings(
+      appModel,
+      templatePersistent: overrideTemplatePersistent,
+      processorPersistent: overrideRendererPersistent)
+    if let name = displaced.templateDisplaced {
+      Task { await DisplacementNotifier.post(
+        kind: .template, displaced: name) }
+    }
+    if let name = displaced.processorDisplaced {
+      Task { await DisplacementNotifier.post(
+        kind: .processor, displaced: name) }
+    }
     // Keep the delegate's appModel reference fresh — `application(_:open:)`
     // and Open Recent dispatch consult `openBehavior` from there.
     appDelegate.appModel = appModel
@@ -242,7 +267,7 @@ struct ContentView: View {
   }
 
   @ToolbarContentBuilder
-  private var toolbarContent: some ToolbarContent {
+  private func toolbarContent(appModel: AppModel) -> some ToolbarContent {
     ToolbarItemGroup(placement: .navigation) {
       Button {
         Task { await model.goBack() }
@@ -313,6 +338,22 @@ private struct WindowAccessor: NSViewRepresentable {
   }
 
   func updateNSView(_ nsView: NSView, context: Context) {}
+}
+
+/// Pins `window.alphaValue = 0` while the AppModel is still booting.
+/// Used by the boot branch of `ContentView.body`; once the body
+/// swaps to `readyBody`, the regular `WindowAccessor` takes over
+/// alpha control based on `documentURL`.
+private struct BootWindowHider: NSViewRepresentable {
+  func makeNSView(context: Context) -> NSView { Hider() }
+  func updateNSView(_ nsView: NSView, context: Context) {}
+
+  private final class Hider: NSView {
+    override func viewDidMoveToWindow() {
+      super.viewDidMoveToWindow()
+      window?.alphaValue = 0
+    }
+  }
 }
 
 private final class ResolvingView: NSView {

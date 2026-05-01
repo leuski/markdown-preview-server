@@ -55,13 +55,7 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var templatesMenu: some View {
     Menu("Template") {
-      let values = templates.values
-      DividedSections(sections: [
-        values.filter { $0.kind == .builtIn },
-        values.filter { $0.kind == .userDefined }
-      ], id: \.self) { item in
-        Toggle(item.name, isOn: templates.isSelectedBinding(item))
-      }
+      MenuCore(model: templates)
       Divider()
       Button("Reveal Templates Folder") {
         templateStore.revealFolder()
@@ -72,7 +66,7 @@ struct MenuBarContent: View {
   @ViewBuilder
   private var rendererMenu: some View {
     Menu("Processor") {
-      RendererMenu(appModel: model)
+      MenuCore(model: model.processors)
     }
   }
 

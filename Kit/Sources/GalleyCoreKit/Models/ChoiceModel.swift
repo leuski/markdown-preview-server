@@ -154,6 +154,20 @@ where Element: ChoiceValueEnvelopeProtocol,
     source.values.first(where: { $0.persistentID == id })
   }
 
+  /// If `selected.value` is no longer in `source.values`, snap to the
+  /// default and return the displaced display name. Call after the
+  /// source mutates its catalog (e.g. template watcher fires) so
+  /// persisted state and UI stay consistent. Returns nil when no
+  /// heal was needed.
+  @discardableResult
+  public func healIfDisplaced() -> String? {
+    let id = selected.value.persistentID
+    if findValue(forID: id) != nil { return nil }
+    let displaced = selected.name
+    selected = Element(source.defaultValue)
+    return displaced
+  }
+
   public static func create(source: Source, persistent: String?)
   -> (ConcreteChoiceModel<Element, Source>, String?)
   {
@@ -235,6 +249,20 @@ where Choice: ChoiceModel & Equatable & Hashable
   }
 }
 
+extension SceneChoiceValueEnvelope where Choice: ChoiceModelEnvelope {
+  /// The underlying domain value (e.g. `Processor`, `Template`),
+  /// resolved through the scene-local pick or — when set to
+  /// `.global(source)` — through the source's current selection.
+  public var value: Choice.Element.Value {
+    switch self {
+    case .local(let element):
+      return element.value
+    case .global(let choice):
+      return choice.selected.value
+    }
+  }
+}
+
 extension SceneChoiceValueEnvelope: SectionedChoiceValue
 where Choice.Element: SectionedChoiceValue
 {
@@ -302,6 +330,25 @@ where Choice: ChoiceModelEnvelope & Equatable & Hashable
       }
     case .global:
       return nil
+    }
+  }
+
+  /// If a local override's underlying value is no longer in the
+  /// source's catalog, snap back to `.global(source)` and return the
+  /// displaced display name. The `.global` case never displaces — it
+  /// always resolves through the source's own (already-healed)
+  /// `selected`.
+  @discardableResult
+  public func healIfDisplaced() -> String? {
+    switch selected {
+    case .global:
+      return nil
+    case .local(let value):
+      let id = value.value.persistentID
+      if source.findValue(forID: id) != nil { return nil }
+      let displaced = value.name
+      selected = .global(source)
+      return displaced
     }
   }
 }

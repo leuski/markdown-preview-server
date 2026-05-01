@@ -4,12 +4,12 @@ import SwiftUI
 @main
 struct ViewerApp: App {
   @NSApplicationDelegateAdaptor(ViewerAppDelegate.self) var appDelegate
-  @State private var model = AppModel()
+  @State private var boot = AppBoot()
 
   var body: some Scene {
     WindowGroup(for: URL.self) { $url in
       ContentView(fileURL: $url)
-        .environment(model)
+        .environment(boot)
         .environment(appDelegate)
     }
     .defaultSize(width: 600, height: 400)
@@ -17,11 +17,19 @@ struct ViewerApp: App {
     .commands {
       FileCommands(delegate: appDelegate)
       NavigationCommands()
-      RenderingCommands(appModel: model)
+      if let model = boot.model {
+        RenderingCommands(appModel: model)
+      }
     }
 
     Settings {
-      SettingsView(appModel: model)
+      if let model = boot.model {
+        SettingsView(appModel: model)
+      } else {
+        ProgressView("Starting…")
+          .padding()
+          .frame(minWidth: 320, minHeight: 200)
+      }
     }
   }
 }

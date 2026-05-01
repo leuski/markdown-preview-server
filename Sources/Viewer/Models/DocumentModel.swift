@@ -31,14 +31,6 @@ final class DocumentModel {
   var templates: SceneTemplateChoice?
   var processors: SceneProcessorChoice?
 
-  /// Window-local override ids. `nil` = "use the global selection."
-  /// Owned here so they're plain `@Observable` properties — view
-  /// menus that read them participate in Observation the same way
-  /// `TemplateChoice.selected` (UserDefaults-backed) does. Persisted
-  /// to `@SceneStorage` from `ContentView` via `.onChange`.
-  var overrideTemplateID: String?
-  var overrideRendererID: String?
-
   private(set) var documentURL: URL?
   private(set) var lastError: String?
 
@@ -119,21 +111,27 @@ final class DocumentModel {
   // MARK: - Public entry points
 
   /// Inject the shared rendering appModel. Called by ContentView
-  /// before the first bind; safe to call again. Builds the per-window
-  /// choice models lazily once — they read/write `overrideTemplateID`
-  /// / `overrideRendererID` on `self` (Observable), and the view
-  /// layer is responsible for syncing those to/from `@SceneStorage`.
-  func bindSettings(_ appModel: AppModel) {
+  /// before the first bind. The persistent strings come from the
+  /// view's `@SceneStorage` slots, so calling `bindSettings` again
+  /// with new values lets state restoration drive a re-hydrate.
+  /// Returns the displaced names (template, processor) when the
+  /// scene-stored persistent string can't be decoded against the
+  /// current catalog — caller posts the user notification.
+  @discardableResult
+  func bindSettings(
+    _ appModel: AppModel,
+    templatePersistent: String?,
+    processorPersistent: String?
+  ) -> (templateDisplaced: String?, processorDisplaced: String?) {
     self.appModel = appModel
-    if templates == nil {
-      templates = SceneTemplateChoice(
-        source: appModel.templates, owner: self)
-    }
-    if processors == nil {
-      processors = SceneProcessorChoice(
-        source: appModel.processors, owner: self)
-    }
+    let (templates, displacedTemplate) = SceneTemplateChoice.create(
+      from: appModel.templates, persistent: templatePersistent)
+    self.templates = templates
+    let (processors, displacedProcessor) = SceneProcessorChoice.create(
+      from: appModel.processors, persistent: processorPersistent)
+    self.processors = processors
     templateBox.template = resolvedTemplate()
+    return (displacedTemplate, displacedProcessor)
   }
 
   /// Initial bind (called from ContentView's `.task(id: fileURL)`).
@@ -333,29 +331,22 @@ final class DocumentModel {
   /// to the global selection if its pick is unavailable). Otherwise
   /// always use the global selection.
   private func resolvedRenderer() -> any MarkdownRenderer {
-    guard let processors else {
-      return appModel?.activeRenderer ?? SwiftMarkdownRenderer()
+    if appModel?.enablePerDocumentOverrides == true,
+       let processors,
+       let renderer = processors.selected.value.renderer
+    {
+      return renderer
     }
-    if appModel?.enablePerDocumentOverrides == true {
-      if let renderer = processors.selected.value.renderer { return renderer }
-      // Local pick is unavailable — fall back to the resolved global
-      // (which itself falls back to the catalog's first-available
-      // entry).
-    }
-    return processors.globalProcessor.value.renderer
-      ?? SwiftMarkdownRenderer()
+    return appModel?.activeRenderer ?? SwiftMarkdownRenderer()
   }
 
   private func resolvedTemplate() -> Template {
-    guard let templates else {
-      return appModel?.activeTemplate ?? .default
-    }
-    if appModel?.enablePerDocumentOverrides == true {
+    if appModel?.enablePerDocumentOverrides == true,
+       let templates
+    {
       return templates.selected.value
     }
-    // Per-document override is off: always use the global selection,
-    // even if a window happens to have a stale local pick.
-    return templates.globalTemplate
+    return appModel?.activeTemplate ?? .default
   }
 
   private func currentScrollY() async -> Double? {

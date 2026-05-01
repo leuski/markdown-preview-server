@@ -48,48 +48,87 @@ final class AppModel {
       })
   }()
 
-  /// The display name of a previously-picked processor that is no
-  /// longer available. Set by `reconcile()` after discovery; cleared
-  /// when the user dismisses the notice or makes a new selection.
-  var displacedProcessorName: String?
-
-  /// The display name of a previously-picked template whose folder is
-  /// no longer present.
-  var displacedTemplateName: String?
-
   private enum Keys {
     static let port = "MarkdownPreviewer.port"
-    static let rendererID = "MarkdownPreviewer.rendererID"
-    static let templateID = "MarkdownPreviewer.selectedTemplateID"
+    static let rendererPersistent = "MarkdownPreviewer.rendererPersistent"
+    static let templatePersistent = "MarkdownPreviewer.templatePersistent"
   }
 
   nonisolated static let defaultPort: UInt16 = 8089
   nonisolated static let defaultHost: String = "127.0.0.1"
 
-  init() {
-    let store = TemplateStore()
-    self.templateStore = store
-    self.templates = TemplateChoice(store: store, key: Keys.templateID)
-    let processorStore = ProcessorStore()
+  /// Constructs an already-hydrated AppModel. Caller (`AppBoot`) is
+  /// expected to have run async catalog discovery
+  /// (`await processorStore.discover()`) before invoking this so
+  /// `create(source:persistent:)` decodes the persisted pick against
+  /// the live catalog and reports displacement honestly.
+  init(templateStore: TemplateStore, processorStore: ProcessorStore) {
+    self.templateStore = templateStore
     self.processorStore = processorStore
-    self.processors = ProcessorChoice(
-      store: processorStore, key: Keys.rendererID)
 
-    // Initial template reconcile (TemplateStore.reload() ran during
-    // its own init, before onReload was set).
-    self.displacedTemplateName = self.templates.reconcile()
-    store.onReload = { [weak self] in self?.afterTemplateReload() }
+    let (templates, displacedTemplate) = TemplateChoice.create(
+      source: templateStore,
+      persistent: UserDefaults.standard.string(
+        forKey: Keys.templatePersistent))
+    self.templates = templates
+
+    let (processors, displacedProcessor) = ProcessorChoice.create(
+      source: processorStore,
+      persistent: UserDefaults.standard.string(
+        forKey: Keys.rendererPersistent))
+    self.processors = processors
+
+    templateStore.onReload = { [weak self] in self?.afterTemplateReload() }
+
+    if let name = displacedTemplate { Self.notify(.template, name) }
+    if let name = displacedProcessor { Self.notify(.processor, name) }
 
     startServer()
+    startPersistenceObservation()
+  }
 
-    Task { @MainActor in
-      await self.rediscoverRenderers()
+  /// Re-runs discovery and heals the persisted pick against the
+  /// fresh catalog. Posts a notification if the pick was displaced.
+  func rediscoverRenderers() async {
+    await processorStore.discover()
+    if let name = processors.healIfDisplaced() {
+      Self.notify(.processor, name)
     }
   }
 
   private func afterTemplateReload() {
-    if let displaced = templates.reconcile() {
-      displacedTemplateName = displaced
+    if let name = templates.healIfDisplaced() {
+      Self.notify(.template, name)
+    }
+  }
+
+  private static func notify(
+    _ kind: DisplacementNotifier.Kind, _ name: String)
+  {
+    Task { await DisplacementNotifier.post(kind: kind, displaced: name) }
+  }
+
+  /// Mirror `selected` changes back to UserDefaults. One observation
+  /// loop tracks both choices; each iteration rewrites both keys
+  /// (cheap — they're tiny strings) and re-arms.
+  private func startPersistenceObservation() {
+    Task { @MainActor [weak self] in
+      while !Task.isCancelled {
+        guard let self else { return }
+        await withCheckedContinuation {
+          (cont: CheckedContinuation<Void, Never>) in
+          withObservationTracking {
+            _ = self.templates.selected
+            _ = self.processors.selected
+          } onChange: {
+            cont.resume()
+          }
+        }
+        UserDefaults.standard.set(
+          self.templates.persistent, forKey: Keys.templatePersistent)
+        UserDefaults.standard.set(
+          self.processors.persistent, forKey: Keys.rendererPersistent)
+      }
     }
   }
 
@@ -108,15 +147,6 @@ final class AppModel {
     Self.hostURL(port: self.port)
   }
 
-  /// Re-runs discovery (e.g. after the user installs a new tool) and
-  /// reconciles the persisted pick against the fresh catalog.
-  func rediscoverRenderers() async {
-    await processorStore.discover()
-    if let displaced = processors.reconcile() {
-      displacedProcessorName = displaced
-    }
-  }
-
   private func startServer() {
     server.start(url: hostURL)
   }
@@ -124,6 +154,29 @@ final class AppModel {
   private func restartServerIfRunning() {
     if case .running = server.state {
       startServer()
+    }
+  }
+}
+
+/// Boot wrapper that runs async processor discovery before
+/// constructing the real AppModel. The view tree branches on
+/// `model` being non-nil; while loading, a placeholder UI is shown.
+@Observable @MainActor
+final class AppBoot {
+  private(set) var model: AppModel?
+
+  init() {
+    // Notification permission is presented as a system sheet on
+    // first run; awaiting it would block boot until the user
+    // responds. Fire it in parallel and let it resolve whenever.
+    Task { await DisplacementNotifier.requestAuthorization() }
+    Task { @MainActor in
+      let templateStore = TemplateStore()
+      let processorStore = ProcessorStore()
+      await processorStore.discover()
+      self.model = AppModel(
+        templateStore: templateStore,
+        processorStore: processorStore)
     }
   }
 }

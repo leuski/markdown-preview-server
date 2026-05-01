@@ -91,5 +91,7 @@ struct SettingsView: View {
 }
 
 #Preview {
-  SettingsView(model: AppModel())
+  SettingsView(model: AppModel(
+    templateStore: TemplateStore(),
+    processorStore: ProcessorStore()))
 }
