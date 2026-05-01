@@ -147,7 +147,8 @@ struct ContentView: View {
   private func replaceDocument(with newURL: URL) {
     appDelegate.record(newURL)
     if fileURL != newURL { fileURL = newURL }
-    Task { await model.bind(to: newURL) }
+    let line = appDelegate.consumePendingScrollLine(for: newURL)
+    Task { await model.bind(to: newURL, scrollToLine: line) }
   }
 
   /// Drives launch wiring + initial bind + FTUE picker. Re-runs when
@@ -197,7 +198,8 @@ struct ContentView: View {
     // Initial bind for a freshly-opened URL.
     if let fileURL {
       appDelegate.record(fileURL)
-      await model.bind(to: fileURL)
+      let line = appDelegate.consumePendingScrollLine(for: fileURL)
+      await model.bind(to: fileURL, scrollToLine: line)
       return
     }
 

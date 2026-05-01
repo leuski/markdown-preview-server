@@ -47,6 +47,13 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
   /// launch picker.
   @ObservationIgnored private weak var activeOpenPanel: NSOpenPanel?
 
+  /// Pending source-line scroll targets keyed by the file URL the
+  /// caller asked us to open. Populated by `normalize(_:)` when an
+  /// incoming `galley://` URL carries a `line=N` query parameter,
+  /// drained by ContentView at bind time.
+  @ObservationIgnored
+  private var pendingScrollLines: [URL: Int] = [:]
+
   /// Mirrors `NSDocumentController.shared.recentDocumentURLs`. Updated
   /// whenever we record or clear a recent URL. Bind from the File
   /// menu's Open Recent submenu.
@@ -69,9 +76,39 @@ final class ViewerAppDelegate: NSObject, NSApplicationDelegate {
 
   func application(_ application: NSApplication, open urls: [URL]) {
     for url in urls {
-      record(url)
-      dispatch(url)
+      let normalized = normalize(url)
+      record(normalized)
+      dispatch(normalized)
     }
+  }
+
+  /// Translate inbound URLs into the canonical file URL the rest of
+  /// the dispatch pipeline expects. `galley://...?line=N` becomes a
+  /// plain `file://` URL with the line stashed in `pendingScrollLines`
+  /// for ContentView to consume at bind time. Other URLs pass through
+  /// unchanged.
+  private func normalize(_ url: URL) -> URL {
+    guard url.scheme?.lowercased() == "galley" else { return url }
+    guard let components = URLComponents(
+      url: url, resolvingAgainstBaseURL: false)
+    else { return url }
+    let path = components.path
+    guard !path.isEmpty else { return url }
+    let fileURL = URL(fileURLWithPath: path)
+    if let value = components.queryItems?
+      .first(where: { $0.name == "line" })?.value,
+       let line = Int(value), line > 0
+    {
+      pendingScrollLines[fileURL] = line
+    }
+    return fileURL
+  }
+
+  /// Take and clear the pending scroll-to-line for `url`, if any.
+  /// Called by ContentView at the bind sites for both initial open and
+  /// in-place replace.
+  func consumePendingScrollLine(for url: URL) -> Int? {
+    pendingScrollLines.removeValue(forKey: url)
   }
 
   /// Single entry point all "open this URL" requests funnel through.

@@ -66,6 +66,12 @@ final class DocumentModel {
   /// older bind invocations check this and bail out when superseded.
   @ObservationIgnored private var bindGeneration: Int = 0
 
+  /// One-shot source-line scroll target consumed by the next render.
+  /// Set by `bind(to:scrollToLine:)` for `galley://...?line=N` opens
+  /// dispatched from BBEdit's preview script; cleared after the JS
+  /// scroll runs so subsequent file-watcher reloads don't re-jump.
+  @ObservationIgnored private var pendingScrollLine: Int?
+
   private let logger = Logger(
     subsystem: Bundle.main.bundleIdentifier ?? "net.leuski.Markdown-Eye",
     category: "DocumentModel")
@@ -153,9 +159,17 @@ final class DocumentModel {
 
   /// Initial bind (called from ContentView's `.task(id: fileURL)`).
   /// Resets history; this URL becomes the only entry on the stack.
-  func bind(to url: URL) async {
+  ///
+  /// `scrollToLine` is the source line the rendered preview should
+  /// scroll to once the page finishes loading — non-nil when the open
+  /// came in via `galley://...?line=N` from an editor script. The
+  /// value is consumed once and applies only to the first render of
+  /// this bind; subsequent file-watcher reloads preserve scroll
+  /// position normally.
+  func bind(to url: URL, scrollToLine: Int? = nil) async {
     history = [url]
     currentIndex = 0
+    pendingScrollLine = scrollToLine
     await rebindCurrent()
   }
 
@@ -386,7 +400,12 @@ final class DocumentModel {
       do {
         for try await _ in page.load(html: html, baseURL: origin) {}
         lastError = nil
-        if savedScrollY > 0 {
+        if let line = pendingScrollLine {
+          // One-shot — consume before the JS call so an in-flight
+          // file-watcher reload doesn't re-jump.
+          pendingScrollLine = nil
+          await scrollToSourceLine(line)
+        } else if savedScrollY > 0 {
           await restoreScrollY(savedScrollY)
         }
       } catch {
@@ -439,6 +458,48 @@ final class DocumentModel {
 
   private func restoreScrollY(_ yPos: Double) async {
     _ = try? await page.callJavaScript("window.scrollTo(0, \(yPos));")
+  }
+
+  /// Find the rendered block whose source line is closest to (but not
+  /// past) `line` and scroll it into view. Reads any of the three
+  /// source-position attribute formats we know about:
+  ///
+  /// - `data-source-line="42"` — `SwiftMarkdownRenderer`
+  /// - `data-pos="…42:1-42:17"` — pandoc with `+sourcepos`
+  /// - `data-sourcepos="42:1-42:17"` — cmark-gfm with `--sourcepos`
+  ///
+  /// No-ops cleanly when the active renderer doesn't emit positions
+  /// (multimarkdown, discount, Markdown.pl) — the user just lands at
+  /// the top of the document.
+  private func scrollToSourceLine(_ line: Int) async {
+    let script = """
+      (function() {
+        var nodes = document.querySelectorAll(
+          '[data-source-line], [data-pos], [data-sourcepos]');
+        var best = null;
+        var bestLine = -1;
+        for (var i = 0; i < nodes.length; i++) {
+          var node = nodes[i];
+          var n = NaN;
+          if (node.dataset.sourceLine) {
+            n = parseInt(node.dataset.sourceLine, 10);
+          } else {
+            var raw = node.dataset.pos || node.dataset.sourcepos || '';
+            var m = raw.match(/(\\d+):\\d+/);
+            if (m) n = parseInt(m[1], 10);
+          }
+          if (Number.isNaN(n)) continue;
+          if (n <= \(line) && n > bestLine) {
+            best = node;
+            bestLine = n;
+          }
+        }
+        if (best) {
+          best.scrollIntoView({ block: 'center', behavior: 'instant' });
+        }
+      })();
+      """
+    _ = try? await page.callJavaScript(script)
   }
 }
 

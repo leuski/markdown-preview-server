@@ -95,19 +95,25 @@ public final class ProcessorStore {
       name: "Pandoc",
       installHint: "brew install pandoc",
       discover: {
+        // `+sourcepos` is a reader extension that emits `data-pos`
+        // attributes on every block, used by the viewer's cmd-click
+        // → editor jump and BBEdit's scroll-to-line on open.
         await ExternalProcessRenderer.discover(
           toolName: "pandoc",
-          arguments: ["--from=markdown", "--to=html"])
+          arguments: ["--from=markdown+sourcepos", "--to=html"])
       }),
     Spec(
       id: "cmark-gfm",
       name: "cmark-gfm",
       installHint: "brew install cmark-gfm",
       discover: {
+        // `--sourcepos` emits `data-sourcepos` attributes — same
+        // purpose as pandoc's `+sourcepos`.
         await ExternalProcessRenderer.discover(
           toolName: "cmark-gfm",
           arguments: [
             "--unsafe",
+            "--sourcepos",
             "--extension", "table",
             "--extension", "strikethrough",
             "--extension", "tasklist",

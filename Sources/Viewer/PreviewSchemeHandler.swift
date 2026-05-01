@@ -12,15 +12,21 @@ import ALFoundation
 /// `Template.rewriteAssets(...)` rewriting logic produces URLs that
 /// resolve correctly here too.
 ///
-/// Origin is `galley://local`. The Viewer sets the WebPage's `baseURL`
-/// to the same origin so any unrewritten relative URLs (e.g. those
-/// in inline `<img>` markup the document author wrote) flow through
-/// the handler as well.
+/// Origin is `x-galley://local`. The Viewer sets the WebPage's
+/// `baseURL` to the same origin so any unrewritten relative URLs
+/// (e.g. those in inline `<img>` markup the document author wrote)
+/// flow through the handler as well.
+///
+/// Distinct from `galley://`, which is reserved for the cross-app
+/// launch URL handled by LaunchServices in `ViewerAppDelegate`.
+/// Two layers, two names — avoids any chance of `application(_:open:)`
+/// receiving an internal asset URL and avoids LaunchServices
+/// re-routing an unclaimed in-WebView navigation back into the app.
 
 @MainActor
 struct PreviewSchemeHandler: URLSchemeHandler {
-  static let scheme = URLScheme("galley") !! "Should not happen"
-  static let originURL: URL = "galley://local"
+  static let scheme = URLScheme("x-galley") !! "Should not happen"
+  static let originURL: URL = "x-galley://local"
 
   /// Reads the active template at request time. Avoids stale state
   /// when the user switches templates: the next asset request picks
